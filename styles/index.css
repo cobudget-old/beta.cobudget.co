@@ -373,14 +373,14 @@ label.label-with-details {
 .group-page__help-icon {
   color: #BDBDBD; }
 
-.group-page__project-container {
+.group-page__live-project-container {
   padding: 3px 0; }
 
-.group-page__project-title {
+.group-page__live-project-title {
   font-size: 16px;
   line-height: 22px; }
 
-.group-page__project-funding {
+.group-page__live-project-funding {
   font-size: 13px;
   line-height: 15px;
   color: #767676; }
@@ -394,14 +394,39 @@ label.label-with-details {
 .group-page__progress-bar .md-bar {
   background: #FF8600; }
 
-.group-page__drafts-heading {
-  color: #6064FF; }
+.group-page__draft-container {
+  position: relative; }
 
 .group-page__draft-title {
   font-size: 16px;
   line-height: 22px; }
 
 .group-page__draft-author {
+  font-size: 13px;
+  line-height: 15px;
+  color: #767676; }
+
+.group-page__comment-count-container {
+  position: absolute;
+  top: 0;
+  right: 4px; }
+
+.group-page__comment-count-icon {
+  font-size: 24px;
+  line-height: 27px; }
+
+.group-page__comment-count {
+  color: white;
+  position: relative;
+  bottom: 23px;
+  font-size: 12px;
+  line-height: 14px; }
+
+.group-page__funded-project-title {
+  font-size: 16px;
+  line-height: 22px; }
+
+.group-page__funded-project-author {
   font-size: 13px;
   line-height: 15px;
   color: #767676; }
@@ -554,7 +579,7 @@ label.label-with-details {
   background: #BDBDBD; }
 
 .project-page__progress-bar .md-bar {
-  background: #FF8600; }
+  background: #00C504; }
 
 .project-page md-progress-linear:not([md-mode="indeterminate"]) .md-container {
   height: 15px; }
@@ -563,7 +588,8 @@ label.label-with-details {
   height: 15px; }
 
 .project-page__progress-info {
-  margin-top: 25px; }
+  margin-top: 25px;
+  margin-bottom: 10px; }
 
 .project-page__progress-amount {
   display: block;
@@ -614,6 +640,9 @@ label.label-with-details {
 .project-page__live-icon {
   color: #00C504; }
 
+.project-page__funded-icon {
+  color: #00BCD7; }
+
 .project-page__status-flagpoint-icon-inactive {
   color: #767676; }
 
@@ -624,6 +653,9 @@ label.label-with-details {
 .project-page .md-button.md-primary.md-raised {
   background-color: #00C504;
   margin-left: 0; }
+
+.project-page .md-button.md-primary.md-raised:not([disabled]):hover {
+  background-color: #00C504; }
 
 .project-page__discussion-header {
   font-size: 20px;
