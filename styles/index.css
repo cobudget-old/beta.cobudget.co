@@ -519,8 +519,7 @@ label.label-with-details {
   top: 60px; }
 
 .project-page__header-card {
-  background-image: url('./../img/collab-funding.png');
-  background-position: top; }
+  background: #69D2C7; }
 
 .project-page__header-card-content {
   margin-top: 60px;
