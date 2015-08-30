@@ -221,9 +221,10 @@ module.exports = {
     };
     $scope.openForFunding = function() {
       if ($scope.project.target) {
-        $scope.project.openForFunding();
-        Toast.showAndRedirect('You launched a project for funding', "/projects/" + projectId);
-        return $scope.back();
+        return $scope.project.openForFunding().then(function() {
+          $scope.back();
+          return Toast.showWithRedirect('You launched a project for funding', "/projects/" + projectId);
+        });
       } else {
         return alert('Estimated funding target must be specified before funding starts');
       }
@@ -917,7 +918,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
       return $mdToast.show(toast);
     };
 
-    Toast.prototype.showAndRedirect = function(msg, path) {
+    Toast.prototype.showWithRedirect = function(msg, path) {
       var toast;
       toast = $mdToast.simple().content(msg).action('VIEW').highlightAction(false);
       return $mdToast.show(toast).then(function(res) {
