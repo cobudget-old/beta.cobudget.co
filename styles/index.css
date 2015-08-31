@@ -330,6 +330,12 @@ label.label-with-details {
   font-size: 20px;
   line-height: 24px; }
 
+@media (min-width: 370px) {
+  .group-page__group-name {
+    letter-spacing: 3px;
+    text-align: center;
+    width: 100%; } }
+
 .group-page__funds-bar {
   height: 48px; }
 
@@ -364,6 +370,8 @@ label.label-with-details {
   background: white; }
 
 .group-page__content {
+  max-width: 640px;
+  margin: 0 auto;
   padding-bottom: 10px;
   top: calc(48px * 2 + 60px); }
 
@@ -465,6 +473,10 @@ label.label-with-details {
 .create-project-page__done-button-text {
   margin-right: 5px; }
 
+.create-project-page__content {
+  max-width: 640px;
+  margin: 0 auto; }
+
 .create-project-page__subheader-title {
   color: #6064FF; }
 
@@ -515,6 +527,8 @@ label.label-with-details {
   width: 60px; }
 
 .project-page__content {
+  max-width: 640px;
+  margin: 0 auto;
   padding-bottom: 10px;
   top: 60px; }
 
@@ -705,6 +719,10 @@ label.label-with-details {
 
 .edit-project-page__done-button-text {
   margin-right: 5px; }
+
+.edit-project-page__content {
+  max-width: 640px;
+  margin: 0 auto; }
 
 .edit-project-page__subheader-title {
   color: #6064FF; }
