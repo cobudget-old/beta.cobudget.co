@@ -596,7 +596,13 @@ label.label-with-details {
   background: #BDBDBD; }
 
 .project-page__progress-bar .md-bar {
-  background: #00C504; }
+  background: #FF8600; }
+
+.project-page__progress-bar .md-bar {
+  background: #FF8600; }
+
+.project-page__progress-bar-green {
+  background: #00C504 !important; }
 
 .project-page md-progress-linear:not([md-mode="indeterminate"]) .md-container {
   height: 15px; }
@@ -618,6 +624,13 @@ label.label-with-details {
   font-size: 13px;
   line-height: 15px;
   color: #767676; }
+
+.project-page__fund-form-input-container {
+  margin-right: 8px; }
+
+.project-page input[type=number]::-webkit-inner-spin-button, .project-page input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; }
 
 .project-page__status-card {
   background: #FAFAFA; }
