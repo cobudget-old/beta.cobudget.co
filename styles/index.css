@@ -332,7 +332,10 @@ label.label-with-details {
 
 .group-page__group-name {
   font-size: 20px;
-  line-height: 24px; }
+  line-height: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; }
 
 @media (min-width: 370px) {
   .group-page__group-name {
@@ -390,7 +393,10 @@ label.label-with-details {
 
 .group-page__live-project-title {
   font-size: 16px;
-  line-height: 22px; }
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; }
 
 .group-page__live-project-funding {
   font-size: 13px;
@@ -411,7 +417,11 @@ label.label-with-details {
 
 .group-page__draft-title {
   font-size: 16px;
-  line-height: 22px; }
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 35px; }
 
 .group-page__draft-author {
   font-size: 13px;
@@ -436,7 +446,10 @@ label.label-with-details {
 
 .group-page__funded-project-title {
   font-size: 16px;
-  line-height: 22px; }
+  line-height: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; }
 
 .group-page__funded-project-author {
   font-size: 13px;
@@ -453,10 +466,19 @@ label.label-with-details {
   right: 10px;
   bottom: 15px; }
 
-.group-page__funder-name {
-  font-size: 16px;
-  line-height: 22px;
+.group-page__funders {
   padding-left: 16px; }
+
+.group-page__funder-name-container {
+  position: relative; }
+
+.group-page__funder-name {
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 16px;
+  line-height: 22px; }
 
 .group-page__funder-balance {
   font-size: 20px;
