@@ -243,7 +243,7 @@ module.exports = {
       return $scope.totalAmountFunded() / parseFloat($scope.project.target) * 100;
     };
     $scope.maxAllowableContribution = function() {
-      return _.min([$scope.project.amountRemaining, $scope.currentMembership.balance()]);
+      return _.min([$scope.project.amountRemaining(), $scope.currentMembership.balance()]);
     };
     $scope.normalizeContributionAmount = function() {
       if ($scope.contribution.amount > $scope.maxAllowableContribution()) {
