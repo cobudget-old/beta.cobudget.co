@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":51,"lokijs":58}],2:[function(require,module,exports){
+},{"angular_record_store":50,"lokijs":57}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -237,20 +237,13 @@ module.exports = {
       return $scope.project && $scope.project.status === 'draft' && $scope.userCanStartFunding();
     };
     $scope.contribution = Records.contributions.build({
-      bucketId: projectId,
-      amount: 0
+      bucketId: projectId
     });
     $scope.fund = function() {
       return $scope.fundClicked = true;
     };
-    $scope.selectAllText = function() {
-      var amountInput;
-      amountInput = jQuery('.project-page__fund-form-amount-input')[0];
-      amountInput.focus();
-      return amountInput.setSelectionRange(0, 9999);
-    };
     $scope.totalAmountFunded = function() {
-      return parseFloat($scope.project.totalContributions) + $scope.contribution.amount;
+      return parseFloat($scope.project.totalContributions) + ($scope.contribution.amount || 0);
     };
     $scope.totalPercentFunded = function() {
       return $scope.totalAmountFunded() / parseFloat($scope.project.target) * 100;
@@ -260,10 +253,7 @@ module.exports = {
     };
     $scope.normalizeContributionAmount = function() {
       if ($scope.contribution.amount > $scope.maxAllowableContribution()) {
-        $scope.contribution.amount = $scope.maxAllowableContribution();
-      }
-      if ($scope.contribution.amount === void 0) {
-        return $scope.contribution.amount = 0;
+        return $scope.contribution.amount = $scope.maxAllowableContribution();
       }
     };
     $scope.updateProgressBarColor = function(contributionAmount) {
@@ -288,7 +278,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./project-page.html":10}],10:[function(require,module,exports){
-module.exports = "<div class=\"project-page\">\n  <md-toolbar class=\"project-page__toolbar\">\n    <div class=\"md-toolbar-tools project-page__menu-bar\">\n      <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__menu-icon\">arrow_back</i>\n        </div>\n      </md-button>\n\n      <span class=\"project-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"status == 'live'\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__funds-icon\">person</i>\n        </div>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"project-page__funds-overview-header\">Your funds</span>\n          <span class=\"project-page__funds-overview-amount\">{{ currentMembership.balance() - contribution.amount | currency : \"$\" : 0 }}</span>\n        </div>\n      </span>\n\n      <span flex></span>\n\n      <span ng-show=\"userCanEditDraft()\">\n        <md-button class=\"project-page__edit-button\" ng-click=\"editDraft()\">Edit</md-button>\n      </span>\n\n      <md-button class=\"md-icon-button project-page-menu-button\" aria-label=\"More\" ng-click=\"toggleStatus()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__menu-icon\">more_vert</i>\n        </div>\n      </md-button>\n    </div>\n   </md-toolbar> \n\n  <md-content class=\"project-page__content\">\n    <md-card class=\"project-page__header-card\">\n      <md-card-content class=\"project-page__header-card-content\">\n        <div class=\"project-page__title\">{{ project.name }}</div>\n        <div class=\"project-page__author\">created by {{ project.author().name }} {{ project.createdAt | timeFromNowInWords }} ago</div>\n      </md-card-content>\n\n      <md-card-content class=\"project-page__description-card\">\n        <div layout=\"row\" ng-if=\"project.target > 0\">\n          <span class=\"project-page__description-header\">Funding Target</span>\n          <span flex=\"10\"></span>\n          <span class=\"project-page__description-header\" flex>{{ project.target | currency : \"$\" : 0  }}</span>\n        </div>\n\n        <div ng-hide=\"showFullDescription\">\n          <p class=\"project-page__description-text\">{{ project.description | limitTo:100 }} <span ng-if=\"project.description.length > 100\">...</span></p>\n          <md-button md-no-ink class=\"md-primary project-page__more-button\" ng-click=\"readMore()\">Read More</md-button>          \n        </div>\n\n        <div ng-show=\"showFullDescription\">\n          <p class=\"project-page__description-text\">{{ project.description }}</p>\n          <md-button md-no-ink class=\"md-primary project-page__more-button\" ng-click=\"showLess()\">Show Less</md-button>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"draft-page__progress-card\" ng-if=\"status == 'live'\">\n      <md-card-content class=\"project-page__progress-card-content\">\n        <span class=\"project-page__progress-header\">Progress</span>\n\n        <md-progress-linear md-mode=\"determinate\" value=\"{{ totalPercentFunded() }}\" class=\"project-page__progress-bar\"></md-progress-linear>\n\n        <div layout=\"row\" class=\"project-page__progress-info\">\n          <div flex=\"25\">\n            <span class=\"project-page__progress-amount\">{{ project.numOfContributors }}</span>\n            <span class=\"project-page__progress-unit\">backers</span>\n          </div>\n\n          <div flex>\n            <span class=\"project-page__progress-amount\">{{ totalAmountFunded() | currency : \"$\" : 0 }}</span>\n            <span class=\"project-page__progress-unit\">pledged of {{ project.target | currency : \"$\" : 0 }}</span>\n          </div>\n\n          <div flex=\"25\" ng-show=\"project.fundingClosesAt\">\n            <span class=\"project-page__progress-amount\">{{ project.fundingClosesAt | timeToNowAmount }}</span>\n            <span class=\"project-page__progress-unit\">{{ project.fundingClosesAt | timeToNowUnits }} left</span>\n          </div>\n        </div>\n        \n        <form class=\"project-page__fund-form\" layout=\"row\">\n          <md-input-container class=\"project-page__fund-form-input-container\" ng-if=\"fundClicked\">\n            <label>Amount</label>\n            <input class=\"project-page__fund-form-amount-input\" type=\"text\" step=\"any\" ng-model=\"contribution.amount\" min=\"0\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" pattern=\"[0-9]*\" focus-if ng-focus=\"selectAllText()\">\n          </md-input-container>\n\n          <md-button class=\"md-raised md-primary\" ng-click='fund()' ng-hide=\"fundClicked\">Fund</md-button>\n          <md-button class=\"md-raised md-primary\" ng-click='submitContribution()' ng-show=\"fundClicked\">Submit</md-button>\n        </form>\n\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"project-page__status-card\">\n      <md-card-content class=\"project-page__status-card-content\">\n        <div class=\"project-page__status-header\">Status</div>\n        <div class=\"project-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'draft'\">\n              <i class=\"material-icons project-page__draft-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Draft</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'draft'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Draft</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'live'\">\n              <i class=\"material-icons project-page__live-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Live</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'live'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Live</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'funded'\">\n              <i class=\"material-icons project-page__funded-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Funded</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'funded'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Funded</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'done'\">\n              <i class=\"material-icons project-page__done-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Done</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'done'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Done</span>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"project-page__status-description\" ng-show=\"status === 'draft'\">\n          <p><em>This project is still being discussed and designed</em></p>\n\n          <div ng-show='userCanStartFunding()'>\n            <p><em>As an administrator or creator, you can approve this project for funding when it is ready</em></p>\n            <md-button class=\"md-raised md-primary\" ng-click='openForFunding()'>Start Funding</md-button>\n          </div>\n        </div>\n\n        <div class=\"project-page__status-description\" ng-show=\"status === 'live'\">\n          <p><em>This project has been launched and can be funded.</em></p>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"project-page__discussion-card\">\n      <md-card-content class=\"project-page__discussion-card-content\">\n        <div class=\"project-page__discussion-header\" layout=\"row\">\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              Discussion\n            </div>\n          </span>\n          <span flex></span>\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              <i class=\"material-icons project-page__comment-count-icon\">messenger</i>\n              <div class=\"project-page__comment-count\">{{ project.comments().length }}</div>\n            </div>\n          </span>\n        </div>\n\n        <form name='commentForm' class=\"project-page__comment-form\" ng-submit=\"createComment()\">\n          <md-input-container>\n            <label>Add a comment</label>\n            <input name=\"body\" type=\"text\" ng-model=\"newComment.body\">\n          </md-input-container>\n\n          <md-input-container class=\"cob-hidden-submit-button\">\n            <input type=\"submit\" aria-label=\"submit\">\n          </md-input-container>\n        </form>\n      </md-card-content>\n\n      <md-list>\n        <md-list-item class=\"project-page__comment\" ng-repeat=\"comment in project.comments()\" layout=\"column\" layout-align=\"center start\">\n          <md-divider></md-divider>\n          <div class=\"project-page__comment-author-name\">{{ comment.author().name }}</div>\n          <div class=\"project-page__comment-body\">{{ comment.body }}</div>\n        </md-list-item>\n      </md-list>\n    </md-card>\n  </md-content>\n</div>";
+module.exports = "<div class=\"project-page\">\n  <md-toolbar class=\"project-page__toolbar\">\n    <div class=\"md-toolbar-tools project-page__menu-bar\">\n      <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__menu-icon\">arrow_back</i>\n        </div>\n      </md-button>\n\n      <span class=\"project-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"status == 'live'\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__funds-icon\">person</i>\n        </div>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"project-page__funds-overview-header\">Your funds</span>\n          <span class=\"project-page__funds-overview-amount\">{{ currentMembership.balance() - contribution.amount | currency : \"$\" : 0 }}</span>\n        </div>\n      </span>\n\n      <span flex></span>\n\n      <span ng-show=\"userCanEditDraft()\">\n        <md-button class=\"project-page__edit-button\" ng-click=\"editDraft()\">Edit</md-button>\n      </span>\n\n      <md-button class=\"md-icon-button project-page-menu-button\" aria-label=\"More\" ng-click=\"toggleStatus()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <i class=\"material-icons project-page__menu-icon\">more_vert</i>\n        </div>\n      </md-button>\n    </div>\n   </md-toolbar> \n\n  <md-content class=\"project-page__content\">\n    <md-card class=\"project-page__header-card\">\n      <md-card-content class=\"project-page__header-card-content\">\n        <div class=\"project-page__title\">{{ project.name }}</div>\n        <div class=\"project-page__author\">created by {{ project.author().name }} {{ project.createdAt | timeFromNowInWords }} ago</div>\n      </md-card-content>\n\n      <md-card-content class=\"project-page__description-card\">\n        <div layout=\"row\" ng-if=\"project.target > 0\">\n          <span class=\"project-page__description-header\">Funding Target</span>\n          <span flex=\"10\"></span>\n          <span class=\"project-page__description-header\" flex>{{ project.target | currency : \"$\" : 0  }}</span>\n        </div>\n\n        <div ng-hide=\"showFullDescription\">\n          <p class=\"project-page__description-text\">{{ project.description | limitTo:100 }} <span ng-if=\"project.description.length > 100\">...</span></p>\n          <md-button md-no-ink class=\"md-primary project-page__more-button\" ng-click=\"readMore()\">Read More</md-button>          \n        </div>\n\n        <div ng-show=\"showFullDescription\">\n          <p class=\"project-page__description-text\">{{ project.description }}</p>\n          <md-button md-no-ink class=\"md-primary project-page__more-button\" ng-click=\"showLess()\">Show Less</md-button>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"draft-page__progress-card\" ng-if=\"status == 'live'\">\n      <md-card-content class=\"project-page__progress-card-content\">\n        <span class=\"project-page__progress-header\">Progress</span>\n\n        <md-progress-linear md-mode=\"determinate\" value=\"{{ totalPercentFunded() }}\" class=\"project-page__progress-bar\"></md-progress-linear>\n\n        <div layout=\"row\" class=\"project-page__progress-info\">\n          <div flex=\"25\">\n            <span class=\"project-page__progress-amount\">{{ project.numOfContributors }}</span>\n            <span class=\"project-page__progress-unit\">backers</span>\n          </div>\n\n          <div flex>\n            <span class=\"project-page__progress-amount\">{{ totalAmountFunded() | currency : \"$\" : 0 }}</span>\n            <span class=\"project-page__progress-unit\">pledged of {{ project.target | currency : \"$\" : 0 }}</span>\n          </div>\n\n          <div flex=\"25\" ng-show=\"project.fundingClosesAt\">\n            <span class=\"project-page__progress-amount\">{{ project.fundingClosesAt | timeToNowAmount }}</span>\n            <span class=\"project-page__progress-unit\">{{ project.fundingClosesAt | timeToNowUnits }} left</span>\n          </div>\n        </div>\n        \n        <form class=\"project-page__fund-form\" layout=\"row\">\n          <md-input-container class=\"project-page__fund-form-input-container\" ng-if=\"fundClicked\">\n            <label>Amount</label>\n            <input class=\"project-page__fund-form-amount-input\" type=\"number\" step=\"any\" min=\"0\" ng-model=\"contribution.amount\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" focus-if>\n          </md-input-container>\n\n          <md-button class=\"md-raised md-primary\" ng-click='fund()' ng-hide=\"fundClicked\">Fund</md-button>\n          <md-button class=\"md-raised md-primary\" ng-click='submitContribution()' ng-show=\"fundClicked\">Submit</md-button>\n        </form>\n\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"project-page__status-card\">\n      <md-card-content class=\"project-page__status-card-content\">\n        <div class=\"project-page__status-header\">Status</div>\n        <div class=\"project-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'draft'\">\n              <i class=\"material-icons project-page__draft-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Draft</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'draft'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Draft</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'live'\">\n              <i class=\"material-icons project-page__live-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Live</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'live'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Live</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'funded'\">\n              <i class=\"material-icons project-page__funded-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Funded</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'funded'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Funded</span>\n            </div>\n          </div>\n\n          <div class=\"project-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"project-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'done'\">\n              <i class=\"material-icons project-page__done-icon\">radio_button_on</i>\n              <span class=\"project-page__status-flagpoint-text-active\">Done</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'done'\">\n              <i class=\"material-icons project-page__status-icon-inactive\">radio_button_off</i>\n              <span class=\"project-page__status-flagpoint-text-inactive\">Done</span>\n            </div>\n          </div>\n        </div>\n\n        <div class=\"project-page__status-description\" ng-show=\"status === 'draft'\">\n          <p><em>This project is still being discussed and designed</em></p>\n\n          <div ng-show='userCanStartFunding()'>\n            <p><em>As an administrator or creator, you can approve this project for funding when it is ready</em></p>\n            <md-button class=\"md-raised md-primary\" ng-click='openForFunding()'>Start Funding</md-button>\n          </div>\n        </div>\n\n        <div class=\"project-page__status-description\" ng-show=\"status === 'live'\">\n          <p><em>This project has been launched and can be funded.</em></p>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"project-page__discussion-card\">\n      <md-card-content class=\"project-page__discussion-card-content\">\n        <div class=\"project-page__discussion-header\" layout=\"row\">\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              Discussion\n            </div>\n          </span>\n          <span flex></span>\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              <i class=\"material-icons project-page__comment-count-icon\">messenger</i>\n              <div class=\"project-page__comment-count\">{{ project.comments().length }}</div>\n            </div>\n          </span>\n        </div>\n\n        <form name='commentForm' class=\"project-page__comment-form\" ng-submit=\"createComment()\">\n          <md-input-container>\n            <label>Add a comment</label>\n            <input name=\"body\" type=\"text\" ng-model=\"newComment.body\">\n          </md-input-container>\n\n          <md-input-container class=\"cob-hidden-submit-button\">\n            <input type=\"submit\" aria-label=\"submit\">\n          </md-input-container>\n        </form>\n      </md-card-content>\n\n      <md-list>\n        <md-list-item class=\"project-page__comment\" ng-repeat=\"comment in project.comments()\" layout=\"column\" layout-align=\"center start\">\n          <md-divider></md-divider>\n          <div class=\"project-page__comment-author-name\">{{ comment.author().name }}</div>\n          <div class=\"project-page__comment-body\">{{ comment.body }}</div>\n        </md-list-item>\n      </md-list>\n    </md-card>\n  </md-content>\n</div>";
 },{}],11:[function(require,module,exports){
 module.exports = {
   url: '/',
@@ -393,14 +383,13 @@ require("angular-animate");
 require("angular-material");
 require("angular-messages");
 require("ng-focus-if");
-require("angular-autoselect");
 
 if ("production" != "production") {
   global.localStorage.debug = "*";
 }
 
 /* @ngInject */
-global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "badwing.autoselect"]).constant("config", require("app/configs/app"));
+global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if"]).constant("config", require("app/configs/app"));
 
 require("app/configs/auth.coffee");
 
@@ -418,7 +407,7 @@ require("./boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./boot.coffee":2,"./controllers/application-controller.coffee":15,"./filters/date-filter.coffee":16,"./models/allocation-model.coffee":18,"./models/bucket-model.coffee":19,"./models/comment-model.coffee":20,"./models/contribution-model.coffee":21,"./models/group-model.coffee":22,"./models/membership-model.coffee":23,"./models/user-model.coffee":24,"./records-interfaces/allocation-records-interface.coffee":25,"./records-interfaces/bucket-records-interface.coffee":26,"./records-interfaces/comment-records-interface.coffee":27,"./records-interfaces/contribution-records-interface.coffee":28,"./records-interfaces/group-records-interface.coffee":29,"./records-interfaces/membership-records-interface.coffee":30,"./records-interfaces/user-records-interface.coffee":31,"./services/current-user.coffee":33,"./services/toast.coffee":34,"angular":48,"angular-animate":36,"angular-aria":38,"angular-autoselect":39,"angular-cookie":40,"angular-material":42,"angular-messages":44,"angular-sanitize/angular-sanitize":45,"angular-ui-router":46,"app/angular-record-store.coffee":1,"app/configs/app":13,"app/configs/auth.coffee":14,"app/routes.coffee":32,"jquery":55,"lodash":56,"moment":59,"ng-focus-if":60,"ng-token-auth":61}],18:[function(require,module,exports){
+},{"./boot.coffee":2,"./controllers/application-controller.coffee":15,"./filters/date-filter.coffee":16,"./models/allocation-model.coffee":18,"./models/bucket-model.coffee":19,"./models/comment-model.coffee":20,"./models/contribution-model.coffee":21,"./models/group-model.coffee":22,"./models/membership-model.coffee":23,"./models/user-model.coffee":24,"./records-interfaces/allocation-records-interface.coffee":25,"./records-interfaces/bucket-records-interface.coffee":26,"./records-interfaces/comment-records-interface.coffee":27,"./records-interfaces/contribution-records-interface.coffee":28,"./records-interfaces/group-records-interface.coffee":29,"./records-interfaces/membership-records-interface.coffee":30,"./records-interfaces/user-records-interface.coffee":31,"./services/current-user.coffee":33,"./services/toast.coffee":34,"angular":47,"angular-animate":36,"angular-aria":38,"angular-cookie":39,"angular-material":41,"angular-messages":43,"angular-sanitize/angular-sanitize":44,"angular-ui-router":45,"app/angular-record-store.coffee":1,"app/configs/app":13,"app/configs/auth.coffee":14,"app/routes.coffee":32,"jquery":54,"lodash":55,"moment":58,"ng-focus-if":59,"ng-token-auth":60}],18:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -5253,151 +5242,6 @@ require('./angular-aria');
 module.exports = 'ngAria';
 
 },{"./angular-aria":37}],39:[function(require,module,exports){
-(function (global){
-(function (root, factory) {
-  'use strict';
-
-  var angular;
-
-  // if AMD or CommonJS module, return a module.
-  if (typeof define === 'function' && define.amd) {
-    define(['angular'], factory);
-  } else if (typeof exports === 'object') {
-    module.exports = factory(require('angular'), global);
-    // otherwise, attach to global `angular` object.
-  } else {
-    angular = root.angular;
-    angular.extend(angular, factory(angular, root));
-  }
-})(this, function (angular) {
-  'use strict';
-
-  /**
-   * Options for autoSelect directive.
-   * @typedef {Object} AutoSelectOptions
-   * @property {number} start Where to start the range selection
-   * @property {number} end Where to end the range selection
-   * @property {boolean} once Perform the selection only once
-   * @property {(string|RegExp)} match String or RegExp to match within the field value
-   */
-
-  /**
-   * Provides various ways to automatically select text.
-   * @returns {{require: string, compile: Function}}
-   */
-  var autoSelectDirective = function autoSelectDirective($log) {
-
-    /**
-     * Determines if a value is a `RegExp` object.
-     * @param {*} [value]
-     * @returns {boolean}
-     */
-    var isRegExp = function isRegExp(value) {
-      return Object.prototype.toString.call(value) === '[object RegExp]';
-    };
-
-    /**
-     * Performs the text selection.
-     * @param {angular.element} element Element to perform selection on
-     * @param {AutoSelectOptions} [options={}] Any options
-     */
-    var select = function select(element, options) {
-        var value = element.val(),
-          length = value.length,
-          node = element[0],
-          match,
-          matched,
-          start,
-          end;
-
-        options = options || {};
-
-        match = options.match;
-        if (match) {
-          if (isRegExp(match) && (matched = value.match(match))) {
-            start = matched.index;
-            end = start + matched[0].length;
-            /*jshint -W052 */
-          } else if (angular.isString(match) && ~(start = value.indexOf(match))) {
-            end = start + match.length;
-          } else {
-            return;
-          }
-        } else {
-          start = options.start || 0;
-          end = options.end || length;
-        }
-
-        if (~start) {
-          node.setSelectionRange(start, end);
-        }
-      },
-
-      /**
-       * Parses directive options from attributes
-       * @param {angular.Scope} scope AngularJS Scope
-       * @param {string} attr Raw attribute value
-       * @returns {AutoSelectOptions}
-       */
-      parseOptions = function parseOptions(scope, attr) {
-        var options = {},
-          attr_options;
-
-        attr_options = scope.$eval(attr) || {};
-
-        if (angular.isString(attr_options) || isRegExp(attr_options)) {
-          options.match = attr_options;
-          delete options.start;
-          delete options.end;
-          delete options.once;
-        } else if (angular.isObject(attr_options)) {
-          angular.extend(options, attr_options);
-        }
-
-        return options;
-      };
-
-
-    return {
-      require: 'ngModel',
-      compile: function compile(tElement, tAttrs) {
-        var link;
-        try {
-          tElement[0].selectionStart;
-          link = function link(scope, element, attrs, ngModel) {
-            var render = ngModel.$render;
-            ngModel.$render = function $render() {
-              var options;
-              if (ngModel.$isEmpty(ngModel.$viewValue)) {
-                element.val('');
-              } else {
-                options = parseOptions(scope, attrs.autoSelect);
-                element.val(ngModel.$viewValue);
-                select(element, options);
-                if (options.once) {
-                  ngModel.$render = render;
-                }
-              }
-            };
-          };
-        } catch (ignored) {
-          $log.warn('Element type "%s" is not supported.  For a list of supported types, see:\nhttps://html.spec.whatwg.org/multipage/forms.html#do-not-apply', tAttrs.type);
-          link = angular.noop;
-        }
-        return link;
-      }
-    };
-  };
-  autoSelectDirective.$inject = ['$log'];
-  autoSelectDirective.$name = 'autoSelect';
-
-  angular.module('badwing.autoselect', [])
-    .directive(autoSelectDirective.$name, autoSelectDirective);
-});
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"angular":48}],40:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -5524,7 +5368,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],41:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -22693,7 +22537,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],42:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -22707,7 +22551,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":41,"angular":48,"angular-animate":36,"angular-aria":38}],43:[function(require,module,exports){
+},{"./angular-material":40,"angular":47,"angular-animate":36,"angular-aria":38}],42:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.4
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -23387,11 +23231,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],44:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":43}],45:[function(require,module,exports){
+},{"./angular-messages":42}],44:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.4
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -24076,7 +23920,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],46:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.15
@@ -28447,7 +28291,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],47:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.4
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -57052,11 +56896,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],48:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":47}],49:[function(require,module,exports){
+},{"./angular":46}],48:[function(require,module,exports){
 var BaseModel, _, isTimeAttribute, moment,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -57346,7 +57190,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var _, isTimeAttribute, parseJSON, transformKeys;
 
 _ = window._;
@@ -57517,7 +57361,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{}],51:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -57530,7 +57374,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":49,"./base_records_interface.coffee":50,"./record_store.coffee":52,"./restful_client.coffee":53}],52:[function(require,module,exports){
+},{"./base_model.coffee":48,"./base_records_interface.coffee":49,"./record_store.coffee":51,"./restful_client.coffee":52}],51:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -57570,7 +57414,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],53:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -57692,9 +57536,9 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],54:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 
-},{}],55:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -66906,7 +66750,7 @@ return jQuery;
 
 }));
 
-},{}],56:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -79262,7 +79106,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],57:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
   
@@ -79840,7 +79684,7 @@ return jQuery;
   }());
 }));
 
-},{}],58:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -83869,7 +83713,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":57,"fs":54}],59:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":56,"fs":53}],58:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -87065,7 +86909,7 @@ return jQuery;
     return _moment;
 
 }));
-},{}],60:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -87095,7 +86939,7 @@ return jQuery;
     }
 })();
 
-},{}],61:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -87863,10 +87707,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 require('app')
 
-},{"app":17}]},{},[62])
+},{"app":17}]},{},[61])
 
 
 //# sourceMappingURL=../maps/index.js.map
