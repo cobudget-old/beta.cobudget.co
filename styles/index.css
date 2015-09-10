@@ -709,7 +709,7 @@ label.label-with-details {
 .project-page .md-button.md-primary.md-raised:not([disabled]):hover {
   background-color: #00C504; }
 
-.project-page__discussion-header {
+.project-page__activity-header {
   font-size: 20px;
   line-height: 24px;
   height: 25px; }
