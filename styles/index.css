@@ -485,299 +485,299 @@ label.label-with-details {
   line-height: 24px;
   color: #00DD28; }
 
-.create-project-page__toolbar {
+.create-bucket-page__toolbar {
   background: #6064FF; }
 
-.create-project-page__cancel-icon {
+.create-bucket-page__cancel-icon {
   font-size: 24px;
   line-height: 27px; }
 
-.create-project-page__header-text {
+.create-bucket-page__header-text {
   font-size: 20px;
   line-height: 24px; }
 
-.create-project-page__done-button-text {
+.create-bucket-page__done-button-text {
   margin-right: 5px; }
 
-.create-project-page__content {
+.create-bucket-page__content {
   max-width: 640px;
   margin: 0 auto; }
 
-.create-project-page__subheader-title {
+.create-bucket-page__subheader-title {
   color: #6064FF; }
 
-.create-project-page__subheader-text {
+.create-bucket-page__subheader-text {
   font-size: 14px;
   line-height: 20px; }
 
-.create-project-page__subheader-text .md-subheader-inner {
+.create-bucket-page__subheader-text .md-subheader-inner {
   padding-top: 0;
   padding-bottom: 0; }
 
-.create-project-page__form {
+.create-bucket-page__form {
   padding: 10px; }
 
-.create-project-page__target-optional-text {
+.create-bucket-page__target-optional-text {
   color: #6064FF; }
 
-.project-page md-toolbar {
+.bucket-page md-toolbar {
   min-height: 0; }
 
-.project-page__toolbar {
+.bucket-page__toolbar {
   background: #6064FF;
   position: fixed; }
 
-.project-page__menu-bar {
+.bucket-page__menu-bar {
   height: 60px; }
 
-.project-page__menu-icon {
+.bucket-page__menu-icon {
   font-size: 24px;
   line-height: 27px; }
 
-.project-page__personal-funds {
+.bucket-page__personal-funds {
   font-size: 20px;
   line-height: 24px; }
 
-.project-page__funds-overview-header {
+.bucket-page__funds-overview-header {
   font-size: 12px;
   line-height: 14px; }
 
-.project-page__funds-icon {
+.bucket-page__funds-icon {
   font-size: 24px;
   line-height: 27px;
   margin-right: 10px; }
 
-.project-page__edit-button {
+.bucket-page__edit-button {
   margin: 0;
   padding: 0;
   width: 60px; }
 
-.project-page__content {
+.bucket-page__content {
   max-width: 640px;
   margin: 0 auto;
   padding-bottom: 10px;
   top: 60px; }
 
-.project-page__header-card {
+.bucket-page__header-card {
   background: #F6F6F6; }
 
-.project-page__header-card-content {
+.bucket-page__header-card-content {
   margin-top: 60px;
   background: rgba(0, 0, 0, 0.7);
   color: white; }
 
-.project-page__title {
+.bucket-page__title {
   font-size: 24px;
   line-height: 27px;
   margin-bottom: 10px; }
 
-.project-page__author {
+.bucket-page__author {
   font-size: 12px;
   line-height: 14px;
   color: #BDBDBD; }
 
-.project-page__description-card {
+.bucket-page__description-card {
   background: #FAFAFA;
   padding-top: 10px;
   padding-bottom: 10px; }
 
-.project-page__description-header {
+.bucket-page__description-header {
   font-size: 16px;
   line-height: 22px; }
 
-.project-page__description-text {
+.bucket-page__description-text {
   font-size: 13px;
   line-height: 15px;
   margin-top: 10px;
   margin-bottom: 10px; }
 
-.project-page__more-button {
+.bucket-page__more-button {
   font-size: 14px;
   line-height: 20px;
   margin: 0;
   padding: 0; }
 
-.project-page__progress-card {
+.bucket-page__progress-card {
   margin-top: 10px; }
 
-.project-page__progress-card-content {
+.bucket-page__progress-card-content {
   background: #FAFAFA;
   padding-top: 10px;
   padding-bottom: 10px; }
 
-.project-page__progress-header {
+.bucket-page__progress-header {
   display: block;
   font-size: 20px;
   line-height: 24px;
   margin-bottom: 10px; }
 
-.project-page__progress-bar {
+.bucket-page__progress-bar {
   margin-bottom: 15px; }
 
-.project-page__progress-bar .md-container {
+.bucket-page__progress-bar .md-container {
   background: #BDBDBD; }
 
-.project-page__progress-bar .md-bar {
+.bucket-page__progress-bar .md-bar {
   background: #FF8600; }
 
-.project-page__progress-bar .md-bar {
+.bucket-page__progress-bar .md-bar {
   background: #FF8600; }
 
-.project-page__progress-bar-green {
+.bucket-page__progress-bar-green {
   background: #00C504 !important; }
 
-.project-page md-progress-linear:not([md-mode="indeterminate"]) .md-container {
+.bucket-page md-progress-linear:not([md-mode="indeterminate"]) .md-container {
   height: 15px; }
 
-.project-page md-progress-linear:not([md-mode="indeterminate"]) .md-bar {
+.bucket-page md-progress-linear:not([md-mode="indeterminate"]) .md-bar {
   height: 15px; }
 
-.project-page__progress-info {
+.bucket-page__progress-info {
   margin-top: 25px;
   margin-bottom: 10px; }
 
-.project-page__progress-amount {
+.bucket-page__progress-amount {
   display: block;
   font-size: 20px;
   line-height: 24px; }
 
-.project-page__progress-unit {
+.bucket-page__progress-unit {
   display: block;
   font-size: 13px;
   line-height: 15px;
   color: #767676; }
 
-.project-page__fund-form-input-container {
+.bucket-page__fund-form-input-container {
   margin-right: 8px; }
 
-.project-page input[type=number]::-webkit-inner-spin-button, .project-page input[type=number]::-webkit-outer-spin-button {
+.bucket-page input[type=number]::-webkit-inner-spin-button, .bucket-page input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0; }
 
-.project-page__status-card {
+.bucket-page__status-card {
   background: #FAFAFA; }
 
-.project-page__status-header {
+.bucket-page__status-header {
   font-size: 20px;
   line-height: 24px;
   margin-bottom: 20px; }
 
-.project-page__status-flagpoints {
+.bucket-page__status-flagpoints {
   margin-bottom: 20px; }
 
-.project-page__status-flagpoint-text-inactive {
+.bucket-page__status-flagpoint-text-inactive {
   font-size: 14px;
   line-height: 20px;
   color: #767676; }
 
-.project-page__status-flagpoint-text-active {
+.bucket-page__status-flagpoint-text-active {
   font-size: 14px;
   line-height: 20px; }
 
-.project-page__status-flagpoint {
+.bucket-page__status-flagpoint {
   width: 50px; }
 
-.project-page__status-flagpoint-divider {
+.bucket-page__status-flagpoint-divider {
   position: relative;
   height: 3px;
   background: #BDBDBD;
   bottom: 10px; }
 
-.project-page__status-icon-inactive {
+.bucket-page__status-icon-inactive {
   color: #767676; }
 
-.project-page__draft-icon {
+.bucket-page__draft-icon {
   color: gold; }
 
-.project-page__live-icon {
+.bucket-page__live-icon {
   color: #00C504; }
 
-.project-page__funded-icon {
+.bucket-page__funded-icon {
   color: #00BCD7; }
 
-.project-page__status-flagpoint-icon-inactive {
+.bucket-page__status-flagpoint-icon-inactive {
   color: #767676; }
 
-.project-page__status-description {
+.bucket-page__status-description {
   font-size: 12px;
   line-height: 14px; }
 
-.project-page .md-button.md-primary.md-raised {
+.bucket-page .md-button.md-primary.md-raised {
   background-color: #00C504;
   margin-left: 0; }
 
-.project-page .md-button.md-primary.md-raised:not([disabled]):hover {
+.bucket-page .md-button.md-primary.md-raised:not([disabled]):hover {
   background-color: #00C504; }
 
-.project-page__activity-header {
+.bucket-page__activity-header {
   font-size: 20px;
   line-height: 24px;
   height: 25px; }
 
-.project-page__comment-count {
+.bucket-page__comment-count {
   color: white;
   position: relative;
   bottom: 23px;
   font-size: 13px;
   line-height: 15px; }
 
-.project-page__comment-count-icon {
+.bucket-page__comment-count-icon {
   font-size: 24px;
   line-height: 27px; }
 
-.project-page md-input-container {
+.bucket-page md-input-container {
   padding: 0; }
 
-.project-page__comment {
+.bucket-page__comment {
   background: #FAFAFA; }
 
-.project-page__comment-author-name {
+.bucket-page__comment-author-name {
   font-size: 16px;
   line-height: 22px;
   margin-top: 10px;
   margin-bottom: 3px; }
 
-.project-page__comment-body {
+.bucket-page__comment-body {
   font-size: 14px;
   line-height: 20px;
   margin-bottom: 10px; }
 
-.project-page md-list {
+.bucket-page md-list {
   padding-bottom: 0; }
 
-.edit-project-page__toolbar {
+.edit-bucket-page__toolbar {
   background: #6064FF; }
 
-.edit-project-page__cancel-icon {
+.edit-bucket-page__cancel-icon {
   font-size: 24px;
   line-height: 27px; }
 
-.edit-project-page__header-text {
+.edit-bucket-page__header-text {
   font-size: 20px;
   line-height: 24px; }
 
-.edit-project-page__done-button-text {
+.edit-bucket-page__done-button-text {
   margin-right: 5px; }
 
-.edit-project-page__content {
+.edit-bucket-page__content {
   max-width: 640px;
   margin: 0 auto; }
 
-.edit-project-page__subheader-title {
+.edit-bucket-page__subheader-title {
   color: #6064FF; }
 
-.edit-project-page__subheader-text {
+.edit-bucket-page__subheader-text {
   font-size: 14px;
   line-height: 20px; }
 
-.edit-project-page__subheader-text .md-subheader-inner {
+.edit-bucket-page__subheader-text .md-subheader-inner {
   padding-top: 0;
   padding-bottom: 0; }
 
-.edit-project-page__form {
+.edit-bucket-page__form {
   padding: 10px; }
 
-.edit-project-page__target-optional-text {
+.edit-bucket-page__target-optional-text {
   color: #6064FF; }
 
 md-toast {
