@@ -468,7 +468,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
     BucketModel.prototype.relationships = function() {
       this.hasMany('comments', {
         sortBy: 'createdAt',
-        sortDesc: true
+        sortDesc: false
       });
       this.belongsTo('group');
       return this.belongsTo('author', {
