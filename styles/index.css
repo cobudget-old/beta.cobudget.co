@@ -320,11 +320,14 @@ label.label-with-details {
   line-height: 27px; }
 
 .group-page__toolbar {
-  background: #6064FF;
-  position: fixed; }
+  position: relative;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.8));
+  color: white;
+  margin-bottom: 20px; }
 
 .group-page__menu-bar {
-  height: 60px; }
+  height: 60px;
+  margin-bottom: 10px; }
 
 .group-page__menu-icon {
   font-size: 24px;
@@ -337,18 +340,25 @@ label.label-with-details {
   overflow: hidden;
   text-overflow: ellipsis; }
 
-@media (min-width: 370px) {
-  .group-page__group-name {
-    letter-spacing: 3px;
-    text-align: center;
-    width: 100%; } }
-
 .group-page__funds-bar {
-  height: 48px; }
+  height: 48px;
+  margin-bottom: 20px; }
+
+.group-page__funds-overview-container {
+  margin-left: 35px; }
+
+@media (min-width: 330px) {
+  .group-page__funds-overview-container {
+    margin-left: 41px; } }
 
 .group-page__funds-overview-header {
   font-size: 12px;
-  line-height: 14px; }
+  line-height: 14px;
+  margin-left: 5px;
+  margin-bottom: 5px; }
+
+.group-page__personal-funds-container {
+  margin-right: 20px; }
 
 .group-page__funds-icon {
   font-size: 24px;
@@ -362,31 +372,40 @@ label.label-with-details {
 .group-page__tabs {
   font-size: 14px;
   line-height: 20px;
-  background: #6064FF;
+  background: transparent;
   height: 48px; }
 
 .group-page__tabs md-tabs-wrapper {
-  background: #6064FF; }
+  background: transparent; }
 
 .group-page__tab-label {
   font-size: 14px;
   line-height: 20px;
-  color: white; }
+  color: white;
+  text-transform: none; }
 
 .group-page md-ink-bar {
-  background: white; }
+  background: #FF0045; }
+
+.group-page__create-bucket-fab {
+  position: absolute;
+  right: 10px;
+  bottom: -30px; }
 
 .group-page__content {
   max-width: 640px;
   margin: 0 auto;
-  padding-bottom: 10px;
-  top: calc(48px * 2 + 60px); }
+  padding-bottom: 10px; }
 
 .group-page__subheader-title {
-  color: #6064FF; }
+  color: #767676; }
 
 .group-page__help-icon {
   color: #BDBDBD; }
+
+.group-page md-divider {
+  margin-top: 5px;
+  margin-bottom: 5px; }
 
 .group-page__live-project-container {
   padding: 3px 0; }
@@ -430,12 +449,17 @@ label.label-with-details {
 
 .group-page__comment-count-container {
   position: absolute;
-  top: 0;
+  top: 2px;
   right: 4px; }
 
 .group-page__comment-count-icon {
   font-size: 24px;
   line-height: 27px; }
+
+.group-page__comment-count-icon-inactive {
+  font-size: 24px;
+  line-height: 27px;
+  color: #BDBDBD; }
 
 .group-page__comment-count {
   color: white;
@@ -455,16 +479,6 @@ label.label-with-details {
   font-size: 13px;
   line-height: 15px;
   color: #767676; }
-
-.group-page__footer {
-  position: fixed;
-  width: 100%;
-  bottom: 0; }
-
-.group-page__create-project-fab {
-  position: fixed;
-  right: 10px;
-  bottom: 15px; }
 
 .group-page__funders {
   padding-left: 16px; }
