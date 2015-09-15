@@ -897,4 +897,21 @@ md-toast > span.ng-binding {
 md-toast > button.md-button {
   color: #69D2C7; }
 
+.loading-bar {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+      -ms-transform: translate(-50%, -50%);
+          transform: translate(-50%, -50%); }
+
+.loading-bar md-progress-circular .md-inner .md-left .md-half-circle {
+  border-left-color: #FF8600; }
+
+.loading-bar md-progress-circular .md-inner .md-right .md-half-circle {
+  border-right-color: #00DD28; }
+
+.loading-bar md-progress-circular .md-inner .md-left .md-half-circle, .loading-bar md-progress-circular .md-inner .md-right .md-half-circle {
+  border-top-color: #FF8600; }
+
 /*# sourceMappingURL=../maps/index.css.map */
