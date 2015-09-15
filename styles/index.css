@@ -332,7 +332,8 @@ label.label-with-details {
 
 .group-page__menu-icon {
   font-size: 24px;
-  line-height: 27px; }
+  line-height: 27px;
+  fill: white; }
 
 .group-page__group-name {
   font-size: 20px;
@@ -364,7 +365,8 @@ label.label-with-details {
 .group-page__funds-icon {
   font-size: 24px;
   line-height: 27px;
-  margin-right: 10px; }
+  margin-right: 10px;
+  fill: white; }
 
 .group-page__funds-overview-amount {
   font-size: 24px;
@@ -392,6 +394,9 @@ label.label-with-details {
   position: absolute;
   right: 10px;
   bottom: -30px; }
+
+.group-page__create-bucket-fab-icon {
+  fill: white; }
 
 .group-page__content {
   max-width: 640px;
@@ -475,21 +480,22 @@ label.label-with-details {
   top: 2px;
   right: 4px; }
 
-.group-page__comment-count-icon {
+.group-page__comment-icon-active {
   font-size: 24px;
   line-height: 27px; }
 
-.group-page__comment-count-icon-inactive {
+.group-page__comment-icon-inactive {
   font-size: 24px;
   line-height: 27px;
-  color: #BDBDBD; }
+  fill: #BDBDBD; }
 
 .group-page__comment-count {
-  color: white;
-  position: relative;
-  bottom: 23px;
   font-size: 12px;
-  line-height: 14px; }
+  line-height: 14px;
+  position: relative;
+  color: white;
+  left: 9px;
+  bottom: 21px; }
 
 .group-page__funded-project-title {
   font-size: 16px;
@@ -528,7 +534,8 @@ label.label-with-details {
 
 .create-bucket-page__cancel-icon {
   font-size: 24px;
-  line-height: 27px; }
+  line-height: 27px;
+  fill: white; }
 
 .create-bucket-page__header-text {
   font-size: 20px;
@@ -571,7 +578,8 @@ label.label-with-details {
 
 .bucket-page__menu-icon {
   font-size: 24px;
-  line-height: 27px; }
+  line-height: 27px;
+  fill: white; }
 
 .bucket-page__personal-funds {
   font-size: 20px;
@@ -584,7 +592,8 @@ label.label-with-details {
 .bucket-page__funds-icon {
   font-size: 24px;
   line-height: 27px;
-  margin-right: 10px; }
+  margin-right: 10px;
+  fill: white; }
 
 .bucket-page__edit-button {
   margin: 0;
@@ -726,19 +735,16 @@ label.label-with-details {
   bottom: 10px; }
 
 .bucket-page__status-icon-inactive {
-  color: #767676; }
+  fill: #767676; }
 
 .bucket-page__draft-icon {
-  color: gold; }
+  fill: gold; }
 
 .bucket-page__live-icon {
-  color: #00C504; }
+  fill: #00C504; }
 
 .bucket-page__funded-icon {
-  color: #00BCD7; }
-
-.bucket-page__status-flagpoint-icon-inactive {
-  color: #767676; }
+  fill: #00BCD7; }
 
 .bucket-page__status-description {
   font-size: 12px;
@@ -759,13 +765,19 @@ label.label-with-details {
 .bucket-page__comment-count {
   color: white;
   position: relative;
-  bottom: 23px;
   font-size: 13px;
-  line-height: 15px; }
+  line-height: 15px;
+  left: 8px;
+  bottom: 22px; }
 
-.bucket-page__comment-count-icon {
+.bucket-page__comment-icon-active {
   font-size: 24px;
   line-height: 27px; }
+
+.bucket-page__comment-icon-inactive {
+  font-size: 24px;
+  line-height: 27px;
+  fill: #BDBDBD; }
 
 .bucket-page md-input-container {
   padding: 0; }
@@ -793,7 +805,8 @@ label.label-with-details {
 
 .edit-bucket-page__cancel-icon {
   font-size: 24px;
-  line-height: 27px; }
+  line-height: 27px;
+  fill: white; }
 
 .edit-bucket-page__header-text {
   font-size: 20px;
