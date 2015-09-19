@@ -1132,10 +1132,12 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
           }
         }
         if (bucketId = parseInt($stateParams.bucketId)) {
-          bucket = Records.buckets.findOrFetchById(bucketId).then(function() {
-            if (!(_.find(data.groups, function(group) {
-              return bucket.groupId === group.id;
-            }))) {
+          bucket = Records.buckets.findOrFetchById(bucketId).then(function(bucket) {
+            var userIsMemberOfBucketGroup;
+            userIsMemberOfBucketGroup = _.find(data.groups, function(group) {
+              return group.id === bucket.groupId;
+            });
+            if (!userIsMemberOfBucketGroup) {
               Toast.show('The bucket you were trying to access is private');
               ipCookie.remove('initialRequestPath');
               $location.path('/');
