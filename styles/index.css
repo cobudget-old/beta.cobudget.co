@@ -457,6 +457,7 @@ label.label-with-details {
   left: 0;
   background: #00DD28;
   z-index: 1;
+  width: 0%;
   transition: 0.5s; }
 
 .group-page__draft-container {
@@ -682,6 +683,7 @@ label.label-with-details {
   left: 0;
   background: #00DD28;
   z-index: 1;
+  width: 0%;
   transition: 0.5s; }
 
 .bucket-page__progress-info {
