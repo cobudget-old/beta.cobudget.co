@@ -272,14 +272,18 @@ module.exports = {
         $scope.group = group;
         $scope.currentMembership = group.membershipFor(CurrentUser());
         Records.buckets.fetchByGroupId(group.id).then(function(data) {
-          return _.each(data.buckets, function(bucket) {
-            Records.contributions.fetchByBucketId(bucket.id).then(function() {
-              return $scope.contributionsLoaded = true;
+          if (data.buckets.length > 0) {
+            return _.each(data.buckets, function(bucket) {
+              Records.contributions.fetchByBucketId(bucket.id).then(function() {
+                return $scope.contributionsLoaded = true;
+              });
+              return Records.comments.fetchByBucketId(bucket.id).then(function() {
+                return $scope.commentsLoaded = true;
+              });
             });
-            return Records.comments.fetchByBucketId(bucket.id).then(function() {
-              return $scope.commentsLoaded = true;
-            });
-          });
+          } else {
+            return $scope.contributionsLoaded = $scope.commentLoaded = true;
+          }
         });
         return Records.memberships.fetchByGroupId(group.id).then(function() {
           return $scope.membershipsLoaded = true;
