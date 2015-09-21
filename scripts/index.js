@@ -1144,7 +1144,7 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
           if (!(_.find(data.groups, function(group) {
             return group.id === groupId;
           }))) {
-            Toast.show('The group you were trying to access is private');
+            Toast.show('The group you were trying to access is private, please sign in to continue');
             ipCookie.remove('initialRequestPath');
             $location.path('/');
             deferred.reject();
@@ -1157,7 +1157,7 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
               return group.id === bucket.groupId;
             });
             if (!userIsMemberOfBucketGroup) {
-              Toast.show('The bucket you were trying to access is private');
+              Toast.show('The bucket you were trying to access is private, please sign in to continue');
               ipCookie.remove('initialRequestPath');
               $location.path('/');
               return deferred.reject();
