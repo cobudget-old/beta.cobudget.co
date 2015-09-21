@@ -282,7 +282,7 @@ module.exports = {
               });
             });
           } else {
-            return $scope.contributionsLoaded = $scope.commentLoaded = true;
+            return $scope.contributionsLoaded = $scope.commentsLoaded = true;
           }
         });
         return Records.memberships.fetchByGroupId(group.id).then(function() {
