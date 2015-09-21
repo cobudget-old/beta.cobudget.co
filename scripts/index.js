@@ -1118,7 +1118,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", "$location", "$stateParams", "$q", function(Records, ipCookie, Toast, $location, $stateParams, $q) {
+global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", "$location", "$stateParams", "$q", "$auth", function(Records, ipCookie, Toast, $location, $stateParams, $q, $auth) {
   return function() {
     var deferred;
     deferred = $q.defer();
@@ -1136,7 +1136,7 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
           }
         }
         if (bucketId = parseInt($stateParams.bucketId)) {
-          bucket = Records.buckets.findOrFetchById(bucketId).then(function(bucket) {
+          return bucket = Records.buckets.findOrFetchById(bucketId).then(function(bucket) {
             var userIsMemberOfBucketGroup;
             userIsMemberOfBucketGroup = _.find(data.groups, function(group) {
               return group.id === bucket.groupId;
@@ -1149,8 +1149,12 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
             }
           });
         }
-        return deferred.resolve();
+      })["catch"](function(data) {
+        Toast.show('Please log in to continue');
+        $location.path('/');
+        return deferred.reject();
       });
+      deferred.resolve();
     } else {
       ipCookie('initialRequestPath', $location.path());
       Toast.show('You must sign in to continue');
