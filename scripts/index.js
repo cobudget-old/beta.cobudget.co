@@ -336,9 +336,7 @@ module.exports = {
       ipCookie('currentUserId', user.id);
       if (ipCookie('initialRequestPath') === void 0 || ipCookie('initialRequestPath') === '/') {
         return Records.memberships.fetchMyMemberships().then(function(data) {
-          if (!ipCookie('currentGroupId')) {
-            ipCookie('currentGroupId', data.groups[0].id);
-          }
+          ipCookie('currentGroupId', data.groups[0].id);
           return $location.path("/groups/" + (ipCookie('currentGroupId')));
         });
       } else {
@@ -1167,6 +1165,9 @@ global.cobudgetApp.factory('AuthenticateUser', ["Records", "ipCookie", "Toast", 
         return deferred.resolve(CurrentUser());
       })["catch"](function(data) {
         Toast.show('Please log in to continue');
+        ipCookie.remove('currentUserId');
+        ipCookie.remove('currentGroupId');
+        ipCookie.remove('initialRequestPath');
         $location.path('/');
         return deferred.reject();
       });
