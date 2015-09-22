@@ -347,6 +347,9 @@ label.label-with-details {
   min-width: 256px;
   position: fixed; }
 
+.group-page .md-sidenav-backdrop {
+  position: fixed; }
+
 .group-page__sidenav-toolbar {
   background: #00B8D4;
   color: white; }
