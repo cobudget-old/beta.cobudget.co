@@ -344,7 +344,8 @@ label.label-with-details {
 
 .group-page__sidenav {
   width: 256px;
-  min-width: 256px; }
+  min-width: 256px;
+  position: fixed; }
 
 .group-page__sidenav-toolbar {
   background: #00B8D4;
