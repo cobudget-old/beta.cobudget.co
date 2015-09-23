@@ -100,7 +100,7 @@ module.exports = "<div class=\"admin-page\">\n  <md-toolbar class=\"md-whitefram
 module.exports = {
   url: '/buckets/:bucketId',
   template: require('./bucket-page.html'),
-  controller: function($scope, Records, $stateParams, $location, Toast, ipCookie, AuthenticateUser) {
+  controller: function($scope, $state, Records, $stateParams, $location, Toast, ipCookie, AuthenticateUser) {
     $scope.groupLoaded = $scope.contributionsLoaded = $scope.commentsLoaded = false;
     AuthenticateUser().then(function(currentUser) {
       $scope.groupId = ipCookie('currentGroupId');
@@ -184,6 +184,7 @@ module.exports = {
     };
     $scope.submitContribution = function() {
       return $scope.contribution.save().then(function() {
+        $state.reload();
         $scope.back();
         return Toast.show('You funded a bucket');
       });
