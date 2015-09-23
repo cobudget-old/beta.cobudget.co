@@ -686,7 +686,12 @@ label.label-with-details {
   font-size: 13px;
   line-height: 15px;
   margin-top: 10px;
-  margin-bottom: 10px; }
+  margin-bottom: 10px;
+  word-break: break-word;
+  -webkit-hyphens: auto;
+  -moz-hyphens: auto;
+  -ms-hyphens: auto;
+      hyphens: auto; }
 
 .bucket-page__more-button {
   font-size: 14px;

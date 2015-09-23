@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":55,"lokijs":63}],2:[function(require,module,exports){
+},{"angular_record_store":56,"lokijs":64}],2:[function(require,module,exports){
 module.exports = {
   url: '/admin',
   template: require('./admin-page.html'),
@@ -193,7 +193,7 @@ module.exports = {
 
 
 },{"./bucket-page.html":5}],5:[function(require,module,exports){
-module.exports = "<div \n  class=\"loading-bar\" \n  layout=\"column\" \n  layout-align=\"center center\" \n  ng-hide=\"groupLoaded && contributionsLoaded && commentsLoaded\">\n  <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n</div>\n\n<div class=\"bucket-page\" ng-if=\"groupLoaded && contributionsLoaded && commentsLoaded\">\n  <md-toolbar class=\"bucket-page__toolbar\">\n    <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n      <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n        <ng-md-icon icon=\"arrow_back\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"status == 'live'\">\n        <ng-md-icon icon=\"person\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__funds-icon\"\n        ></ng-md-icon>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n          <span class=\"bucket-page__funds-overview-amount\">{{ currentMembership.balance() - contribution.amount | currency : group.currencySymbol : 0 }}</span>\n        </div>\n      </span>\n\n      <span flex></span>\n\n      <span ng-show=\"userCanEditBucket()\">\n        <md-button class=\"bucket-page__edit-button\" ng-click=\"editBucket()\">Edit</md-button>\n      </span>\n\n      <md-button class=\"md-icon-button bucket-page-menu-button\" aria-label=\"More\" ng-click=\"toggleStatus()\">\n        <ng-md-icon icon=\"more_vert\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </div>\n  </md-toolbar> \n\n  <md-content class=\"bucket-page__content\">\n    <md-card class=\"bucket-page__header-card\">\n      <md-card-content class=\"bucket-page__header-card-content\">\n        <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n        <div class=\"bucket-page__author\">created by {{ bucket.author().name }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n      </md-card-content>\n\n      <md-card-content class=\"bucket-page__description-card\">\n        <div layout=\"row\" ng-if=\"bucket.target > 0\">\n          <span class=\"bucket-page__description-header\">Funding Target</span>\n          <span flex=\"10\"></span>\n          <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n        </div>\n\n        <div ng-hide=\"showFullDescription\">\n          <p class=\"bucket-page__description-text\">{{ bucket.description | limitTo:100 }} <span ng-if=\"bucket.description.length > 100\">...</span></p>\n          <md-button md-no-ink class=\"md-primary bucket-page__more-button\" ng-click=\"readMore()\">Read More</md-button>          \n        </div>\n\n        <div ng-show=\"showFullDescription\">\n          <p class=\"bucket-page__description-text\">{{ bucket.description }}</p>\n          <md-button md-no-ink class=\"md-primary bucket-page__more-button\" ng-click=\"showLess()\">Show Less</md-button>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"draft-page__progress-card\" ng-if=\"status == 'live'\">\n      <md-card-content class=\"bucket-page__progress-card-content\">\n        <span class=\"bucket-page__progress-header\">Progress</span>\n\n        <div class=\"bucket-page__progress-bar-container\">\n          <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ percentNotContributedByUser }}%\"></div>\n          <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ percentContributedByUser + percentNotContributedByUser + percentContributed() }}%\"></div>\n        </div>\n\n        <div layout=\"row\" class=\"bucket-page__progress-info\">\n          <div flex=\"25\">\n            <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n            <span class=\"bucket-page__progress-unit\">backers</span>\n          </div>\n\n          <div flex>\n            <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n            <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n          </div>\n\n          <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n            <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n            <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n          </div>\n        </div>\n        \n        <form class=\"bucket-page__fund-form\" layout=\"row\">\n          <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n            <label>Amount</label>\n            <input class=\"bucket-page__fund-form-amount-input\" type=\"number\" step=\"any\" min=\"0\" pattern=\"[0-9]*\" ng-model=\"contribution.amount\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" focus-if>\n          </md-input-container>\n\n          <md-button class=\"md-raised md-primary\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n          <md-button class=\"md-raised md-primary\" ng-click='submitContribution()' ng-show=\"fundFormOpened\">Submit</md-button>\n        </form>\n\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"bucket-page__status-card\">\n      <md-card-content class=\"bucket-page__status-card-content\">\n        <div class=\"bucket-page__status-header\">Status</div>\n        <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'draft'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__draft-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Idea</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'draft'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Idea</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'live'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__live-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Funding</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'live'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Funding</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'funded'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__funded-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Funded</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'funded'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Funded</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'done'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__done-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Done</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'done'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Done</span>\n\n            </div>\n          </div>\n        </div>\n\n        <div class=\"bucket-page__status-description\" ng-show=\"status === 'draft'\">\n          <p><em>This bucket idea is still being discussed and designed</em></p>\n\n          <div ng-show='userCanStartFunding()'>\n            <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n            <md-button class=\"md-raised md-primary\" ng-click='openForFunding()'>Start Funding</md-button>\n          </div>\n        </div>\n\n        <div class=\"bucket-page__status-description\" ng-show=\"status === 'live'\">\n          <p><em>This bucket has been launched and can be funded.</em></p>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"bucket-page__activity-card\">\n      <md-card-content class=\"bucket-page__activity-card-content\">\n        <div class=\"bucket-page__activity-header\" layout=\"row\">\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              Activity\n            </div>\n          </span>\n          <span flex></span>\n          <span>\n            <ng-md-icon icon=\"messenger\"\n              layout=\"column\"\n              layout-align=\"center center\"\n              ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n\n            ></ng-md-icon>\n            <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n          </span>\n        </div>\n\n        <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n          <md-input-container>\n            <label>Add a comment</label>\n            <input name=\"body\" type=\"text\" ng-model=\"newComment.body\">\n          </md-input-container>\n\n          <md-input-container class=\"cob-hidden-submit-button\">\n            <input type=\"submit\" aria-label=\"submit\">\n          </md-input-container>\n        </form>\n      </md-card-content>\n\n      <md-list>\n        <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n          <md-divider></md-divider>\n          <div class=\"bucket-page__comment-author-name\">{{ comment.author().name }}</div>\n          <div class=\"bucket-page__comment-body\">{{ comment.body }}</div>\n        </md-list-item>\n      </md-list>\n    </md-card>\n  </md-content>\n</div>";
+module.exports = "<div \n  class=\"loading-bar\" \n  layout=\"column\" \n  layout-align=\"center center\" \n  ng-hide=\"groupLoaded && contributionsLoaded && commentsLoaded\">\n  <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n</div>\n\n<div class=\"bucket-page\" ng-if=\"groupLoaded && contributionsLoaded && commentsLoaded\">\n  <md-toolbar class=\"bucket-page__toolbar\">\n    <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n      <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n        <ng-md-icon icon=\"arrow_back\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"status == 'live'\">\n        <ng-md-icon icon=\"person\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__funds-icon\"\n        ></ng-md-icon>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n          <span class=\"bucket-page__funds-overview-amount\">{{ currentMembership.balance() - contribution.amount | currency : group.currencySymbol : 0 }}</span>\n        </div>\n      </span>\n\n      <span flex></span>\n\n      <span ng-show=\"userCanEditBucket()\">\n        <md-button class=\"bucket-page__edit-button\" ng-click=\"editBucket()\">Edit</md-button>\n      </span>\n\n      <md-button class=\"md-icon-button bucket-page-menu-button\" aria-label=\"More\" ng-click=\"toggleStatus()\">\n        <ng-md-icon icon=\"more_vert\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </div>\n  </md-toolbar> \n\n  <md-content class=\"bucket-page__content\">\n    <md-card class=\"bucket-page__header-card\">\n      <md-card-content class=\"bucket-page__header-card-content\">\n        <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n        <div class=\"bucket-page__author\">created by {{ bucket.author().name }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n      </md-card-content>\n\n      <md-card-content class=\"bucket-page__description-card\">\n        <div layout=\"row\" ng-if=\"bucket.target > 0\">\n          <span class=\"bucket-page__description-header\">Funding Target</span>\n          <span flex=\"10\"></span>\n          <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n        </div>\n\n        <div ng-hide=\"showFullDescription\">\n          <p class=\"bucket-page__description-text\" ng-bind-html=\"bucket.description | characters:100:false | linky:'_blank' \"></p>\n          <md-button md-no-ink class=\"md-primary bucket-page__more-button\" ng-click=\"readMore()\">Read More</md-button>          \n        </div>\n\n        <div ng-show=\"showFullDescription\">\n          <p class=\"bucket-page__description-text\" ng-bind-html=\"bucket.description | linky:'_blank'\"></p>\n          <md-button md-no-ink class=\"md-primary bucket-page__more-button\" ng-click=\"showLess()\">Show Less</md-button>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"draft-page__progress-card\" ng-if=\"status == 'live'\">\n      <md-card-content class=\"bucket-page__progress-card-content\">\n        <span class=\"bucket-page__progress-header\">Progress</span>\n\n        <div class=\"bucket-page__progress-bar-container\">\n          <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ percentNotContributedByUser }}%\"></div>\n          <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ percentContributedByUser + percentNotContributedByUser + percentContributed() }}%\"></div>\n        </div>\n\n        <div layout=\"row\" class=\"bucket-page__progress-info\">\n          <div flex=\"25\">\n            <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n            <span class=\"bucket-page__progress-unit\">backers</span>\n          </div>\n\n          <div flex>\n            <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n            <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n          </div>\n\n          <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n            <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n            <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n          </div>\n        </div>\n        \n        <form class=\"bucket-page__fund-form\" layout=\"row\">\n          <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n            <label>Amount</label>\n            <input class=\"bucket-page__fund-form-amount-input\" type=\"number\" step=\"any\" min=\"0\" pattern=\"[0-9]*\" ng-model=\"contribution.amount\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" focus-if>\n          </md-input-container>\n\n          <md-button class=\"md-raised md-primary\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n          <md-button class=\"md-raised md-primary\" ng-click='submitContribution()' ng-show=\"fundFormOpened\">Submit</md-button>\n        </form>\n\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"bucket-page__status-card\">\n      <md-card-content class=\"bucket-page__status-card-content\">\n        <div class=\"bucket-page__status-header\">Status</div>\n        <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'draft'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__draft-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Idea</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'draft'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Idea</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'live'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__live-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Funding</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'live'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Funding</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'funded'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__funded-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Funded</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'funded'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Funded</span>\n            </div>\n          </div>\n\n          <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n          <div class=\"bucket-page__status-flagpoint\">\n            <div layout=\"column\" layout-align=\"center center\" ng-show=\"status === 'done'\">\n              <ng-md-icon icon=\"radio_button_on\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__done-icon\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-active\">Done</span>\n            </div>\n\n            <div layout=\"column\" layout-align=\"center center\" ng-hide=\"status === 'done'\">\n              <ng-md-icon icon=\"radio_button_off\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"bucket-page__status-icon-inactive\"\n              ></ng-md-icon>\n              <span class=\"bucket-page__status-flagpoint-text-inactive\">Done</span>\n\n            </div>\n          </div>\n        </div>\n\n        <div class=\"bucket-page__status-description\" ng-show=\"status === 'draft'\">\n          <p><em>This bucket idea is still being discussed and designed</em></p>\n\n          <div ng-show='userCanStartFunding()'>\n            <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n            <md-button class=\"md-raised md-primary\" ng-click='openForFunding()'>Start Funding</md-button>\n          </div>\n        </div>\n\n        <div class=\"bucket-page__status-description\" ng-show=\"status === 'live'\">\n          <p><em>This bucket has been launched and can be funded.</em></p>\n        </div>\n      </md-card-content>\n    </md-card>\n\n    <md-card class=\"bucket-page__activity-card\">\n      <md-card-content class=\"bucket-page__activity-card-content\">\n        <div class=\"bucket-page__activity-header\" layout=\"row\">\n          <span>\n            <div layout=\"column\" layout-align=\"center center\">\n              Activity\n            </div>\n          </span>\n          <span flex></span>\n          <span>\n            <ng-md-icon icon=\"messenger\"\n              layout=\"column\"\n              layout-align=\"center center\"\n              ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n\n            ></ng-md-icon>\n            <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n          </span>\n        </div>\n\n        <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n          <md-input-container>\n            <label>Add a comment</label>\n            <input name=\"body\" type=\"text\" ng-model=\"newComment.body\">\n          </md-input-container>\n\n          <md-input-container class=\"cob-hidden-submit-button\">\n            <input type=\"submit\" aria-label=\"submit\">\n          </md-input-container>\n        </form>\n      </md-card-content>\n\n      <md-list>\n        <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n          <md-divider></md-divider>\n          <div class=\"bucket-page__comment-author-name\">{{ comment.author().name }}</div>\n          <div class=\"bucket-page__comment-body\" ng-bind-html=\"comment.body | linky:'_blank'\"></div>\n        </md-list-item>\n      </md-list>\n    </md-card>\n  </md-content>\n</div>";
 },{}],6:[function(require,module,exports){
 module.exports = {
   url: '/buckets/new',
@@ -458,13 +458,15 @@ require("angular-messages");
 require("ng-focus-if");
 require("angular-upload");
 require("angular-material-icons");
+require("ng-sanitize");
+require("angular-truncate-2");
 
 if ("production" != "production") {
   global.localStorage.debug = "*";
 }
 
 /* @ngInject */
-global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons"]).constant("config", require("app/configs/app"));
+global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons", "ngSanitize", "truncate"]).constant("config", require("app/configs/app"));
 
 require("app/configs/auth.coffee");
 
@@ -480,7 +482,7 @@ require('./services/authenticate-user.coffee');require('./services/current-user.
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":16,"./filters/date-filter.coffee":17,"./models/allocation-model.coffee":19,"./models/bucket-model.coffee":20,"./models/comment-model.coffee":21,"./models/contribution-model.coffee":22,"./models/group-model.coffee":23,"./models/membership-model.coffee":24,"./models/user-model.coffee":25,"./records-interfaces/allocation-records-interface.coffee":26,"./records-interfaces/bucket-records-interface.coffee":27,"./records-interfaces/comment-records-interface.coffee":28,"./records-interfaces/contribution-records-interface.coffee":29,"./records-interfaces/group-records-interface.coffee":30,"./records-interfaces/membership-records-interface.coffee":31,"./records-interfaces/user-records-interface.coffee":32,"./services/authenticate-user.coffee":34,"./services/current-user.coffee":35,"./services/toast.coffee":36,"angular":52,"angular-animate":38,"angular-aria":40,"angular-cookie":41,"angular-material":45,"angular-material-icons":43,"angular-messages":47,"angular-sanitize/angular-sanitize":48,"angular-ui-router":49,"angular-upload":50,"app/angular-record-store.coffee":1,"app/configs/app":14,"app/configs/auth.coffee":15,"app/routes.coffee":33,"camelize":59,"jquery":60,"lodash":61,"moment":64,"ng-focus-if":65,"ng-token-auth":66}],19:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":16,"./filters/date-filter.coffee":17,"./models/allocation-model.coffee":19,"./models/bucket-model.coffee":20,"./models/comment-model.coffee":21,"./models/contribution-model.coffee":22,"./models/group-model.coffee":23,"./models/membership-model.coffee":24,"./models/user-model.coffee":25,"./records-interfaces/allocation-records-interface.coffee":26,"./records-interfaces/bucket-records-interface.coffee":27,"./records-interfaces/comment-records-interface.coffee":28,"./records-interfaces/contribution-records-interface.coffee":29,"./records-interfaces/group-records-interface.coffee":30,"./records-interfaces/membership-records-interface.coffee":31,"./records-interfaces/user-records-interface.coffee":32,"./services/authenticate-user.coffee":34,"./services/current-user.coffee":35,"./services/toast.coffee":36,"angular":53,"angular-animate":38,"angular-aria":40,"angular-cookie":41,"angular-material":45,"angular-material-icons":43,"angular-messages":47,"angular-sanitize/angular-sanitize":48,"angular-truncate-2":49,"angular-ui-router":50,"angular-upload":51,"app/angular-record-store.coffee":1,"app/configs/app":14,"app/configs/auth.coffee":15,"app/routes.coffee":33,"camelize":60,"jquery":61,"lodash":62,"moment":65,"ng-focus-if":66,"ng-sanitize":67,"ng-token-auth":68}],19:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -23690,7 +23692,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":44,"angular":52,"angular-animate":38,"angular-aria":40}],46:[function(require,module,exports){
+},{"./angular-material":44,"angular":53,"angular-animate":38,"angular-aria":40}],46:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.4
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25060,6 +25062,57 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 })(window, window.angular);
 
 },{}],49:[function(require,module,exports){
+angular.module('truncate', [])
+    .filter('characters', function () {
+        return function (input, chars, breakOnWord) {
+            if (isNaN(chars)) return input;
+            if (chars <= 0) return '';
+            if (input && input.length > chars) {
+                input = input.substring(0, chars);
+
+                if (!breakOnWord) {
+                    var lastspace = input.lastIndexOf(' ');
+                    //get last space
+                    if (lastspace !== -1) {
+                        input = input.substr(0, lastspace);
+                    }
+                }else{
+                    while(input.charAt(input.length-1) === ' '){
+                        input = input.substr(0, input.length -1);
+                    }
+                }
+                return input + '…';
+            }
+            return input;
+        };
+    })
+    .filter('splitcharacters', function() {
+        return function (input, chars) {
+            if (isNaN(chars)) return input;
+            if (chars <= 0) return '';
+            if (input && input.length > chars) {
+                var prefix = input.substring(0, chars/2);
+                var postfix = input.substring(input.length-chars/2, input.length);
+                return prefix + '...' + postfix;
+            }
+            return input;
+        };
+    })
+    .filter('words', function () {
+        return function (input, words) {
+            if (isNaN(words)) return input;
+            if (words <= 0) return '';
+            if (input) {
+                var inputWords = input.split(/\s+/);
+                if (inputWords.length > words) {
+                    input = inputWords.slice(0, words).join(' ') + '…';
+                }
+            }
+            return input;
+        };
+    });
+
+},{}],50:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.15
@@ -29430,7 +29483,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -29732,7 +29785,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.4
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -58337,11 +58390,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":51}],53:[function(require,module,exports){
+},{"./angular":52}],54:[function(require,module,exports){
 var BaseModel, _, isTimeAttribute, moment,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -58631,7 +58684,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var _, isTimeAttribute, parseJSON, transformKeys;
 
 _ = window._;
@@ -58802,7 +58855,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -58815,7 +58868,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":53,"./base_records_interface.coffee":54,"./record_store.coffee":56,"./restful_client.coffee":57}],56:[function(require,module,exports){
+},{"./base_model.coffee":54,"./base_records_interface.coffee":55,"./record_store.coffee":57,"./restful_client.coffee":58}],57:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -58855,7 +58908,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -58977,9 +59030,9 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],58:[function(require,module,exports){
-
 },{}],59:[function(require,module,exports){
+
+},{}],60:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -59040,7 +59093,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -68252,7 +68305,7 @@ return jQuery;
 
 }));
 
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -80608,7 +80661,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
   
@@ -81186,7 +81239,7 @@ return jQuery;
   }());
 }));
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -85215,7 +85268,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":62,"fs":58}],64:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":63,"fs":59}],65:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -88411,7 +88464,7 @@ return jQuery;
     return _moment;
 
 }));
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -88441,7 +88494,498 @@ return jQuery;
     }
 })();
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
+!function(root, factory) {
+
+  // Set up ngSanitize appropriately for the environment. Start with AMD.
+  if (typeof define === 'function' && define.amd) {
+    define(['exports'], function(exports) {
+      // Export global even in AMD case in case this script is loaded with
+      // others that may still expect a global ngSanitize.
+      root.ngSanitize = factory(root, exports);
+    });
+
+  // Next for Node.js or CommonJS. jQuery may not be needed as a module.
+  } else if (typeof exports !== 'undefined') {
+    factory(root, exports);
+
+  // Finally, as a browser global.
+  } else {
+    root.ngSanitize = factory(root, {});
+  }
+
+}(this, function(root, ngSanitize) {
+  'use strict';
+
+  ngSanitize.aHrefSanitizationWhitelist  = aHrefSanitizationWhitelist;
+  ngSanitize.imgSrcSanitizationWhitelist = imgSrcSanitizationWhitelist;
+  ngSanitize.ngSanitize = ngSanitize;
+
+  var _aHrefSanitizationWhitelist = /^\s*(https?|ftp|mailto|tel|file):/;
+  var _imgSrcSanitizationWhitelist = /^\s*(https?|ftp|file):|data:image\//;
+  var toString = Object.prototype.toString;
+  var slice = Array.prototype.slice;
+  var urlParsingNode = document.createElement('a');
+  var msie = int((/msie (\d+)/.exec(lowercase(navigator.userAgent)) || [])[1]);
+  if (isNaN(msie)) {
+    msie = int((/trident\/.*; rv:(\d+)/.exec(lowercase(navigator.userAgent)) || [])[1]);
+  }
+
+  function imgSrcSanitizationWhitelist(regexp) {
+    if (isDefined(regexp)) {
+      _imgSrcSanitizationWhitelist = regexp;
+      return this;
+    }
+    return _imgSrcSanitizationWhitelist;
+  }
+  function aHrefSanitizationWhitelist(regexp) {
+    if (isDefined(regexp)) {
+      _aHrefSanitizationWhitelist = regexp;
+      return this;
+    }
+    return _aHrefSanitizationWhitelist;
+  }
+  function ngSanitize(html) {
+    var buf = [];
+    htmlParser(html, htmlSanitizeWriter(buf, function(uri, isImage) {
+      return !/^unsafe/.test(sanitizeUri(uri, isImage));
+    }));
+    return buf.join('');
+  }
+
+  function noop() {}
+  function isString(value){ return typeof value === 'string'; }
+  function lowercase(string){ return isString(string) ? string.toLowerCase() : string; }
+  function isDefined(value){ return typeof value !== 'undefined'; }
+  function int(str) { return parseInt(str, 10); }
+  function isFunction(value){ return typeof value === 'function'; }
+  function isWindow(obj) { return obj && obj.document && obj.location && obj.alert && obj.setInterval; }
+  function isArray(value) { return toString.call(value) === '[object Array]'; }
+  function sliceArgs(args, startIndex) { return slice.call(args, startIndex || 0); }
+  function isArrayLike(obj) {
+    if (obj === null || isWindow(obj)) {
+      return false;
+    }
+    var length = obj.length;
+    if (obj.nodeType === 1 && length) {
+      return true;
+    }
+    return isString(obj) || isArray(obj) || length === 0 ||
+           typeof length === 'number' && length > 0 && (length - 1) in obj;
+  }
+  function bind(self, fn) {
+    var curryArgs = arguments.length > 2 ? sliceArgs(arguments, 2) : [];
+    if (isFunction(fn) && !(fn instanceof RegExp)) {
+      return curryArgs.length ?
+          function() {
+            return arguments.length ?
+                fn.apply(self, curryArgs.concat(slice.call(arguments, 0)))
+              : fn.apply(self, curryArgs);
+          }
+        : function() {
+            return arguments.length ?
+                fn.apply(self, arguments)
+              : fn.call(self);
+          };
+    } else {
+      // in IE, native methods are not functions so they cannot be bound (note: they don't need to be)
+      return fn;
+    }
+  }
+  function forEach(obj, iterator, context) {
+    var key;
+    if (obj) {
+      if (isFunction(obj)){
+        for (key in obj) {
+          // Need to check if hasOwnProperty exists,
+          // as on IE8 the result of querySelectorAll is an object without a hasOwnProperty function
+          if (key != 'prototype' && key != 'length' && key != 'name' && (!obj.hasOwnProperty || obj.hasOwnProperty(key))) {
+            iterator.call(context, obj[key], key);
+          }
+        }
+      } else if (obj.forEach && obj.forEach !== forEach) {
+        obj.forEach(iterator, context);
+      } else if (isArrayLike(obj)) {
+        for (key = 0; key < obj.length; key++)
+          iterator.call(context, obj[key], key);
+      } else {
+        for (key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            iterator.call(context, obj[key], key);
+          }
+        }
+      }
+    }
+    return obj;
+  }
+  function extend(dst) {
+    forEach(arguments, function(obj){
+      if (obj !== dst) {
+        forEach(obj, function(value, key){
+          dst[key] = value;
+        });
+      }
+    });
+    return dst;
+  }
+  function makeMap(str) {
+    var obj = {}, items = str.split(','), i;
+    for (i = 0; i < items.length; i++) obj[items[i]] = true;
+    return obj;
+  }
+
+  function urlResolve(url, base) {
+    var href = url;
+
+    if (msie) {
+      // Normalize before parse.  Refer Implementation Notes on why this is
+      // done in two steps on IE.
+      urlParsingNode.setAttribute('href', href);
+      href = urlParsingNode.href;
+    }
+
+    urlParsingNode.setAttribute('href', href);
+
+    // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
+    return {
+      href: urlParsingNode.href,
+      protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
+      host: urlParsingNode.host,
+      search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
+      hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
+      hostname: urlParsingNode.hostname,
+      port: urlParsingNode.port,
+      pathname: (urlParsingNode.pathname.charAt(0) === '/') ? urlParsingNode.pathname : '/' + urlParsingNode.pathname
+    };
+  }
+
+  function sanitizeUri(uri, isImage) {
+    var regex = isImage ? _imgSrcSanitizationWhitelist : _aHrefSanitizationWhitelist;
+    var normalizedVal;
+    // NOTE: urlResolve() doesn't support IE < 8 so we don't sanitize for that case.
+    if (!msie || msie >= 8 ) {
+      normalizedVal = urlResolve(uri).href;
+      if (normalizedVal !== '' && !normalizedVal.match(regex)) {
+        return 'unsafe:'+normalizedVal;
+      }
+    }
+    return uri;
+  }
+
+
+  function sanitizeText(chars) {
+    var buf = [];
+    var writer = htmlSanitizeWriter(buf, noop);
+    writer.chars(chars);
+    return buf.join('');
+  }
+
+
+  // Regular Expressions for parsing tags and attributes
+  var START_TAG_REGEXP =
+         /^<\s*([\w:-]+)((?:\s+[\w:-]+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)\s*>/,
+    END_TAG_REGEXP = /^<\s*\/\s*([\w:-]+)[^>]*>/,
+    ATTR_REGEXP = /([\w:-]+)(?:\s*=\s*(?:(?:"((?:[^"])*)")|(?:'((?:[^'])*)')|([^>\s]+)))?/g,
+    BEGIN_TAG_REGEXP = /^</,
+    BEGING_END_TAGE_REGEXP = /^<\s*\//,
+    COMMENT_REGEXP = /<!--(.*?)-->/g,
+    DOCTYPE_REGEXP = /<!DOCTYPE([^>]*?)>/i,
+    CDATA_REGEXP = /<!\[CDATA\[(.*?)]]>/g,
+    // Match everything outside of normal chars and " (quote character)
+    NON_ALPHANUMERIC_REGEXP = /([^\#-~| |!])/g;
+
+
+  // Good source of info about elements and attributes
+  // http://dev.w3.org/html5/spec/Overview.html#semantics
+  // http://simon.html5.org/html-elements
+
+  // Safe Void Elements - HTML5
+  // http://dev.w3.org/html5/spec/Overview.html#void-elements
+  var voidElements = makeMap('area,br,col,hr,img,wbr');
+
+  // Elements that you can, intentionally, leave open (and which close themselves)
+  // http://dev.w3.org/html5/spec/Overview.html#optional-tags
+  var optionalEndTagBlockElements = makeMap('colgroup,dd,dt,li,p,tbody,td,tfoot,th,thead,tr'),
+      optionalEndTagInlineElements = makeMap('rp,rt'),
+      optionalEndTagElements = extend({},
+                                      optionalEndTagInlineElements,
+                                      optionalEndTagBlockElements);
+
+  // Safe Block Elements - HTML5
+  var blockElements = extend({}, optionalEndTagBlockElements, makeMap('address,article,' +
+          'aside,blockquote,caption,center,del,dir,div,dl,figure,figcaption,footer,h1,h2,h3,h4,h5,' +
+          'h6,header,hgroup,hr,ins,map,menu,nav,ol,pre,script,section,table,ul'));
+
+  // Inline Elements - HTML5
+  var inlineElements = extend({}, optionalEndTagInlineElements, makeMap('a,abbr,acronym,b,' +
+          'bdi,bdo,big,br,cite,code,del,dfn,em,font,i,img,ins,kbd,label,map,mark,q,ruby,rp,rt,s,' +
+          'samp,small,span,strike,strong,sub,sup,time,tt,u,var'));
+
+
+  // Special Elements (can contain anything)
+  var specialElements = makeMap('script,style');
+
+  var validElements = extend({},
+                             voidElements,
+                             blockElements,
+                             inlineElements,
+                             optionalEndTagElements);
+
+  //Attributes that have href and hence need to be sanitized
+  var uriAttrs = makeMap('background,cite,href,longdesc,src,usemap');
+  var validAttrs = extend({}, uriAttrs, makeMap(
+      'abbr,align,alt,axis,bgcolor,border,cellpadding,cellspacing,class,clear,'+
+      'color,cols,colspan,compact,coords,dir,face,headers,height,hreflang,hspace,'+
+      'ismap,lang,language,nohref,nowrap,rel,rev,rows,rowspan,rules,'+
+      'scope,scrolling,shape,size,span,start,summary,target,title,type,'+
+      'valign,value,vspace,width'));
+
+  /**
+   * @example
+   * htmlParser(htmlString, {
+   *     start: function(tag, attrs, unary) {},
+   *     end: function(tag) {},
+   *     chars: function(text) {},
+   *     comment: function(text) {}
+   * });
+   *
+   * @param {string} html string
+   * @param {object} handler
+   */
+  function htmlParser( html, handler ) {
+    var index, chars, match, stack = [], last = html;
+    stack.last = function() { return stack[ stack.length - 1 ]; };
+
+    while ( html ) {
+      chars = true;
+
+      // Make sure we're not in a script or style element
+      if ( !stack.last() || !specialElements[ stack.last() ] ) {
+
+        // Comment
+        if ( html.indexOf('<!--') === 0 ) {
+          // comments containing -- are not allowed unless they terminate the comment
+          index = html.indexOf('--', 4);
+
+          if ( index >= 0 && html.lastIndexOf('-->', index) === index) {
+            if (handler.comment) handler.comment( html.substring( 4, index ) );
+            html = html.substring( index + 3 );
+            chars = false;
+          }
+        // DOCTYPE
+        } else if ( DOCTYPE_REGEXP.test(html) ) {
+          match = html.match( DOCTYPE_REGEXP );
+
+          if ( match ) {
+            html = html.replace( match[0], '');
+            chars = false;
+          }
+        // end tag
+        } else if ( BEGING_END_TAGE_REGEXP.test(html) ) {
+          match = html.match( END_TAG_REGEXP );
+
+          if ( match ) {
+            html = html.substring( match[0].length );
+            match[0].replace( END_TAG_REGEXP, parseEndTag );
+            chars = false;
+          }
+
+        // start tag
+        } else if ( BEGIN_TAG_REGEXP.test(html) ) {
+          match = html.match( START_TAG_REGEXP );
+
+          if ( match ) {
+            html = html.substring( match[0].length );
+            match[0].replace( START_TAG_REGEXP, parseStartTag );
+            chars = false;
+          }
+        }
+
+        if ( chars ) {
+          index = html.indexOf('<');
+
+          var text = index < 0 ? html : html.substring( 0, index );
+          html = index < 0 ? '' : html.substring( index );
+
+          if (handler.chars) { handler.chars( decodeEntities(text) ); }
+        }
+
+      } else {
+        html = html.replace(new RegExp('(.*)<\\s*\\/\\s*' + stack.last() + '[^>]*>', 'i'),
+          function(all, text){
+            text = text.replace(COMMENT_REGEXP, '$1').replace(CDATA_REGEXP, '$1');
+
+            if (handler.chars) { handler.chars( decodeEntities(text) ); }
+
+            return '';
+        });
+
+        parseEndTag( '', stack.last() );
+      }
+
+      if ( html == last ) {
+        throw new Error('badparse', 'The sanitizer was unable to parse the following block ' +
+                                          'of html: {0}', html);
+      }
+      last = html;
+    }
+
+    // Clean up any remaining tags
+    parseEndTag();
+
+    function parseStartTag( tag, tagName, rest, unary ) {
+      tagName = lowercase(tagName);
+      if ( blockElements[ tagName ] ) {
+        while ( stack.last() && inlineElements[ stack.last() ] ) {
+          parseEndTag( '', stack.last() );
+        }
+      }
+
+      if ( optionalEndTagElements[ tagName ] && stack.last() == tagName ) {
+        parseEndTag( '', tagName );
+      }
+
+      unary = voidElements[ tagName ] || !!unary;
+
+      if ( !unary )
+        stack.push( tagName );
+
+      var attrs = {};
+
+      rest.replace(ATTR_REGEXP,
+        function(match, name, doubleQuotedValue, singleQuotedValue, unquotedValue) {
+          var value = doubleQuotedValue || singleQuotedValue || unquotedValue || '';
+
+          attrs[name] = decodeEntities(value);
+      });
+      if (handler.start) { handler.start( tagName, attrs, unary ); }
+    }
+
+    function parseEndTag( tag, tagName ) {
+      var pos = 0, i;
+      tagName = lowercase(tagName);
+      if ( tagName )
+        // Find the closest opened tag of the same type
+        for ( pos = stack.length - 1; pos >= 0; pos-- )
+          if ( stack[ pos ] == tagName )
+            break;
+
+      if ( pos >= 0 ) {
+        // Close all the open elements, up the stack
+        for ( i = stack.length - 1; i >= pos; i-- )
+          if (handler.end) { handler.end( stack[ i ] ); }
+
+        // Remove the open elements from the stack
+        stack.length = pos;
+      }
+    }
+  }
+
+  var hiddenPre = document.createElement('pre');
+  var spaceRe = /^(\s*)([\s\S]*?)(\s*)$/;
+  /**
+   * decodes all entities into regular string
+   * @param value
+   * @returns {string} A string with decoded entities.
+   */
+  function decodeEntities(value) {
+    if (!value) { return ''; }
+
+    // Note: IE8 does not preserve spaces at the start/end of innerHTML
+    // so we must capture them and reattach them afterward
+    var parts = spaceRe.exec(value);
+    var spaceBefore = parts[1];
+    var spaceAfter = parts[3];
+    var content = parts[2];
+    if (content) {
+      hiddenPre.innerHTML=content.replace(/</g,'&lt;');
+      // innerText depends on styling as it doesn't display hidden elements.
+      // Therefore, it's better to use textContent not to cause unnecessary
+      // reflows. However, IE<9 don't support textContent so the innerText
+      // fallback is necessary.
+      content = 'textContent' in hiddenPre ?
+        hiddenPre.textContent : hiddenPre.innerText;
+    }
+    return spaceBefore + content + spaceAfter;
+  }
+
+  /**
+   * Escapes all potentially dangerous characters, so that the
+   * resulting string can be safely inserted into attribute or
+   * element text.
+   * @param value
+   * @returns {string} escaped text
+   */
+  function encodeEntities(value) {
+    return value.
+      replace(/&/g, '&amp;').
+      replace(NON_ALPHANUMERIC_REGEXP, function(value){
+        return '&#' + value.charCodeAt(0) + ';';
+      }).
+      replace(/</g, '&lt;').
+      replace(/>/g, '&gt;');
+  }
+
+  /**
+   * create an HTML/XML writer which writes to buffer
+   * @param {Array} buf use buf.jain('') to get out sanitized html string
+   * @returns {object} in the form of {
+   *     start: function(tag, attrs, unary) {},
+   *     end: function(tag) {},
+   *     chars: function(text) {},
+   *     comment: function(text) {}
+   * }
+   */
+  function htmlSanitizeWriter(buf, uriValidator){
+    var ignore = false;
+    var out = bind(buf, buf.push);
+    return {
+      start: function(tag, attrs, unary){
+        tag = lowercase(tag);
+        if (!ignore && specialElements[tag]) {
+          ignore = tag;
+        }
+        if (!ignore && validElements[tag] === true) {
+          out('<');
+          out(tag);
+          forEach(attrs, function(value, key){
+            var lkey = lowercase(key);
+            var isImage = (tag === 'img' && lkey === 'src') || (lkey === 'background');
+            if (validAttrs[lkey] === true &&
+              (uriAttrs[lkey] !== true || uriValidator(value, isImage))) {
+              out(' ');
+              out(key);
+              out('="');
+              out(encodeEntities(value));
+              out('"');
+            }
+          });
+          out(unary ? '/>' : '>');
+        }
+      },
+      end: function(tag){
+          tag = lowercase(tag);
+          if (!ignore && validElements[tag] === true) {
+            out('</');
+            out(tag);
+            out('>');
+          }
+          if (tag == ignore) {
+            ignore = false;
+          }
+        },
+      chars: function(chars){
+          if (!ignore) {
+            out(encodeEntities(chars));
+          }
+        }
+    };
+  }
+
+  return ngSanitize;
+});
+
+},{}],68:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -89209,10 +89753,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],67:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 require('app')
 
-},{"app":18}]},{},[67])
+},{"app":18}]},{},[69])
 
 
 //# sourceMappingURL=../maps/index.js.map
