@@ -340,8 +340,10 @@ module.exports = {
   url: '/',
   template: require('./welcome-page.html'),
   controller: function($scope, $auth, $location, Records, $rootScope, ipCookie) {
+    $scope.userSigningIn = false;
     $scope.login = function(formData) {
       $scope.formError = "";
+      $scope.userSigningIn = true;
       return $auth.submitLogin({
         email: formData.email,
         password: formData.password
@@ -365,14 +367,15 @@ module.exports = {
       return $scope.redirectToGroupPage(user);
     });
     $scope.$on('auth:login-error', function() {
-      return $scope.formError = "Invalid Credentials";
+      $scope.formError = "Invalid Credentials";
+      return $scope.userSigningIn = false;
     });
   }
 };
 
 
 },{"./welcome-page.html":13}],13:[function(require,module,exports){
-module.exports = "<div class=\"welcome-page\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate ng-submit=\"login(formData)\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n  \n      <input type=\"submit\" value=\"log in\">\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div \n  class=\"loading-bar\" \n  layout=\"column\" \n  layout-align=\"center center\" \n  ng-show=\"userSigningIn\">\n  <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n</div>\n\n<div class=\"welcome-page\" ng-hide=\"userSigningIn\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate ng-submit=\"login(formData)\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n  \n      <input type=\"submit\" value=\"log in\">\n    </form>\n  </md-content>\n</div>";
 },{}],14:[function(require,module,exports){
 module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
 },{}],15:[function(require,module,exports){
