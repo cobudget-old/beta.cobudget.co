@@ -947,6 +947,18 @@ label.label-with-details {
   font-size: 14px;
   font-weight: 500; }
 
+.confirm-account-page__toolbar {
+  background: #243239;
+  color: white; }
+
+.confirm-account-page__content {
+  max-width: 640px;
+  margin: 0 auto; }
+
+.confirm-account-page__heading {
+  font-size: 24px;
+  line-height: 27px; }
+
 md-toast {
   position: fixed; }
 
