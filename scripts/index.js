@@ -398,6 +398,7 @@ module.exports = {
       }
     };
     $scope.$on('auth:validation-success', function(event, user) {
+      $scope.userSigningIn = true;
       return $scope.redirectToGroupPage(user);
     });
     $scope.$on('auth:login-success', function(event, user) {
