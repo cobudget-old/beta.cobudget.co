@@ -211,6 +211,7 @@ module.exports = {
     };
     return $scope.confirmAccount = function(formData) {
       var params;
+      $scope.userConfirmingAccount = true;
       params = {
         name: formData.name,
         password: formData.password,
