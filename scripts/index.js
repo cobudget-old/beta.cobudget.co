@@ -199,13 +199,15 @@ module.exports = "<div \n  class=\"loading-bar\" \n  layout=\"column\" \n  layou
 module.exports = {
   url: '/confirm_account?confirmation_token',
   template: require('./confirm-account-page.html'),
-  controller: function($scope, $location, $stateParams, Records, ipCookie, Toast) {
+  controller: function($scope, $auth, $location, $stateParams, Records, ipCookie, Toast) {
     $scope.userConfirmingAccount = false;
     $scope.confirmationToken = $stateParams.confirmation_token;
     $scope.redirectToLogin = function() {
       $location.search('confirmation_token', null);
       ipCookie.remove('currentUserId');
-      return $location.path('/');
+      return $auth.signOut().then(function() {
+        return $location.path('/');
+      });
     };
     return $scope.confirmAccount = function(formData) {
       var params;
