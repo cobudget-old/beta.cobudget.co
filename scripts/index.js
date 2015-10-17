@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":85,"lokijs":94}],2:[function(require,module,exports){
+},{"angular_record_store":86,"lokijs":95}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -87,7 +87,7 @@ module.exports = {
   },
   url: '/admin',
   template: require('./admin-page.html'),
-  controller: function($scope, $location, Records, config, CurrentUser, UserCan, Error) {
+  controller: function(config, CurrentUser, Dialog, Error, $location, Records, $scope, UserCan) {
     $scope.currencies = [
       {
         code: 'USD',
@@ -126,7 +126,9 @@ module.exports = {
       return Records.groups.findOrFetchById(groupId);
     };
     $scope.onCsvUploadCompletion = function() {
-      return alert('upload complete');
+      return Dialog.alert({
+        title: 'upload complete!'
+      });
     };
     $scope.updateGroupCurrency = function(groupId, currencyCode) {
       return Records.groups.findOrFetchById(groupId).then(function(group) {
@@ -585,7 +587,7 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
     restrict: 'E',
     template: require('./bucket-page-status-card.html'),
     replace: true,
-    controller: ["$scope", "Toast", function($scope, Toast) {
+    controller: ["$scope", "Toast", "Dialog", function($scope, Toast, Dialog) {
       $scope.userCanStartFunding = function() {
         return $scope.membership.isAdmin || $scope.bucket.author().id === $scope.membership.member().id;
       };
@@ -596,7 +598,11 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
             return Toast.showWithRedirect('You launched a bucket for funding', "/buckets/" + $scope.bucket.id);
           });
         } else {
-          return alert('Estimated funding target must be specified before funding starts');
+          return Dialog.alert({
+            title: 'hi friend ~~',
+            content: 'an estimated funding target must be specified before funding starts',
+            buttonText: 'oh, ok!'
+          });
         }
       };
     }]
@@ -762,7 +768,7 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-page-sidenav.html":39}],39:[function(require,module,exports){
-module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <md-menu class=\"group-page__account-options-menu\">\n        <div layout=\"row\" layout-align=\"start center\" ng-click=\"$mdOpenMenu($event)\">\n          <div class=\"group-page__user-email\">\n            {{ currentUser.email }}\n          </div>\n          <ng-md-icon icon=\"arrow_drop_down\" \n            style=\"fill: white\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <md-menu-content width=\"2\">\n          <md-menu-item>\n            <md-button ng-click=\"signOut()\">\n              <span md-menu-align-target>Sign Out</span>\n            </md-button>\n          </md-menu-item>\n        </md-menu-content>\n      </md-menu>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:30:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
+module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <md-menu class=\"group-page__account-options-menu\">\n        <div layout=\"row\" layout-align=\"start center\" ng-click=\"$mdOpenMenu($event)\">\n          <div class=\"group-page__user-email\">\n            {{ currentUser.email }}\n          </div>\n          <ng-md-icon icon=\"arrow_drop_down\" \n            style=\"fill: white\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <md-menu-content width=\"2\">\n          <md-menu-item>\n            <md-button ng-click=\"signOut()\">\n              <span md-menu-align-target>Sign Out</span>\n            </md-button>\n          </md-menu-item>\n        </md-menu-content>\n      </md-menu>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
 },{}],40:[function(require,module,exports){
 (function (global){
 null;
@@ -912,14 +918,14 @@ require('./controllers/application-controller.coffee');;
 require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
-require('./services/current-user.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
+require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
 require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":19,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":20,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":22,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":24,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":26,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":28,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":30,"./directives/error-page/error-page.coffee":32,"./directives/group-page-buckets/group-page-buckets.coffee":34,"./directives/group-page-funders/group-page-funders.coffee":36,"./directives/group-page-sidenav/group-page-sidenav.coffee":38,"./directives/group-page-toolbar/group-page-toolbar.coffee":40,"./directives/loading-page/loading-page.coffee":42,"./filters/date-filter.coffee":44,"./models/allocation-model.coffee":46,"./models/bucket-model.coffee":47,"./models/comment-model.coffee":48,"./models/contribution-model.coffee":49,"./models/group-model.coffee":50,"./models/membership-model.coffee":51,"./models/user-model.coffee":52,"./records-interfaces/allocation-records-interface.coffee":53,"./records-interfaces/bucket-records-interface.coffee":54,"./records-interfaces/comment-records-interface.coffee":55,"./records-interfaces/contribution-records-interface.coffee":56,"./records-interfaces/group-records-interface.coffee":57,"./records-interfaces/membership-records-interface.coffee":58,"./records-interfaces/user-records-interface.coffee":59,"./services/current-user.coffee":61,"./services/error.coffee":62,"./services/load-bar.coffee":63,"./services/toast.coffee":64,"./services/user-can.coffee":65,"angular":82,"angular-animate":67,"angular-aria":69,"angular-cookie":70,"angular-material":74,"angular-material-icons":72,"angular-messages":76,"angular-sanitize/angular-sanitize":77,"angular-truncate-2":78,"angular-ui-router":79,"angular-upload":80,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":17,"app/configs/auth.coffee":18,"app/routes.coffee":60,"camelize":90,"jquery":91,"lodash":92,"moment":95,"ng-focus-if":96,"ng-sanitize":97,"ng-token-auth":98}],46:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":19,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":20,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":22,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":24,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":26,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":28,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":30,"./directives/error-page/error-page.coffee":32,"./directives/group-page-buckets/group-page-buckets.coffee":34,"./directives/group-page-funders/group-page-funders.coffee":36,"./directives/group-page-sidenav/group-page-sidenav.coffee":38,"./directives/group-page-toolbar/group-page-toolbar.coffee":40,"./directives/loading-page/loading-page.coffee":42,"./filters/date-filter.coffee":44,"./models/allocation-model.coffee":46,"./models/bucket-model.coffee":47,"./models/comment-model.coffee":48,"./models/contribution-model.coffee":49,"./models/group-model.coffee":50,"./models/membership-model.coffee":51,"./models/user-model.coffee":52,"./records-interfaces/allocation-records-interface.coffee":53,"./records-interfaces/bucket-records-interface.coffee":54,"./records-interfaces/comment-records-interface.coffee":55,"./records-interfaces/contribution-records-interface.coffee":56,"./records-interfaces/group-records-interface.coffee":57,"./records-interfaces/membership-records-interface.coffee":58,"./records-interfaces/user-records-interface.coffee":59,"./services/current-user.coffee":61,"./services/dialog.coffee":62,"./services/error.coffee":63,"./services/load-bar.coffee":64,"./services/toast.coffee":65,"./services/user-can.coffee":66,"angular":83,"angular-animate":68,"angular-aria":70,"angular-cookie":71,"angular-material":75,"angular-material-icons":73,"angular-messages":77,"angular-sanitize/angular-sanitize":78,"angular-truncate-2":79,"angular-ui-router":80,"angular-upload":81,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":17,"app/configs/auth.coffee":18,"app/routes.coffee":60,"camelize":91,"jquery":92,"lodash":93,"moment":96,"ng-focus-if":97,"ng-sanitize":98,"ng-token-auth":99}],46:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1604,6 +1610,38 @@ null;
 
 /* @ngInject */
 
+global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
+  var Dialog;
+  return new (Dialog = (function() {
+    function Dialog() {}
+
+    Dialog.prototype.alert = function(args) {
+      var alert;
+      alert = $mdDialog.alert({
+        title: args.title,
+        content: args.content,
+        ok: args.buttonText || 'close'
+      });
+      return $mdDialog.show(alert);
+    };
+
+    Dialog.prototype.prompt = function() {};
+
+    return Dialog;
+
+  })());
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],63:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
 global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
   var Error;
   return new (Error = (function() {
@@ -1625,7 +1663,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1653,7 +1691,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1693,7 +1731,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1735,7 +1773,7 @@ global.cobudgetApp.factory('UserCan', ["Toast", "$location", "$q", "Records", fu
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -5665,11 +5703,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":66}],68:[function(require,module,exports){
+},{"./angular-animate":67}],69:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6068,11 +6106,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":68}],70:[function(require,module,exports){
+},{"./angular-aria":69}],71:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -6199,7 +6237,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -7131,11 +7169,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":71}],73:[function(require,module,exports){
+},{"./angular-material-icons":72}],74:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -24304,7 +24342,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -24318,7 +24356,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":73,"angular":82,"angular-animate":67,"angular-aria":69}],75:[function(require,module,exports){
+},{"./angular-material":74,"angular":83,"angular-animate":68,"angular-aria":70}],76:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25005,11 +25043,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":75}],77:[function(require,module,exports){
+},{"./angular-messages":76}],78:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25694,7 +25732,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -25745,7 +25783,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.15
@@ -30116,7 +30154,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -30418,7 +30456,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -59323,11 +59361,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":81}],83:[function(require,module,exports){
+},{"./angular":82}],84:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -59621,7 +59659,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":88}],84:[function(require,module,exports){
+},{"./utils.coffee":89}],85:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -59779,7 +59817,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":88}],85:[function(require,module,exports){
+},{"./utils.coffee":89}],86:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -59792,7 +59830,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":83,"./base_records_interface.coffee":84,"./record_store.coffee":86,"./restful_client.coffee":87}],86:[function(require,module,exports){
+},{"./base_model.coffee":84,"./base_records_interface.coffee":85,"./record_store.coffee":87,"./restful_client.coffee":88}],87:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -59832,7 +59870,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -59957,7 +59995,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -60000,9 +60038,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],89:[function(require,module,exports){
-
 },{}],90:[function(require,module,exports){
+
+},{}],91:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -60063,7 +60101,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -69275,7 +69313,7 @@ return jQuery;
 
 }));
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -81631,7 +81669,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
   
@@ -82208,7 +82246,7 @@ return jQuery;
   }());
 }));
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -86305,7 +86343,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":93,"fs":89}],95:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":94,"fs":90}],96:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -89501,7 +89539,7 @@ return jQuery;
     return _moment;
 
 }));
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -89531,7 +89569,7 @@ return jQuery;
     }
 })();
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -90022,7 +90060,7 @@ return jQuery;
   return ngSanitize;
 });
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -90871,10 +90909,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 require('app')
 
-},{"app":45}]},{},[99])
+},{"app":45}]},{},[100])
 
 
 //# sourceMappingURL=../maps/index.js.map
