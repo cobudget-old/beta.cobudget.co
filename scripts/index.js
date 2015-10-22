@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":87,"lokijs":96}],2:[function(require,module,exports){
+},{"angular_record_store":88,"lokijs":97}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -433,14 +433,18 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
     restrict: 'E',
     template: require('./bucket-page-activity-card.html'),
     replace: true,
-    controller: ["$scope", "Records", function($scope, Records) {
+    controller: ["LoadBar", "Records", "$scope", "Toast", "$window", function(LoadBar, Records, $scope, Toast, $window) {
       $scope.newComment = Records.comments.build({
         bucketId: $scope.bucket.id
       });
       return $scope.createComment = function() {
-        $scope.newComment.save();
-        return $scope.newComment = Records.comments.build({
-          bucketId: $scope.bucket.id
+        LoadBar.start();
+        return $scope.newComment.save().then(function() {
+          LoadBar.stop();
+          Toast.show('You posted a comment');
+          return $scope.newComment = Records.comments.build({
+            bucketId: $scope.bucket.id
+          });
         });
       };
     }]
@@ -451,7 +455,7 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page-activity-card.html":21}],21:[function(require,module,exports){
-module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.author().name }}</div>\n        <div class=\"bucket-page__comment-body\" ng-bind-html=\"comment.body | linky:'_blank'\"></div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" placeholder=\"Add a comment\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n        <md-button class=\"md-primary bucket-page__submit-comment-btn\">submit</md-button>\n      </md-input-container>\n    </form>\n  </md-card>\n</div>\n  ";
+module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.author().name }}</div>\n        <div class=\"bucket-page__comment-body\" ng-bind-html=\"comment.body | linky:'_blank'\"></div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" placeholder=\"Add a comment, question, or offer of support\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n        <md-button class=\"md-primary bucket-page__submit-comment-btn\">submit</md-button>\n      </md-input-container>\n    </form>\n  </md-card>\n</div>\n  ";
 },{}],22:[function(require,module,exports){
 (function (global){
 null;
@@ -599,7 +603,7 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
           return Dialog.alert({
             title: 'hi friend ~~',
             content: 'an estimated funding target must be specified before funding starts',
-            buttonText: 'oh, ok!'
+            ok: 'oh, ok!'
           });
         }
       };
@@ -696,6 +700,8 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
 },{"./group-page-buckets.html":35}],35:[function(require,module,exports){
 module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n          \n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}               \n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.author().name }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n        \n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon \n            icon=\"messenger\" \n            layout=\"column\" \n            layout-align=\"center center\" \n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n\n\n      </div>\n    </md-list-item>\n  </md-list>   \n\n  <md-list class=\"group-page__funded-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.author().name }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
 },{}],36:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"delete user dialog\">\n  <md-dialog-content class=\"sticky-container\">\n    <md-subheader class=\"md-sticky-no-effect\">\n      Are you sure you want to delete {{ member.name }} with email address {{ member.email }} from {{ group.name }}?\n    </md-subheader>\n    <div class=\"group-page__delete-user-dialog-list-header\">This will cause: </div>\n    <ul class=\"group-page__delete-user-dialog-list\">\n      <li>All of their funds to be deleted from currently funding projects</li>\n      <li>All of their funds to be removed from the group</li>\n      <li>All of their ideas to be deleted from the group</li>\n      <li>All of their comments to be deleted from the group</li>\n    </ul>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">no</md-button>\n    <md-button ng-click=\"proceed()\">yes</md-button>\n  </div>\n</md-dialog>\n";
+},{}],37:[function(require,module,exports){
 (function (global){
 null;
 
@@ -707,14 +713,29 @@ global.cobudgetApp.directive('groupPageFunders', function() {
     restrict: 'E',
     template: require('./group-page-funders.html'),
     replace: true,
-    controller: ["$scope", function($scope) {
-      $scope.makeMemberAdmin = function(membership) {
-        membership.isAdmin = true;
+    controller: ["$scope", "Dialog", function($scope, Dialog) {
+      $scope.toggleMemberAdmin = function(membership) {
+        membership.isAdmin = !membership.isAdmin;
         return membership.save();
       };
-      $scope.undoMemberAdmin = function(membership) {
-        membership.isAdmin = false;
-        return membership.save();
+      $scope.deleteMembership = function(membership) {
+        return Dialog.custom({
+          clickOutsideToClose: true,
+          template: require('./delete-membership-dialog.tmpl.html'),
+          scope: $scope,
+          preserveScope: true,
+          controller: function($scope, $mdDialog, Records) {
+            $scope.member = membership.member();
+            $scope.cancel = function() {
+              return $mdDialog.cancel();
+            };
+            return $scope.proceed = function() {
+              return membership.destroy().then(function() {
+                return $mdDialog.hide();
+              });
+            };
+          }
+        });
       };
     }]
   };
@@ -723,9 +744,9 @@ global.cobudgetApp.directive('groupPageFunders', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-funders.html":37}],37:[function(require,module,exports){
-module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" flex class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-name-container\" layout=\"row\" layout-align=\"start center\" flex>\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" flex=\"20\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance() | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon \n              icon=\"more_vert\" \n              layout=\"column\" \n              layout-align=\"center center\" \n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n        \n          <md-menu-content width=\"2\">\n            <md-menu-item ng-if=\"!funderMembership.isAdmin\">\n              <md-button ng-click=\"makeMemberAdmin(funderMembership)\">\n                <span md-menu-align-target>Make administrator</span>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item ng-if=\"funderMembership.isAdmin\">\n              <md-button ng-click=\"undoMemberAdmin(funderMembership)\">\n                <span md-menu-align-target>Undo administrator</span>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>";
-},{}],38:[function(require,module,exports){
+},{"./delete-membership-dialog.tmpl.html":36,"./group-page-funders.html":38}],38:[function(require,module,exports){
+module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" flex class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-name-container\" layout=\"row\" layout-align=\"start center\" flex>\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" flex=\"20\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance() | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon \n              icon=\"more_vert\" \n              layout=\"column\" \n              layout-align=\"center center\" \n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n        \n          <md-menu-content width=\"2\">\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\">\n                <span md-menu-align-target>{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} administrator</span>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"deleteMembership(funderMembership)\">\n                <span md-menu-align-target>Delete user</span>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>";
+},{}],39:[function(require,module,exports){
 (function (global){
 null;
 
@@ -765,9 +786,9 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-sidenav.html":39}],39:[function(require,module,exports){
+},{"./group-page-sidenav.html":40}],40:[function(require,module,exports){
 module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <md-menu class=\"group-page__account-options-menu\">\n        <div layout=\"row\" layout-align=\"start center\" ng-click=\"$mdOpenMenu($event)\">\n          <div class=\"group-page__user-email\">\n            {{ currentUser.email }}\n          </div>\n          <ng-md-icon icon=\"arrow_drop_down\" \n            style=\"fill: white\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <md-menu-content width=\"2\">\n          <md-menu-item>\n            <md-button ng-click=\"signOut()\">\n              <span md-menu-align-target>Sign Out</span>\n            </md-button>\n          </md-menu-item>\n        </md-menu-content>\n      </md-menu>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 (function (global){
 null;
 
@@ -802,9 +823,9 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-toolbar.html":41}],41:[function(require,module,exports){
+},{"./group-page-toolbar.html":42}],42:[function(require,module,exports){
 module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\" \n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n    <md-button class=\"md-icon-button group-page-feedback-button\" aria-label=\"Give Feedback\" ng-click=\"openFeedbackForm()\">\n      <ng-md-icon icon=\"live_help\" \n        class=\"group-page__menu-icon\" \n        layout=\"column\" \n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>      \n    <md-button class=\"md-icon-button group-page-admin-button\" aria-label=\"Admin Panel\" ng-if=\"membership.isAdmin\" ng-click=\"openAdminPanel()\">\n      <ng-md-icon icon=\"local_pizza\" \n        class=\"group-page__menu-icon\" \n        layout=\"column\" \n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>      \n  </div>\n\n  <div class=\"md-toolbar-tools group-page__funds-bar\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\" \n            layout=\"column\" \n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance() | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n        \n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\" \n            class=\"group-page__funds-icon\" \n            layout=\"column\" \n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height>\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Funders</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\" \n      class=\"group-page__create-bucket-fab-icon\" \n      layout=\"column\" \n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>";
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (global){
 null;
 
@@ -832,9 +853,9 @@ global.cobudgetApp.directive('loadingPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loading-page.html":43}],43:[function(require,module,exports){
+},{"./loading-page.html":44}],44:[function(require,module,exports){
 module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -875,7 +896,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -923,7 +944,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":19,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":20,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":22,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":24,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":26,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":28,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":30,"./directives/error-page/error-page.coffee":32,"./directives/group-page-buckets/group-page-buckets.coffee":34,"./directives/group-page-funders/group-page-funders.coffee":36,"./directives/group-page-sidenav/group-page-sidenav.coffee":38,"./directives/group-page-toolbar/group-page-toolbar.coffee":40,"./directives/loading-page/loading-page.coffee":42,"./filters/date-filter.coffee":44,"./models/allocation-model.coffee":46,"./models/bucket-model.coffee":47,"./models/comment-model.coffee":48,"./models/contribution-model.coffee":49,"./models/group-model.coffee":50,"./models/membership-model.coffee":51,"./models/user-model.coffee":52,"./records-interfaces/allocation-records-interface.coffee":53,"./records-interfaces/bucket-records-interface.coffee":54,"./records-interfaces/comment-records-interface.coffee":55,"./records-interfaces/contribution-records-interface.coffee":56,"./records-interfaces/group-records-interface.coffee":57,"./records-interfaces/membership-records-interface.coffee":58,"./records-interfaces/user-records-interface.coffee":59,"./services/app-state.coffee":61,"./services/current-user.coffee":62,"./services/dialog.coffee":63,"./services/error.coffee":64,"./services/load-bar.coffee":65,"./services/toast.coffee":66,"./services/user-can.coffee":67,"angular":84,"angular-animate":69,"angular-aria":71,"angular-cookie":72,"angular-material":76,"angular-material-icons":74,"angular-messages":78,"angular-sanitize/angular-sanitize":79,"angular-truncate-2":80,"angular-ui-router":81,"angular-upload":82,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":17,"app/configs/auth.coffee":18,"app/routes.coffee":60,"camelize":92,"jquery":93,"lodash":94,"moment":97,"ng-focus-if":98,"ng-sanitize":99,"ng-token-auth":100}],46:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":19,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":20,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":22,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":24,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":26,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":28,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":30,"./directives/error-page/error-page.coffee":32,"./directives/group-page-buckets/group-page-buckets.coffee":34,"./directives/group-page-funders/group-page-funders.coffee":37,"./directives/group-page-sidenav/group-page-sidenav.coffee":39,"./directives/group-page-toolbar/group-page-toolbar.coffee":41,"./directives/loading-page/loading-page.coffee":43,"./filters/date-filter.coffee":45,"./models/allocation-model.coffee":47,"./models/bucket-model.coffee":48,"./models/comment-model.coffee":49,"./models/contribution-model.coffee":50,"./models/group-model.coffee":51,"./models/membership-model.coffee":52,"./models/user-model.coffee":53,"./records-interfaces/allocation-records-interface.coffee":54,"./records-interfaces/bucket-records-interface.coffee":55,"./records-interfaces/comment-records-interface.coffee":56,"./records-interfaces/contribution-records-interface.coffee":57,"./records-interfaces/group-records-interface.coffee":58,"./records-interfaces/membership-records-interface.coffee":59,"./records-interfaces/user-records-interface.coffee":60,"./services/app-state.coffee":62,"./services/current-user.coffee":63,"./services/dialog.coffee":64,"./services/error.coffee":65,"./services/load-bar.coffee":66,"./services/toast.coffee":67,"./services/user-can.coffee":68,"angular":85,"angular-animate":70,"angular-aria":72,"angular-cookie":73,"angular-material":77,"angular-material-icons":75,"angular-messages":79,"angular-sanitize/angular-sanitize":80,"angular-truncate-2":81,"angular-ui-router":82,"angular-upload":83,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":17,"app/configs/auth.coffee":18,"app/routes.coffee":61,"camelize":93,"jquery":94,"lodash":95,"moment":98,"ng-focus-if":99,"ng-sanitize":100,"ng-token-auth":101}],47:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -956,7 +977,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1051,7 +1072,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1094,7 +1115,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1134,7 +1155,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1213,7 +1234,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1259,7 +1280,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1304,7 +1325,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1342,7 +1363,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1380,7 +1401,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1418,7 +1439,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1464,7 +1485,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1500,7 +1521,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1544,7 +1565,7 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1573,7 +1594,7 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1585,7 +1606,7 @@ global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($sta
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":5,"app/components/confirm-account-page/confirm-account-page.coffee":7,"app/components/create-bucket-page/create-bucket-page.coffee":9,"app/components/edit-bucket-page/edit-bucket-page.coffee":11,"app/components/group-page/group-page.coffee":13,"app/components/welcome-page/welcome-page.coffee":15}],61:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":5,"app/components/confirm-account-page/confirm-account-page.coffee":7,"app/components/create-bucket-page/create-bucket-page.coffee":9,"app/components/edit-bucket-page/edit-bucket-page.coffee":11,"app/components/group-page/group-page.coffee":13,"app/components/welcome-page/welcome-page.coffee":15}],62:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1605,7 +1626,7 @@ global.cobudgetApp.factory('AppState', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1621,7 +1642,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", "ipCookie", function(Recor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1635,15 +1656,37 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
     Dialog.prototype.alert = function(args) {
       var alert;
+      if (args == null) {
+        args = {};
+      }
       alert = $mdDialog.alert({
         title: args.title,
         content: args.content,
-        ok: args.buttonText || 'close'
+        ok: args.ok || 'close'
       });
       return $mdDialog.show(alert);
     };
 
-    Dialog.prototype.prompt = function() {};
+    Dialog.prototype.confirm = function(args) {
+      var confirm;
+      if (args == null) {
+        args = {};
+      }
+      confirm = $mdDialog.confirm({
+        title: args.title,
+        content: args.content,
+        ok: args.confirm || 'ok',
+        cancel: args.cancel || 'cancel'
+      });
+      return $mdDialog.show(confirm);
+    };
+
+    Dialog.prototype.custom = function(args) {
+      if (args == null) {
+        args = {};
+      }
+      return $mdDialog.show(args);
+    };
 
     return Dialog;
 
@@ -1653,7 +1696,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1681,7 +1724,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1709,7 +1752,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1749,7 +1792,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1791,7 +1834,7 @@ global.cobudgetApp.factory('UserCan', ["Toast", "$location", "$q", "Records", fu
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -5721,11 +5764,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":68}],70:[function(require,module,exports){
+},{"./angular-animate":69}],71:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6124,11 +6167,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":70}],72:[function(require,module,exports){
+},{"./angular-aria":71}],73:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -6255,7 +6298,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -7187,11 +7230,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":73}],75:[function(require,module,exports){
+},{"./angular-material-icons":74}],76:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -24360,7 +24403,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -24374,7 +24417,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":75,"angular":84,"angular-animate":69,"angular-aria":71}],77:[function(require,module,exports){
+},{"./angular-material":76,"angular":85,"angular-animate":70,"angular-aria":72}],78:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25061,11 +25104,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":77}],79:[function(require,module,exports){
+},{"./angular-messages":78}],80:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25750,7 +25793,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -25801,7 +25844,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.15
@@ -30172,7 +30215,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -30474,7 +30517,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -59379,11 +59422,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":83}],85:[function(require,module,exports){
+},{"./angular":84}],86:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -59677,7 +59720,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":90}],86:[function(require,module,exports){
+},{"./utils.coffee":91}],87:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -59835,7 +59878,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":90}],87:[function(require,module,exports){
+},{"./utils.coffee":91}],88:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -59848,7 +59891,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":85,"./base_records_interface.coffee":86,"./record_store.coffee":88,"./restful_client.coffee":89}],88:[function(require,module,exports){
+},{"./base_model.coffee":86,"./base_records_interface.coffee":87,"./record_store.coffee":89,"./restful_client.coffee":90}],89:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -59888,7 +59931,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -60013,7 +60056,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -60056,9 +60099,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],91:[function(require,module,exports){
-
 },{}],92:[function(require,module,exports){
+
+},{}],93:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -60119,7 +60162,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -69331,7 +69374,7 @@ return jQuery;
 
 }));
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -81687,7 +81730,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
   
@@ -82264,7 +82307,7 @@ return jQuery;
   }());
 }));
 
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -86361,7 +86404,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":95,"fs":91}],97:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":96,"fs":92}],98:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -89557,7 +89600,7 @@ return jQuery;
     return _moment;
 
 }));
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -89587,7 +89630,7 @@ return jQuery;
     }
 })();
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -90078,7 +90121,7 @@ return jQuery;
   return ngSanitize;
 });
 
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -90927,10 +90970,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 require('app')
 
-},{"app":45}]},{},[101])
+},{"app":46}]},{},[102])
 
 
 //# sourceMappingURL=../maps/index.js.map
