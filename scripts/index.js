@@ -63,11 +63,13 @@ global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "To
     });
   });
   return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
-    e.preventDefault();
-    global.cobudgetApp.currentUserId = null;
-    membershipsLoadedDeferred.reject();
-    Toast.show('Please log in to continue');
-    return $location.path('/');
+    if (error) {
+      e.preventDefault();
+      global.cobudgetApp.currentUserId = null;
+      membershipsLoadedDeferred.reject();
+      Toast.show('Please log in to continue');
+      return $location.path('/');
+    }
   });
 }]);
 
