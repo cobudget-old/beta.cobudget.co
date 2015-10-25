@@ -63,13 +63,11 @@ global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "To
     });
   });
   return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
-    if (error.reason === "unauthorized" && error.errors[0] === "No credentials") {
-      e.preventDefault();
-      global.cobudgetApp.currentUserId = null;
-      membershipsLoadedDeferred.reject();
-      Toast.show('Please log in to continue');
-      return $location.path('/');
-    }
+    e.preventDefault();
+    global.cobudgetApp.currentUserId = null;
+    membershipsLoadedDeferred.reject();
+    Toast.show('Please log in to continue');
+    return $location.path('/');
   });
 }]);
 
