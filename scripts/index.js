@@ -1753,7 +1753,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
       alert = $mdDialog.alert({
         title: args.title,
         content: args.content,
-        ok: args.ok
+        ok: args.ok || 'ok'
       });
       return $mdDialog.show(alert);
     };
