@@ -480,9 +480,11 @@ module.exports = {
       return LoadBar.stop();
     });
     $scope.login = function(formData) {
+      LoadBar.start();
       $scope.formError = "";
       return $auth.submitLogin(formData)["catch"](function() {
-        return $scope.formError = "Invalid Credentials";
+        $scope.formError = "Invalid Credentials";
+        return LoadBar.stop();
       });
     };
   }
