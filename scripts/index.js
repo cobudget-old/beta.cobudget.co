@@ -40,7 +40,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "Toast", function($rootScope, Records, $q, $location, $auth, Toast) {
+global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "Toast", "$window", function($rootScope, Records, $q, $location, $auth, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -63,12 +63,21 @@ global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "To
     });
   });
   return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
+    console.log('$stateChangeError signal fired!');
+    console.log('e: ', e);
+    console.log('toState: ', toState);
+    console.log('toParams: ', toParams);
+    console.log('fromState: ', fromState);
+    console.log('fromParams: ', fromParams);
+    console.log('error: ', error);
     if (error) {
       e.preventDefault();
       global.cobudgetApp.currentUserId = null;
       membershipsLoadedDeferred.reject();
       Toast.show('Please log in to continue');
       return $location.path('/');
+    } else {
+      return $window.location.reload();
     }
   });
 }]);
