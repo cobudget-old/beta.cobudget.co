@@ -849,7 +849,7 @@ global.cobudgetApp.directive('groupPageFunders', function() {
                 $mdDialog.hide();
                 return Dialog.alert({
                   title: 'Success!',
-                  content: 'Member deleted.'
+                  content: $scope.member.name + " was deleted from " + $scope.group.name
                 }).then(function() {
                   return $window.location.reload();
                 });
