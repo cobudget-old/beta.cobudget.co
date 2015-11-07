@@ -40,7 +40,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "Toast", "$window", function($rootScope, Records, $q, $location, $auth, Toast, $window) {
+global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, $location, $q, Records, $rootScope, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -54,6 +54,11 @@ global.cobudgetApp.run(["$rootScope", "Records", "$q", "$location", "$auth", "To
     global.cobudgetApp.currentUserId = user.id;
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
+      if (CurrentUser().utcOffset !== moment().utcOffset()) {
+        Records.users.updateProfile({
+          utc_offset: moment().utcOffset()
+        }).then(function(data) {});
+      }
       membershipsLoadedDeferred.resolve();
       if (data.groups) {
         groupId = data.groups[0].id;
@@ -308,7 +313,7 @@ module.exports = {
   },
   url: '/buckets/new',
   template: require('./create-bucket-page.html'),
-  controller: function($scope, Records, $location, Toast, CurrentUser, $window) {
+  controller: function(CurrentUser, Error, $location, Records, $scope, Toast, UserCan, $window) {
     $scope.accessibleGroups = CurrentUser().groups();
     $scope.bucket = Records.buckets.build();
     $scope.cancel = function() {
@@ -572,7 +577,7 @@ module.exports = {
 },{"./welcome-page.html":24}],24:[function(require,module,exports){
 module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate ng-submit=\"login(formData)\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n\n    </form>\n    <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n  </md-content>\n</div>";
 },{}],25:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],26:[function(require,module,exports){
 (function (global){
 
@@ -1120,7 +1125,7 @@ require("ng-sanitize");
 require("angular-truncate-2");
 require("angular-marked");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -1519,6 +1524,10 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
       return this.recordStore.groups.find(groupIds);
     };
 
+    UserModel.prototype.primaryGroup = function() {
+      return this.groups[0];
+    };
+
     return UserModel;
 
   })(BaseModel);
@@ -1796,6 +1805,12 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
       return this.remote.post('reset_password', params);
     };
 
+    UserRecordsInterface.prototype.updateProfile = function(params) {
+      return this.remote.post('update_profile', {
+        user: params
+      });
+    };
+
     return UserRecordsInterface;
 
   })(BaseRecordsInterface);
@@ -1843,7 +1858,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.factory('CurrentUser', ["Records", "ipCookie", function(Records, ipCookie) {
+global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
   return function() {
     return Records.users.find(global.cobudgetApp.currentUserId);
   };
@@ -2019,7 +2034,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.factory('UserCan', ["Toast", "$location", "$q", "Records", function(Toast, $location, $q, Records) {
+global.cobudgetApp.factory('UserCan', ["$location", "$q", "Records", "Toast", function($location, $q, Records, Toast) {
   var UserCan;
   return new (UserCan = (function() {
     function UserCan() {}
