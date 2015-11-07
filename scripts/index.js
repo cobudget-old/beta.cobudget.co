@@ -313,11 +313,13 @@ module.exports = {
   },
   url: '/buckets/new',
   template: require('./create-bucket-page.html'),
-  controller: function(CurrentUser, Error, $location, Records, $scope, Toast, UserCan, $window) {
+  controller: function(CurrentUser, Error, $location, Records, $scope, Toast) {
     $scope.accessibleGroups = CurrentUser().groups();
     $scope.bucket = Records.buckets.build();
     $scope.cancel = function() {
-      return $window.history.back();
+      var group;
+      group = CurrentUser().primaryGroup();
+      return $location.path("/groups/" + group.id);
     };
     return $scope.done = function() {
       if ($scope.bucketForm.$valid) {
@@ -1525,7 +1527,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
     };
 
     UserModel.prototype.primaryGroup = function() {
-      return this.groups[0];
+      return this.groups()[0];
     };
 
     return UserModel;
