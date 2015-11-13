@@ -40,7 +40,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, ipCookie, $location, $q, Records, $rootScope, Toast, $window) {
+global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, $location, $q, Records, $rootScope, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -51,7 +51,6 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
     });
   });
   $rootScope.$on('auth:login-success', function(ev, user) {
-    ipCookie.remove('currentGroupId');
     global.cobudgetApp.currentUserId = user.id;
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
@@ -68,7 +67,7 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
       }
     });
   });
-  $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
+  return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
     console.log('$stateChangeError signal fired!');
     console.log('e: ', e);
     console.log('toState: ', toState);
@@ -84,11 +83,6 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
       return $location.path('/');
     } else {
       return $window.location.reload();
-    }
-  });
-  return $rootScope.$on('$stateChangeSuccess', function(e, toState, toParams, fromState, fromParams) {
-    if (toState.url === '/groups/:groupId') {
-      return ipCookie('currentGroupId', toParams.groupId);
     }
   });
 }]);
@@ -319,17 +313,13 @@ module.exports = {
   },
   url: '/buckets/new',
   template: require('./create-bucket-page.html'),
-  controller: function(CurrentUser, Error, ipCookie, $location, Records, $scope, Toast, $window) {
+  controller: function(CurrentUser, Error, $location, Records, $scope, Toast) {
     $scope.accessibleGroups = CurrentUser().groups();
     $scope.bucket = Records.buckets.build();
     $scope.cancel = function() {
-      var groupId;
-      if (ipCookie('currentGroupId')) {
-        groupId = ipCookie('currentGroupId');
-      } else {
-        groupId = CurrentUser().primaryGroup().id;
-      }
-      return $location.path("/groups/" + groupId);
+      var group;
+      group = CurrentUser().primaryGroup();
+      return $location.path("/groups/" + group.id);
     };
     return $scope.done = function() {
       if ($scope.bucketForm.$valid) {
@@ -559,7 +549,7 @@ module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAcc
 module.exports = {
   url: '/',
   template: require('./welcome-page.html'),
-  controller: function($auth, Dialog, Error, LoadBar, $location, Records, $scope) {
+  controller: function($auth, Dialog, Error, LoadBar, $location, Records, $scope, $window) {
     Error.clear();
     LoadBar.start();
     $auth.validateUser().then(function() {
@@ -584,12 +574,15 @@ module.exports = {
     $scope.visitForgotPasswordPage = function() {
       return $location.path('/forgot_password');
     };
+    $scope.openFeedbackForm = function() {
+      return $window.location.href = 'https://docs.google.com/forms/d/1-_zDQzdMmq_WndQn2bPUEW2DZQSvjl7nIJ6YkvUcp0I/viewform?usp=send_form';
+    };
   }
 };
 
 
 },{"./welcome-page.html":24}],24:[function(require,module,exports){
-module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate ng-submit=\"login(formData); formData = {}\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n\n    </form>\n    <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n  </md-content>\n</div>";
+module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate class=\"welcome-page__login-form\" ng-submit=\"login(formData); formData = {}\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n    </form>\n\n    <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n\n    <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n  </md-content>\n</div>";
 },{}],25:[function(require,module,exports){
 module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],26:[function(require,module,exports){
