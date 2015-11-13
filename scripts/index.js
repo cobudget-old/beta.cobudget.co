@@ -33,14 +33,14 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":98,"lokijs":107}],2:[function(require,module,exports){
+},{"angular_record_store":97,"lokijs":106}],2:[function(require,module,exports){
 (function (global){
 null;
 
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, $location, $q, Records, $rootScope, Toast, $window) {
+global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, ipCookie, $location, $q, Records, $rootScope, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -51,6 +51,7 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$
     });
   });
   $rootScope.$on('auth:login-success', function(ev, user) {
+    ipCookie.remove('currentGroupId');
     global.cobudgetApp.currentUserId = user.id;
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
@@ -67,7 +68,7 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$
       }
     });
   });
-  return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
+  $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
     console.log('$stateChangeError signal fired!');
     console.log('e: ', e);
     console.log('toState: ', toState);
@@ -83,6 +84,11 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$
       return $location.path('/');
     } else {
       return $window.location.reload();
+    }
+  });
+  return $rootScope.$on('$stateChangeSuccess', function(e, toState, toParams, fromState, fromParams) {
+    if (toState.url === '/groups/:groupId') {
+      return ipCookie('currentGroupId', toParams.groupId);
     }
   });
 }]);
@@ -313,13 +319,23 @@ module.exports = {
   },
   url: '/buckets/new',
   template: require('./create-bucket-page.html'),
-  controller: function(CurrentUser, Error, $location, Records, $scope, Toast) {
+  controller: function(CurrentUser, Error, ipCookie, $location, Records, $scope, Toast, $window) {
     $scope.accessibleGroups = CurrentUser().groups();
     $scope.bucket = Records.buckets.build();
+    if (document.referrer) {
+      $scope.bucket.groupId = ipCookie('currentGroupId');
+    }
+    if ($scope.accessibleGroups.length === 1) {
+      $scope.bucket.groupId = CurrentUser().primaryGroup().id;
+    }
     $scope.cancel = function() {
-      var group;
-      group = CurrentUser().primaryGroup();
-      return $location.path("/groups/" + group.id);
+      var groupId;
+      if (ipCookie('currentGroupId')) {
+        groupId = ipCookie('currentGroupId');
+      } else {
+        groupId = CurrentUser().primaryGroup().id;
+      }
+      return $location.path("/groups/" + groupId);
     };
     return $scope.done = function() {
       if ($scope.bucketForm.$valid) {
@@ -338,7 +354,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./create-bucket-page.html":12}],12:[function(require,module,exports){
-module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select ng-model=\"bucket.groupId\">\n          <md-option required ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.description.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select name=\"group\" required ng-model=\"bucket.groupId\">\n          <md-option ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.group.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
 },{}],13:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -1149,14 +1165,14 @@ require('./controllers/application-controller.coffee');;
 require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
-require('./services/app-state.coffee');require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
+require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
 require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/expandable-bucket-description.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":27,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":28,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":30,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":32,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":34,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":36,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":38,"./directives/error-page/error-page.coffee":40,"./directives/expandable-bucket-description.coffee":42,"./directives/group-page-buckets/group-page-buckets.coffee":43,"./directives/group-page-funders/group-page-funders.coffee":46,"./directives/group-page-sidenav/group-page-sidenav.coffee":48,"./directives/group-page-toolbar/group-page-toolbar.coffee":50,"./directives/loading-page/loading-page.coffee":52,"./filters/date-filter.coffee":54,"./models/allocation-model.coffee":56,"./models/bucket-model.coffee":57,"./models/comment-model.coffee":58,"./models/contribution-model.coffee":59,"./models/group-model.coffee":60,"./models/membership-model.coffee":61,"./models/user-model.coffee":62,"./records-interfaces/allocation-records-interface.coffee":63,"./records-interfaces/bucket-records-interface.coffee":64,"./records-interfaces/comment-records-interface.coffee":65,"./records-interfaces/contribution-records-interface.coffee":66,"./records-interfaces/group-records-interface.coffee":67,"./records-interfaces/membership-records-interface.coffee":68,"./records-interfaces/user-records-interface.coffee":69,"./services/app-state.coffee":71,"./services/current-user.coffee":72,"./services/dialog.coffee":73,"./services/error.coffee":74,"./services/load-bar.coffee":75,"./services/toast.coffee":76,"./services/user-can.coffee":77,"angular":95,"angular-animate":79,"angular-aria":81,"angular-cookie":82,"angular-marked":83,"angular-material":87,"angular-material-icons":85,"angular-messages":89,"angular-sanitize/angular-sanitize":90,"angular-truncate-2":91,"angular-ui-router":92,"angular-upload":93,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":25,"app/configs/auth.coffee":26,"app/routes.coffee":70,"camelize":103,"jquery":104,"lodash":105,"moment":109,"ng-focus-if":110,"ng-sanitize":111,"ng-token-auth":112}],56:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":27,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":28,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":30,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":32,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":34,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":36,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":38,"./directives/error-page/error-page.coffee":40,"./directives/expandable-bucket-description.coffee":42,"./directives/group-page-buckets/group-page-buckets.coffee":43,"./directives/group-page-funders/group-page-funders.coffee":46,"./directives/group-page-sidenav/group-page-sidenav.coffee":48,"./directives/group-page-toolbar/group-page-toolbar.coffee":50,"./directives/loading-page/loading-page.coffee":52,"./filters/date-filter.coffee":54,"./models/allocation-model.coffee":56,"./models/bucket-model.coffee":57,"./models/comment-model.coffee":58,"./models/contribution-model.coffee":59,"./models/group-model.coffee":60,"./models/membership-model.coffee":61,"./models/user-model.coffee":62,"./records-interfaces/allocation-records-interface.coffee":63,"./records-interfaces/bucket-records-interface.coffee":64,"./records-interfaces/comment-records-interface.coffee":65,"./records-interfaces/contribution-records-interface.coffee":66,"./records-interfaces/group-records-interface.coffee":67,"./records-interfaces/membership-records-interface.coffee":68,"./records-interfaces/user-records-interface.coffee":69,"./services/current-user.coffee":71,"./services/dialog.coffee":72,"./services/error.coffee":73,"./services/load-bar.coffee":74,"./services/toast.coffee":75,"./services/user-can.coffee":76,"angular":94,"angular-animate":78,"angular-aria":80,"angular-cookie":81,"angular-marked":82,"angular-material":86,"angular-material-icons":84,"angular-messages":88,"angular-sanitize/angular-sanitize":89,"angular-truncate-2":90,"angular-ui-router":91,"angular-upload":92,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":25,"app/configs/auth.coffee":26,"app/routes.coffee":70,"camelize":102,"jquery":103,"lodash":104,"moment":108,"ng-focus-if":109,"ng-sanitize":110,"ng-token-auth":111}],56:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1845,26 +1861,6 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.factory('AppState', function() {
-  var AppState;
-  return new (AppState = (function() {
-    function AppState() {}
-
-    return AppState;
-
-  })());
-});
-
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],72:[function(require,module,exports){
-(function (global){
-null;
-
-
-/* @ngInject */
-
 global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
   return function() {
     return Records.users.find(global.cobudgetApp.currentUserId);
@@ -1874,7 +1870,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],73:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1938,7 +1934,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],74:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1966,7 +1962,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],75:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1994,7 +1990,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],76:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2034,7 +2030,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],77:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2084,7 +2080,7 @@ global.cobudgetApp.factory('UserCan', ["$location", "$q", "Records", "Toast", fu
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],78:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6014,11 +6010,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],79:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":78}],80:[function(require,module,exports){
+},{"./angular-animate":77}],79:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6417,11 +6413,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],81:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":80}],82:[function(require,module,exports){
+},{"./angular-aria":79}],81:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -6548,7 +6544,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],83:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -6910,7 +6906,7 @@ factory('ipCookie', ['$document',
 
 }());
 
-},{"marked":108}],84:[function(require,module,exports){
+},{"marked":107}],83:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -7842,11 +7838,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],85:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":84}],86:[function(require,module,exports){
+},{"./angular-material-icons":83}],85:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -25015,7 +25011,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],87:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -25029,7 +25025,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":86,"angular":95,"angular-animate":79,"angular-aria":81}],88:[function(require,module,exports){
+},{"./angular-material":85,"angular":94,"angular-animate":78,"angular-aria":80}],87:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -25716,11 +25712,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],89:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":88}],90:[function(require,module,exports){
+},{"./angular-messages":87}],89:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26405,7 +26401,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],91:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -26456,7 +26452,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],92:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.15
@@ -30827,7 +30823,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],93:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -31129,7 +31125,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],94:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.7
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -60034,11 +60030,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],95:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":94}],96:[function(require,module,exports){
+},{"./angular":93}],95:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -60332,7 +60328,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":101}],97:[function(require,module,exports){
+},{"./utils.coffee":100}],96:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -60490,7 +60486,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":101}],98:[function(require,module,exports){
+},{"./utils.coffee":100}],97:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -60503,7 +60499,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":96,"./base_records_interface.coffee":97,"./record_store.coffee":99,"./restful_client.coffee":100}],99:[function(require,module,exports){
+},{"./base_model.coffee":95,"./base_records_interface.coffee":96,"./record_store.coffee":98,"./restful_client.coffee":99}],98:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -60543,7 +60539,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],100:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -60668,7 +60664,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],101:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -60711,9 +60707,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],102:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 
-},{}],103:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -60774,7 +60770,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],104:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.1.4
  * http://jquery.com/
@@ -69986,7 +69982,7 @@ return jQuery;
 
 }));
 
-},{}],105:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -82342,7 +82338,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],106:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
   
@@ -82919,7 +82915,7 @@ return jQuery;
   }());
 }));
 
-},{}],107:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -87016,7 +87012,7 @@ return jQuery;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":106,"fs":102}],108:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":105,"fs":101}],107:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -88306,7 +88302,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],109:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 //! moment.js
 //! version : 2.10.6
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -91502,7 +91498,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],110:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -91532,7 +91528,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     }
 })();
 
-},{}],111:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -92023,7 +92019,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
   return ngSanitize;
 });
 
-},{}],112:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -92872,10 +92868,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],113:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 require('app')
 
-},{"app":55}]},{},[113])
+},{"app":55}]},{},[112])
 
 
 //# sourceMappingURL=../maps/index.js.map
