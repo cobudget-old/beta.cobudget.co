@@ -40,7 +40,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, ipCookie, $location, $q, Records, $rootScope, Toast, $window) {
+global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, $location, $q, Records, $rootScope, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -51,7 +51,6 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
     });
   });
   $rootScope.$on('auth:login-success', function(ev, user) {
-    ipCookie.remove('currentGroupId');
     global.cobudgetApp.currentUserId = user.id;
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
@@ -68,7 +67,7 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
       }
     });
   });
-  $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
+  return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
     console.log('$stateChangeError signal fired!');
     console.log('e: ', e);
     console.log('toState: ', toState);
@@ -84,11 +83,6 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "ipCookie", "$location", "$q", "
       return $location.path('/');
     } else {
       return $window.location.reload();
-    }
-  });
-  return $rootScope.$on('$stateChangeSuccess', function(e, toState, toParams, fromState, fromParams) {
-    if (toState.url === '/groups/:groupId') {
-      return ipCookie('currentGroupId', toParams.groupId);
     }
   });
 }]);
@@ -317,27 +311,28 @@ module.exports = {
       return global.cobudgetApp.membershipsLoaded;
     }
   },
-  url: '/buckets/new',
+  url: '/buckets/new?group_id',
   template: require('./create-bucket-page.html'),
-  controller: function(CurrentUser, Error, ipCookie, $location, Records, $scope, Toast, $window) {
+  controller: function(config, CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, $window) {
     $scope.accessibleGroups = CurrentUser().groups();
-    $scope.bucket = Records.buckets.build();
-    if (document.referrer) {
-      $scope.bucket.groupId = ipCookie('currentGroupId');
-    }
+    $scope.bucket = Records.buckets.build({
+      groupId: $stateParams.group_id
+    });
     if ($scope.accessibleGroups.length === 1) {
       $scope.bucket.groupId = CurrentUser().primaryGroup().id;
     }
     $scope.cancel = function() {
       var groupId;
-      if (ipCookie('currentGroupId')) {
-        groupId = ipCookie('currentGroupId');
+      $location.search('group_id', null);
+      if ($scope.bucket.groupId) {
+        groupId = $scope.bucket.groupId;
       } else {
         groupId = CurrentUser().primaryGroup().id;
       }
       return $location.path("/groups/" + groupId);
     };
     return $scope.done = function() {
+      $location.search('group_id', null);
       if ($scope.bucketForm.$valid) {
         return $scope.bucket.save().then(function(data) {
           var bucketId;
@@ -1038,7 +1033,7 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
         return $location.path("/admin");
       };
       $scope.createBucket = function() {
-        return $location.path("/buckets/new");
+        return $location.path("/buckets/new").search('group_id', $scope.group.id);
       };
       $scope.selectTab = function(tabNum) {
         return $scope.tabSelected = parseInt(tabNum);
