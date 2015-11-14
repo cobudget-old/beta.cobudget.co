@@ -311,28 +311,17 @@ module.exports = {
       return global.cobudgetApp.membershipsLoaded;
     }
   },
-  url: '/buckets/new?group_id',
+  url: '/buckets/new',
   template: require('./create-bucket-page.html'),
-  controller: function(config, CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, $window) {
+  controller: function(CurrentUser, Error, $location, Records, $scope, Toast) {
     $scope.accessibleGroups = CurrentUser().groups();
-    $scope.bucket = Records.buckets.build({
-      groupId: $stateParams.group_id
-    });
-    if ($scope.accessibleGroups.length === 1) {
-      $scope.bucket.groupId = CurrentUser().primaryGroup().id;
-    }
+    $scope.bucket = Records.buckets.build();
     $scope.cancel = function() {
-      var groupId;
-      $location.search('group_id', null);
-      if ($scope.bucket.groupId) {
-        groupId = $scope.bucket.groupId;
-      } else {
-        groupId = CurrentUser().primaryGroup().id;
-      }
-      return $location.path("/groups/" + groupId);
+      var group;
+      group = CurrentUser().primaryGroup();
+      return $location.path("/groups/" + group.id);
     };
     return $scope.done = function() {
-      $location.search('group_id', null);
       if ($scope.bucketForm.$valid) {
         return $scope.bucket.save().then(function(data) {
           var bucketId;
@@ -349,7 +338,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./create-bucket-page.html":12}],12:[function(require,module,exports){
-module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select name=\"group\" required ng-model=\"bucket.groupId\">\n          <md-option ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.group.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select ng-model=\"bucket.groupId\">\n          <md-option required ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.description.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
 },{}],13:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -595,7 +584,7 @@ module.exports = {
 },{"./welcome-page.html":24}],24:[function(require,module,exports){
 module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate class=\"welcome-page__login-form\" ng-submit=\"login(formData); formData = {}\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"welcome-page__buttons-container\">\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>";
 },{}],25:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
+module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
 },{}],26:[function(require,module,exports){
 (function (global){
 
@@ -1033,7 +1022,7 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
         return $location.path("/admin");
       };
       $scope.createBucket = function() {
-        return $location.path("/buckets/new").search('group_id', $scope.group.id);
+        return $location.path("/buckets/new");
       };
       $scope.selectTab = function(tabNum) {
         return $scope.tabSelected = parseInt(tabNum);
@@ -1143,7 +1132,7 @@ require("ng-sanitize");
 require("angular-truncate-2");
 require("angular-marked");
 
-if ("staging" != "production") {
+if ("production" != "production") {
   global.localStorage.debug = "*";
 }
 
