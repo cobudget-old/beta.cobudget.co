@@ -324,18 +324,29 @@ module.exports = {
       return global.cobudgetApp.membershipsLoaded;
     }
   },
-  url: '/buckets/new',
+  url: '/buckets/new?group_id',
   template: require('./create-bucket-page.html'),
-  controller: function(CurrentUser, Error, $location, Records, $scope, Toast) {
+  controller: function(config, CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, $window) {
     $scope.accessibleGroups = CurrentUser().groups();
-    $scope.bucket = Records.buckets.build();
+    $scope.bucket = Records.buckets.build({
+      groupId: $stateParams.group_id
+    });
+    if ($scope.accessibleGroups.length === 1) {
+      $scope.bucket.groupId = CurrentUser().primaryGroup().id;
+    }
     $scope.cancel = function() {
-      var group;
-      group = CurrentUser().primaryGroup();
-      return $location.path("/groups/" + group.id);
+      var groupId;
+      $location.search('group_id', null);
+      if ($scope.bucket.groupId) {
+        groupId = $scope.bucket.groupId;
+      } else {
+        groupId = CurrentUser().primaryGroup().id;
+      }
+      return $location.path("/groups/" + groupId);
     };
     return $scope.done = function() {
       $scope.bucketFormSubmitted = true;
+      $location.search('group_id', null);
       if ($scope.bucketForm.$valid) {
         return $scope.bucket.save().then(function(data) {
           var bucketId;
@@ -1042,7 +1053,7 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
         return $location.path("/admin");
       };
       $scope.createBucket = function() {
-        return $location.path("/buckets/new");
+        return $location.path("/buckets/new").search('group_id', $scope.group.id);
       };
       $scope.selectTab = function(tabNum) {
         return $scope.tabSelected = parseInt(tabNum);
