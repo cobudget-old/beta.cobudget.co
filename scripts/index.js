@@ -40,7 +40,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, $location, $q, Records, $rootScope, Toast, $window) {
+global.cobudgetApp.run(["$auth", "CurrentUser", "Dialog", "LoadBar", "$location", "$q", "Records", "$rootScope", "Toast", "$window", function($auth, CurrentUser, Dialog, LoadBar, $location, $q, Records, $rootScope, Toast, $window) {
   var membershipsLoadedDeferred;
   membershipsLoadedDeferred = $q.defer();
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
@@ -54,16 +54,29 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "$location", "$q", "Records", "$
     global.cobudgetApp.currentUserId = user.id;
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
-      if (CurrentUser().utcOffset !== moment().utcOffset()) {
-        Records.users.updateProfile({
-          utc_offset: moment().utcOffset()
-        }).then(function(data) {});
-      }
       membershipsLoadedDeferred.resolve();
-      if (data.groups) {
+      if (!data.groups) {
+        $auth.signOut().then(function() {
+          global.cobudgetApp.currentUserId = null;
+          $location.path('/');
+          Dialog.alert({
+            title: 'error!',
+            content: 'invalid credentials!'
+          });
+          return LoadBar.stop();
+        });
+      }
+      if (data.groups && _.every(data.groups, {
+        'initialized': true
+      })) {
         groupId = data.groups[0].id;
         $location.path("/groups/" + groupId);
-        return Toast.show('Welcome to Cobudget!');
+        Toast.show('Welcome to Cobudget!');
+        if (CurrentUser().utcOffset !== moment().utcOffset()) {
+          return Records.users.updateProfile({
+            utc_offset: moment().utcOffset()
+          });
+        }
       }
     });
   });
@@ -151,9 +164,11 @@ module.exports = {
         template: require('./invite-group-dialog-content.tmpl.html')
       });
     };
-    $scope.newGroupAdmin = Records.users.build();
-    $scope.inviteGroup = function() {
-      return $scope.newGroupAdmin.save().then(function() {
+    $scope.inviteGroup = function(email) {
+      $scope.formData = {};
+      return Records.users.inviteToCreateGroup({
+        email: email
+      }).then(function() {
         return Dialog.alert({
           title: 'Success!',
           content: "Your invite was sent."
@@ -163,8 +178,6 @@ module.exports = {
           title: 'Error!',
           content: 'Email invalid or already taken.'
         });
-      })["finally"](function() {
-        return $scope.newGroupAdmin = Records.users.build();
       });
     };
     $scope.closeDialog = function() {
@@ -199,9 +212,9 @@ module.exports = {
 },{"./admin-page.html":4,"./create-group-dialog-content.tmpl.html":5,"./invite-group-dialog-content.tmpl.html":6}],4:[function(require,module,exports){
 module.exports = "<div class=\"admin-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 admin-page__toolbar\">\n    <div class=\"md-toolbar-tools\" layout=\"column\" layout-align=\"center center\">\n      hi admin\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"admin-page__content\">\n    <md-button class=\"admin-page__form-submit-btn\" ng-click=\"openCreateGroupDialog()\">create group</md-button>\n    <md-button class=\"admin-page__form-submit-btn\" ng-click=\"openInviteGroupDialog()\">invite group</md-button>\n\n    <md-divider></md-divider>\n\n    <md-subheader class=\"admin-page__group-list-subheader\">Edit Existing Groups</md-subheader>\n\n    <md-list class=\"admin-page__group-list\">\n      <div class=\"admin-page__group-list-item-container\" ng-repeat=\"group in accessibleGroups\">      \n        <md-list-item class=\"admin-page__group-list-item\">\n          <div>\n            <div class=\"admin-page__group-info\" layout=\"row\" layout-align=\"start center\">\n              <div class=\"admin-page__group-name\">\n                {{ group.name }} \n                <md-button ng-click=\"viewGroup(group.id)\">view</md-button>\n              </div>\n            </div>\n\n            <div class=\"admin-page__group-options\">\n              <span>\n                <md-input-container class='admin-page__currency-code-input'>\n                  <label>Currency</label>\n                  <md-select ng-model=\"group.currencyCode\" ng-change=\"updateGroupCurrency(group.id, group.currencyCode)\">\n                    <md-option ng-repeat=\"currency in currencies\" value=\"{{currency.code}}\">{{ currency.code + \" - \" + currency.symbol }}</md-option>\n                  </md-select>\n                </md-input-container>\n              </span>\n\n              <span >\n                <div upload-button \n                  class=\"admin-page__upload-btn-container\" \n                  url=\"{{ uploadPathForGroup(group.id) }}\" \n                  param=\"csv\" \n                  accept=\"text/csv\"\n                  on-success=\"onCsvUploadSuccess(group.id)\"\n                  on-complete=\"onCsvUploadCompletion()\"\n                >update members + allocations via csv upload<br><br>\n                </div>\n              </span>\n            </div>\n          </div>\n        </md-list-item>\n\n        <md-divider></md-divider>\n      </div>\n    </md-list>\n  </md-content>\n</div>";
 },{}],5:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"create group\">\n  <md-dialog-content class=\"sticky-container\">\n    <form name='newGroupForm' class=\"admin-page__form\" ng-submit=\"newGroupForm.$setUntouched()\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"newGroup.name\">\n        <div ng-messages=\"newGroupForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <div class=\"md-actions\" layout=\"row\">\n        <md-button ng-click=\"closeDialog()\">cancel</md-button>\n        <md-button ng-click=\"createGroup()\">send</md-button>\n      </div>\n    </form>\n  </md-dialog-content>\n</md-dialog>\n";
+module.exports = "<md-dialog aria-label=\"create group\">\n  <md-dialog-content class=\"sticky-container\">\n    <form novalidate name='newGroupForm' class=\"admin-page__form\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"newGroup.name\">\n        <div ng-messages=\"newGroupForm.name.$error\" ng-if=\"newGroupForm.name.$dirty || newGroupForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <div class=\"md-actions\" layout=\"row\">\n        <md-button ng-click=\"closeDialog()\">cancel</md-button>\n        <md-button ng-click=\"newGroupForm.$valid && createGroup()\">send</md-button>\n      </div>\n    </form>\n  </md-dialog-content>\n</md-dialog>\n";
 },{}],6:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"invite group\">\n  <md-dialog-content class=\"sticky-container\">\n    <form name='inviteGroupForm' class=\"admin-page__form\" ng-submit=\"inviteGroupForm.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"text\" ng-model=\"newGroupAdmin.email\">\n        <div ng-messages=\"inviteGroupForm.email.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <div class=\"md-actions\" layout=\"row\">\n        <md-button ng-click=\"closeDialog()\">cancel</md-button>\n        <md-button ng-click=\"inviteGroup()\">send</md-button>\n      </div>\n    </form>\n  </md-dialog-content>\n</md-dialog>\n";
+module.exports = "<md-dialog aria-label=\"invite group\">\n  <md-dialog-content class=\"sticky-container\">\n    <form novalidate name='inviteGroupForm' class=\"admin-page__form\" ng-submit=\"inviteGroupForm.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"inviteGroupForm.email.$error\" ng-if=\"inviteGroupForm.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n      <div class=\"md-actions\" layout=\"row\">\n        <md-button ng-click=\"closeDialog()\">cancel</md-button>\n        <md-button ng-click=\"inviteGroupForm.$valid && inviteGroup(formData.email)\">send</md-button>\n      </div>\n    </form>\n  </md-dialog-content>\n</md-dialog>\n";
 },{}],7:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -259,16 +272,16 @@ module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-pa
 },{}],9:[function(require,module,exports){
 (function (global){
 module.exports = {
-  url: '/confirm_account?confirmation_token&create_group',
+  url: '/confirm_account?confirmation_token&:group_id',
   template: require('./confirm-account-page.html'),
   controller: function($scope, $auth, LoadBar, $location, $stateParams, Records, Toast) {
     $scope.confirmationToken = $stateParams.confirmation_token;
-    $scope.createGroup = $stateParams.create_group;
+    $scope.groupId = $stateParams.group_id;
     return $scope.confirmAccount = function(formData) {
       var params;
       LoadBar.start();
       $location.search('confirmation_token', null);
-      $location.search('create_group', null);
+      $location.search('group_id', null);
       params = {
         name: formData.name,
         password: formData.password,
@@ -283,8 +296,8 @@ module.exports = {
           password: formData.password
         };
         return $auth.submitLogin(loginParams).then(function(ev, user) {
-          if ($scope.createGroup) {
-            return $location.path('/setup_group');
+          if ($scope.groupId) {
+            return $location.path("/groups/" + $scope.groupId + "/setup");
           }
         });
       })["catch"](function() {
@@ -299,7 +312,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./confirm-account-page.html":10}],10:[function(require,module,exports){
-module.exports = "<div class=\"confirm-account-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary confirm-account-page__toolbar\">\n    <h1 class=\"md-toolbar-tools confirm-account-page__heading\" layout-align=\"center\">Confirm your Account</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <form name=\"newUserForm\" ng-submit=\"confirmAccount(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newUserForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>new password</label>\n        <input minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"newUserForm.password.$error\">\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"minlength\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"confirm-account-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"confirm-account-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary confirm-account-page__toolbar\">\n    <h1 class=\"md-toolbar-tools confirm-account-page__heading\" layout-align=\"center\">Confirm your Account</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <form novalidate name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newUserForm.name.$error\" ng-if=\"newUserForm.name.$dirty || newUserForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>new password</label>\n        <input minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"newUserForm.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"newUserForm.password.$dirty || newUserForm.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"newUserForm.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"confirm-account-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
 },{}],11:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -332,6 +345,7 @@ module.exports = {
       return $location.path("/groups/" + groupId);
     };
     return $scope.done = function() {
+      $scope.bucketFormSubmitted = true;
       $location.search('group_id', null);
       if ($scope.bucketForm.$valid) {
         return $scope.bucket.save().then(function(data) {
@@ -349,7 +363,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./create-bucket-page.html":12}],12:[function(require,module,exports){
-module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select name=\"group\" required ng-model=\"bucket.groupId\">\n          <md-option ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.group.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n    \n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">People in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\" ng-if=\"bucketForm.name.$dirty || bucketFormSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\" ng-if=\"bucketForm.description.$dirty || bucketFormSubmitted\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select required name=\"groupId\" ng-model=\"bucket.groupId\">\n          <md-option required ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.groupId.$error\" ng-if=\"bucketForm.groupId.$dirty || bucketFormSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
 },{}],13:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -395,7 +409,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./edit-bucket-page.html":14}],14:[function(require,module,exports){
-module.exports = "<div class=\"edit-bucket-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 edit-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"edit-bucket-page__cancel-icon\"\n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"edit-bucket-page__header-text\">Edit {{ bucket.status == 'draft' ? 'Idea' : 'Bucket' }}</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button edit-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done(bucketForm)\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"edit-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"edit-bucket-page__content\">\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-title\">You're about to edit a {{ bucket.status == 'draft' ? 'bucket idea' : 'bucket' }}</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-text\">\n        You can continue to edit this {{ bucket.status == 'draft' ? 'idea' : 'bucket' }}, propose it to your peers, and get feedback.\n        <span ng-if=\"bucket.status == 'draft'\">When you're ready, you can request funding.</span>\n      </md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"edit-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"edit-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"edit-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"number\" ng-model=\"bucket.target\">\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"edit-bucket-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 edit-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"edit-bucket-page__cancel-icon\"\n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"edit-bucket-page__header-text\">Edit {{ bucket.status == 'draft' ? 'Idea' : 'Bucket' }}</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button edit-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done(bucketForm)\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"edit-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"edit-bucket-page__content\">\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-title\">You're about to edit a {{ bucket.status == 'draft' ? 'bucket idea' : 'bucket' }}</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-text\">\n        You can continue to edit this {{ bucket.status == 'draft' ? 'idea' : 'bucket' }}, propose it to your peers, and get feedback.\n        <span ng-if=\"bucket.status == 'draft'\">When you're ready, you can request funding.</span>\n      </md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"edit-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"edit-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"edit-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input ng-required=\"bucket.status == 'live'\" name=\"target\" min=\"0\" type=\"number\" ng-model=\"bucket.target\">\n        <div ng-messages=\"bucketForm.target.$error\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"min\">Target must be positive.</div>\n        </div>\n      </md-input-container>\n    </form>\n  </md-content>\n</div>";
 },{}],15:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
@@ -422,7 +436,7 @@ module.exports = {
 
 
 },{"./forgot-password-page.html":16}],16:[function(require,module,exports){
-module.exports = "<div class=\"forgot-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary forgot-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools forgot-password-page__heading\" layout-align=\"center\">Having trouble logging in?</h1>\n  </md-toolbar>\n\n\n  <md-content layout-padding class=\"forgot-password-page__content\">\n    <div class=\"forgot-password-page__subheading\">\n      Enter your email address here and we'll send you an email to reset your account.\n    </div>\n\n    <form name=\"form\" ng-submit=\"requestPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-model=\"formData.email\">\n        <div ng-messages=\"form.email.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"forgot-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"forgot-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary forgot-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools forgot-password-page__heading\" layout-align=\"center\">Having trouble logging in?</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"forgot-password-page__content\">\n    <div class=\"forgot-password-page__subheading\">\n      Enter your email address here and we'll send you an email to reset your account.\n    </div>\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && requestPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"form.email.$error\" ng-if=\"form.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"forgot-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
 },{}],17:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -480,24 +494,30 @@ module.exports = {
       return global.cobudgetApp.membershipsLoaded;
     }
   },
-  url: '/setup_group',
+  url: '/groups/:groupId/setup',
   template: require('./group-setup-page.html'),
-  controller: function(Error, LoadBar, $location, Records, $scope, UserCan) {
+  controller: function(Error, LoadBar, $location, Records, $scope, $stateParams, UserCan) {
+    var groupId;
     LoadBar.start();
-    if (UserCan.viewGroupSetupPage()) {
-      $scope.authorized = true;
+    groupId = parseInt($stateParams.groupId);
+    Records.groups.findOrFetchById(groupId).then(function(group) {
+      $scope.group = group;
+      if (UserCan.viewGroup(group)) {
+        $scope.authorized = true;
+        return LoadBar.stop();
+      } else {
+        $scope.authorized = false;
+        LoadBar.stop();
+        return Error.set("you can't view this page");
+      }
+    })["catch"](function() {
       LoadBar.stop();
-    } else {
-      $scope.authorized = false;
-      LoadBar.stop();
-      Error.set("you can't view this page");
-    }
-    $scope.newGroup = Records.groups.build();
-    return $scope.saveGroup = function() {
-      return $scope.newGroup.save().then(function(data) {
-        var group;
-        group = data.groups[0];
-        return $location.path('/');
+      return Error.set('group not found');
+    });
+    return $scope.setupGroup = function(formData) {
+      $scope.group.name = formData.name;
+      return $scope.group.save().then(function() {
+        return $location.path("/groups/" + $scope.group.id);
       });
     };
   }
@@ -507,7 +527,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-setup-page.html":20}],20:[function(require,module,exports){
-module.exports = "<div class=\"group-setup-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-primary group-setup-page__toolbar\">\n    <h1 class=\"md-toolbar-tools group-setup-page__heading\" layout-align=\"center\">Group setup</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <form name=\"newGroupForm\" ng-submit=\"saveGroup()\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"newGroup.name\">\n        <div ng-messages=\"newGroupForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"group-setup-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"group-setup-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-primary group-setup-page__toolbar\">\n    <h1 class=\"md-toolbar-tools group-setup-page__heading\" layout-align=\"center\">Group setup</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <form novalidate name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && setupGroup(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newGroupForm.name.$error\" ng-if=\"newGroupForm.name.$dirty || newGroupForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"group-setup-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
 },{}],21:[function(require,module,exports){
 module.exports = {
   url: '/reset_password?reset_password_token',
@@ -555,7 +575,7 @@ module.exports = {
 
 
 },{"./reset-password-page.html":22}],22:[function(require,module,exports){
-module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form name=\"form\" ng-submit=\"resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\">\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"minlength\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
+module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"form.password.$dirty || form.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"form.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\" ng-if=\"form.confirmPassword.$dirty || form.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
 },{}],23:[function(require,module,exports){
 module.exports = {
   url: '/',
@@ -595,7 +615,7 @@ module.exports = {
 },{"./welcome-page.html":24}],24:[function(require,module,exports){
 module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate class=\"welcome-page__login-form\" ng-submit=\"login(formData); formData = {}\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input name=\"email\" type=\"email\" ng-model=\"formData.email\">\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input name=\"password\" type=\"password\" ng-model=\"formData.password\">\n      </md-input-container>\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"welcome-page__buttons-container\">\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>";
 },{}],25:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],26:[function(require,module,exports){
 (function (global){
 
@@ -653,7 +673,7 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page-activity-card.html":29}],29:[function(require,module,exports){
-module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.author().name || '[deleted user]' }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" placeholder=\"Add a comment, question, or offer of support\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\">submit</md-button>\n        </md-input-container>\n      </div>\n\n    </form>\n  </md-card>\n</div>\n  ";
+module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.authorName() }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" placeholder=\"Add a comment, question, or offer of support\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\">submit</md-button>\n        </md-input-container>\n      </div>\n\n    </form>\n  </md-card>\n</div>\n  ";
 },{}],30:[function(require,module,exports){
 (function (global){
 null;
@@ -679,7 +699,7 @@ global.cobudgetApp.directive('bucketPageHeaderCard', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page-header-card.html":31}],31:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.author().name || '[deleted user]'}} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" ng-if=\"bucket.target > 0\">\n      <span class=\"bucket-page__description-header\">Funding Target</span>\n      <span flex=\"10\"></span>\n      <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n      <!-- <div class=\"bucket-page__description-text-overlay\"></div> -->\n    </div>\n\n   <!--  <md-button \n      md-no-ink \n      ng-if=\"bucket.description.length > 200\"\n      class=\"md-primary bucket-page__more-button\" \n      ng-click=\"toggleMore()\"\n    >{{ moreButtonText() }}</md-button>           -->\n\n  </md-card-content>\n\n</md-card>\n";
+module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.authorName() }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" ng-if=\"bucket.target > 0\">\n      <span class=\"bucket-page__description-header\">Funding Target</span>\n      <span flex=\"10\"></span>\n      <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n      <!-- <div class=\"bucket-page__description-text-overlay\"></div> -->\n    </div>\n\n   <!--  <md-button \n      md-no-ink \n      ng-if=\"bucket.description.length > 200\"\n      class=\"md-primary bucket-page__more-button\" \n      ng-click=\"toggleMore()\"\n    >{{ moreButtonText() }}</md-button>           -->\n\n  </md-card-content>\n\n</md-card>\n";
 },{}],32:[function(require,module,exports){
 (function (global){
 null;
@@ -915,10 +935,8 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-page-buckets.html":44}],44:[function(require,module,exports){
-module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n          \n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}               \n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.author().name }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n        \n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon \n            icon=\"messenger\" \n            layout=\"column\" \n            layout-align=\"center center\" \n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n\n\n      </div>\n    </md-list-item>\n  </md-list>   \n\n  <md-list class=\"group-page__funded-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.author().name || '[deleted user]' }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
+module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n          \n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}               \n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.authorName() }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n        \n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon \n            icon=\"messenger\" \n            layout=\"column\" \n            layout-align=\"center center\" \n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n\n\n      </div>\n    </md-list-item>\n  </md-list>   \n\n  <md-list class=\"group-page__funded-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.authorName() }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
 },{}],45:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"delete membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"group-page__delete-membership-dialog-header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page__delete-membership-dialog-warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"group-page__delete-membership-dialog-header-text\">\n        Delete {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"group-page__delete-membership-dialog-list-container\">\n      <div class=\"group-page__delete-membership-dialog-list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"group-page__delete-membership-dialog-list\">\n        <li class=\"group-page__delete-membership-dialog-list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"center start\">\n          <ng-md-icon icon=\"check_box\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"group-page__delete-membership-dialog-checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"group-page__delete-membership-dialog-warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised group-page__delete-membership-dialog-delete-btn\" ng-click=\"proceed()\">delete</md-button>\n    <md-button class=\"group-page__delete-membership-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
-},{}],46:[function(require,module,exports){
 (function (global){
 null;
 
@@ -930,27 +948,29 @@ global.cobudgetApp.directive('groupPageFunders', function() {
     restrict: 'E',
     template: require('./group-page-funders.html'),
     replace: true,
-    controller: ["Dialog", "$scope", "$window", function(Dialog, $scope, $window) {
+    controller: ["Dialog", "LoadBar", "$scope", "$window", function(Dialog, LoadBar, $scope, $window) {
       $scope.toggleMemberAdmin = function(membership) {
         membership.isAdmin = !membership.isAdmin;
         return membership.save();
       };
-      $scope.deleteMembership = function(membership) {
+      $scope.removeMembership = function(membership) {
         return Dialog.custom({
-          template: require('./delete-membership-dialog.tmpl.html'),
+          template: require('./remove-membership-dialog.tmpl.html'),
           scope: $scope,
           controller: function($scope, $mdDialog, Records) {
             $scope.member = membership.member();
-            $scope.warnings = ["All of their funds will be deleted from currently funding buckets", "All of their funds will be removed from the group", "All of their ideas will be deleted from the group", "All of their funding buckets will be deleted from the group and money will be refunded"];
+            $scope.warnings = ["All of their funds will be removed from currently funding buckets", "All of their funds will be removed from the group", "All of their ideas will be removed from the group", "All of their funding buckets will be removed from the group and money will be refunded"];
             $scope.cancel = function() {
               return $mdDialog.cancel();
             };
             return $scope.proceed = function() {
-              return membership.destroy().then(function() {
-                $mdDialog.hide();
+              $mdDialog.hide();
+              LoadBar.start();
+              return membership.archive().then(function() {
+                LoadBar.stop();
                 return Dialog.alert({
                   title: 'Success!',
-                  content: $scope.member.name + " was deleted from " + $scope.group.name
+                  content: $scope.member.name + " was removed from " + $scope.group.name
                 }).then(function() {
                   return $window.location.reload();
                 });
@@ -966,8 +986,10 @@ global.cobudgetApp.directive('groupPageFunders', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./delete-membership-dialog.tmpl.html":45,"./group-page-funders.html":47}],47:[function(require,module,exports){
-module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" flex class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-name-container\" layout=\"row\" layout-align=\"start center\" flex>\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" flex=\"20\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance() | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon \n              icon=\"more_vert\" \n              layout=\"column\" \n              layout-align=\"center center\" \n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n        \n          <md-menu-content width=\"2\">\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\">\n                <span md-menu-align-target>{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} administrator</span>\n              </md-button>\n            </md-menu-item>\n\n<!--             <md-menu-item>\n              <md-button ng-click=\"deleteMembership(funderMembership)\">\n                <span md-menu-align-target>Delete user</span>\n              </md-button>\n            </md-menu-item>\n -->            \n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>";
+},{"./group-page-funders.html":46,"./remove-membership-dialog.tmpl.html":47}],46:[function(require,module,exports){
+module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" flex class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-name-container\" layout=\"row\" layout-align=\"start center\" flex>\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" flex=\"20\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance() | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon \n              icon=\"more_vert\" \n              layout=\"column\" \n              layout-align=\"center center\" \n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n        \n          <md-menu-content width=\"2\">\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\">\n                <span md-menu-align-target>{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} administrator</span>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n              <md-button ng-click=\"removeMembership(funderMembership)\">\n                <span md-menu-align-target>Remove user</span>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>";
+},{}],47:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"remove membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"group-page__remove-membership-dialog-header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page__remove-membership-dialog-warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"group-page__remove-membership-dialog-header-text\">\n        Remove {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"group-page__remove-membership-dialog-list-container\">\n      <div class=\"group-page__remove-membership-dialog-list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"group-page__remove-membership-dialog-list\">\n        <li class=\"group-page__remove-membership-dialog-list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"start start\">\n          <ng-md-icon icon=\"check\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"group-page__remove-membership-dialog-checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"group-page__remove-membership-dialog-warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised group-page__remove-membership-dialog-remove-btn\" ng-click=\"proceed()\">remove</md-button>\n    <md-button class=\"group-page__remove-membership-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
 },{}],48:[function(require,module,exports){
 (function (global){
 null;
@@ -1143,7 +1165,7 @@ require("ng-sanitize");
 require("angular-truncate-2");
 require("angular-marked");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -1167,7 +1189,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":27,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":28,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":30,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":32,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":34,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":36,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":38,"./directives/error-page/error-page.coffee":40,"./directives/expandable-bucket-description.coffee":42,"./directives/group-page-buckets/group-page-buckets.coffee":43,"./directives/group-page-funders/group-page-funders.coffee":46,"./directives/group-page-sidenav/group-page-sidenav.coffee":48,"./directives/group-page-toolbar/group-page-toolbar.coffee":50,"./directives/loading-page/loading-page.coffee":52,"./filters/date-filter.coffee":54,"./models/allocation-model.coffee":56,"./models/bucket-model.coffee":57,"./models/comment-model.coffee":58,"./models/contribution-model.coffee":59,"./models/group-model.coffee":60,"./models/membership-model.coffee":61,"./models/user-model.coffee":62,"./records-interfaces/allocation-records-interface.coffee":63,"./records-interfaces/bucket-records-interface.coffee":64,"./records-interfaces/comment-records-interface.coffee":65,"./records-interfaces/contribution-records-interface.coffee":66,"./records-interfaces/group-records-interface.coffee":67,"./records-interfaces/membership-records-interface.coffee":68,"./records-interfaces/user-records-interface.coffee":69,"./services/current-user.coffee":71,"./services/dialog.coffee":72,"./services/error.coffee":73,"./services/load-bar.coffee":74,"./services/toast.coffee":75,"./services/user-can.coffee":76,"angular":94,"angular-animate":78,"angular-aria":80,"angular-cookie":81,"angular-marked":82,"angular-material":86,"angular-material-icons":84,"angular-messages":88,"angular-sanitize/angular-sanitize":89,"angular-truncate-2":90,"angular-ui-router":91,"angular-upload":92,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":25,"app/configs/auth.coffee":26,"app/routes.coffee":70,"camelize":102,"jquery":103,"lodash":104,"moment":108,"ng-focus-if":109,"ng-sanitize":110,"ng-token-auth":111}],56:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":27,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":28,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":30,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":32,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":34,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":36,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":38,"./directives/error-page/error-page.coffee":40,"./directives/expandable-bucket-description.coffee":42,"./directives/group-page-buckets/group-page-buckets.coffee":43,"./directives/group-page-funders/group-page-funders.coffee":45,"./directives/group-page-sidenav/group-page-sidenav.coffee":48,"./directives/group-page-toolbar/group-page-toolbar.coffee":50,"./directives/loading-page/loading-page.coffee":52,"./filters/date-filter.coffee":54,"./models/allocation-model.coffee":56,"./models/bucket-model.coffee":57,"./models/comment-model.coffee":58,"./models/contribution-model.coffee":59,"./models/group-model.coffee":60,"./models/membership-model.coffee":61,"./models/user-model.coffee":62,"./records-interfaces/allocation-records-interface.coffee":63,"./records-interfaces/bucket-records-interface.coffee":64,"./records-interfaces/comment-records-interface.coffee":65,"./records-interfaces/contribution-records-interface.coffee":66,"./records-interfaces/group-records-interface.coffee":67,"./records-interfaces/membership-records-interface.coffee":68,"./records-interfaces/user-records-interface.coffee":69,"./services/current-user.coffee":71,"./services/dialog.coffee":72,"./services/error.coffee":73,"./services/load-bar.coffee":74,"./services/toast.coffee":75,"./services/user-can.coffee":76,"angular":94,"angular-animate":78,"angular-aria":80,"angular-cookie":81,"angular-marked":82,"angular-material":86,"angular-material-icons":84,"angular-messages":88,"angular-sanitize/angular-sanitize":89,"angular-truncate-2":90,"angular-ui-router":91,"angular-upload":92,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":25,"app/configs/auth.coffee":26,"app/routes.coffee":70,"camelize":102,"jquery":103,"lodash":104,"moment":108,"ng-focus-if":109,"ng-sanitize":110,"ng-token-auth":111}],56:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1287,6 +1309,14 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
       return this.amountContributedByUser(user) / this.target * 100;
     };
 
+    BucketModel.prototype.authorName = function() {
+      if (this.author().isMemberOf(this.group())) {
+        return this.author().name;
+      } else {
+        return "[removed user]";
+      }
+    };
+
     return BucketModel;
 
   })(BaseModel);
@@ -1328,6 +1358,14 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
         by: 'userId'
       });
       return this.belongsTo('bucket');
+    };
+
+    CommentModel.prototype.authorName = function() {
+      if (this.author().isMemberOf(this.bucket().group())) {
+        return this.author().name;
+      } else {
+        return "[removed user]";
+      }
     };
 
     return CommentModel;
@@ -1495,6 +1533,10 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
       return parseFloat(this.totalAllocations) - parseFloat(this.totalContributions);
     };
 
+    MembershipModel.prototype.archive = function() {
+      return this.remote.postMember(this.id, 'archive');
+    };
+
     return MembershipModel;
 
   })(BaseModel);
@@ -1544,6 +1586,12 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
     UserModel.prototype.primaryGroup = function() {
       return this.groups()[0];
+    };
+
+    UserModel.prototype.isMemberOf = function(group) {
+      return _.find(this.memberships(), function(membership) {
+        return membership.groupId === group.id;
+      });
     };
 
     return UserModel;
@@ -1829,6 +1877,10 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
       });
     };
 
+    UserRecordsInterface.prototype.inviteToCreateGroup = function(params) {
+      return this.remote.post('invite_to_create_group', params);
+    };
+
     return UserRecordsInterface;
 
   })(BaseRecordsInterface);
@@ -2057,14 +2109,6 @@ global.cobudgetApp.factory('UserCan', ["$location", "$q", "Records", "Toast", fu
         isAdmin: true
       });
       return validMemberships.length > 0;
-    };
-
-    UserCan.prototype.viewGroupSetupPage = function() {
-      var validMemberships;
-      validMemberships = Records.memberships.find({
-        memberId: global.cobudgetApp.currentUserId
-      });
-      return validMemberships.length === 0;
     };
 
     return UserCan;
