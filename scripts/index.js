@@ -380,17 +380,17 @@ module.exports = {
   },
   url: '/buckets/:bucketId/edit',
   template: require('./edit-bucket-page.html'),
-  controller: function($scope, Records, $stateParams, $location, Toast, UserCan, Error) {
+  controller: function(Error, $location, Records, $scope, $stateParams, Toast, UserCan) {
     var bucketId;
     bucketId = parseInt($stateParams.bucketId);
     Records.buckets.findOrFetchById(bucketId).then(function(bucket) {
-      if (UserCan.viewBucket(bucket)) {
+      if (UserCan.editBucket(bucket)) {
         $scope.authorized = true;
         Error.clear();
         return $scope.bucket = bucket;
       } else {
         $scope.authorized = false;
-        return Error.set('cannot view bucket');
+        return Error.set('cannot edit bucket');
       }
     })["catch"](function() {
       return Error.set('bucket not found');
@@ -1735,6 +1735,12 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
       });
     };
 
+    UserModel.prototype.isAdminOf = function(group) {
+      return _.find(this.memberships(), function(membership) {
+        return membership.groupId === group.id && membership.isAdmin;
+      });
+    };
+
     return UserModel;
 
   })(BaseModel);
@@ -2230,7 +2236,7 @@ null;
 
 /* @ngInject */
 
-global.cobudgetApp.factory('UserCan', ["$location", "$q", "Records", "Toast", function($location, $q, Records, Toast) {
+global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Records", "Toast", function(CurrentUser, $location, $q, Records, Toast) {
   var UserCan;
   return new (UserCan = (function() {
     function UserCan() {}
@@ -2246,6 +2252,12 @@ global.cobudgetApp.factory('UserCan', ["$location", "$q", "Records", "Toast", fu
 
     UserCan.prototype.viewBucket = function(bucket) {
       return this.viewGroup(bucket.group());
+    };
+
+    UserCan.prototype.editBucket = function(bucket) {
+      var isBucketAuthor;
+      isBucketAuthor = bucket.userId === global.cobudgetApp.currentUserId;
+      return isBucketAuthor || CurrentUser().isAdminOf(bucket.group());
     };
 
     UserCan.prototype.viewAdminPanel = function() {
