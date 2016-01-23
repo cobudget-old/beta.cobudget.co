@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":104,"lokijs":115}],2:[function(require,module,exports){
+},{"angular_record_store":105,"lokijs":116}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -55,33 +55,27 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "Dialog", "LoadBar", "$location"
     return Records.memberships.fetchMyMemberships().then(function(data) {
       var groupId;
       membershipsLoadedDeferred.resolve();
-      if (!data.groups) {
-        $auth.signOut().then(function() {
-          global.cobudgetApp.currentUserId = null;
-          $location.path('/');
-          Dialog.alert({
-            title: 'error!',
-            content: 'invalid credentials!'
-          });
-          return LoadBar.stop();
-        });
-      }
-      if (data.groups && _.every(data.groups, {
-        'initialized': true
-      })) {
-        groupId = data.groups[0].id;
-        $location.path("/groups/" + groupId);
-        Toast.show('Welcome to Cobudget!');
-        if (CurrentUser().utcOffset !== moment().utcOffset()) {
-          Records.users.updateProfile({
+      if (CurrentUser().hasEverJoinedAGroup()) {
+        if (CurrentUser().hasMemberships()) {
+          groupId = data.groups[0].id;
+          $location.path("/groups/" + groupId);
+          Toast.show('Welcome to Cobudget!');
+          return Records.users.updateProfile({
             utc_offset: moment().utcOffset()
           });
-        }
-        if (CurrentUser().isPendingConfirmation) {
-          return Records.users.updateProfile({
-            confirmationToken: null
+        } else {
+          return $auth.signOut().then(function() {
+            global.cobudgetApp.currentUserId = null;
+            $location.path('/');
+            Dialog.alert({
+              title: 'error!',
+              content: 'invalid credentials!'
+            });
+            return LoadBar.stop();
           });
         }
+      } else {
+        return LoadBar.stop();
       }
     });
   });
@@ -275,11 +269,17 @@ module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-pa
 },{}],9:[function(require,module,exports){
 (function (global){
 module.exports = {
-  url: '/confirm_account?confirmation_token&group_id',
+  resolve: {
+    clearSession: function(Session) {
+      return Session.clear();
+    }
+  },
+  url: '/confirm_account?confirmation_token&setup_group',
   template: require('./confirm-account-page.html'),
-  controller: function($scope, $auth, LoadBar, $location, $stateParams, Records, Toast) {
+  reloadOnSearch: false,
+  controller: function($scope, $auth, LoadBar, $location, $stateParams, Records, Session, Toast) {
     $scope.confirmationToken = $stateParams.confirmation_token;
-    $scope.groupId = $stateParams.group_id;
+    $scope.setupGroup = $stateParams.setup_group;
     return $scope.confirmAccount = function(formData) {
       var params;
       LoadBar.start();
@@ -297,10 +297,9 @@ module.exports = {
           password: formData.password
         };
         return $auth.submitLogin(loginParams).then(function(ev, user) {
-          if ($scope.groupId) {
-            $location.search('confirmation_token', null);
-            $location.search('group_id', null);
-            return $location.path("/groups/" + $scope.groupId + "/setup");
+          $location.url($location.path());
+          if ($scope.setupGroup) {
+            return $location.path("/setup_group");
           }
         });
       })["catch"](function() {
@@ -315,7 +314,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./confirm-account-page.html":10}],10:[function(require,module,exports){
-module.exports = "<div class=\"confirm-account-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary confirm-account-page__toolbar\">\n    <h1 class=\"md-toolbar-tools confirm-account-page__heading\" layout-align=\"center\">Confirm your Account</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <form novalidate name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newUserForm.name.$error\" ng-if=\"newUserForm.name.$dirty || newUserForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>new password</label>\n        <input minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"newUserForm.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"newUserForm.password.$dirty || newUserForm.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"newUserForm.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"confirm-account-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"confirm-account-page\">\n  <md-toolbar class=\"md-primary confirm-account-page__toolbar\">\n    <h1 class=\"md-toolbar-tools confirm-account-page__heading\" layout-align=\"center\">Confirm your Account</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <form novalidate name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newUserForm.name.$error\" ng-if=\"newUserForm.name.$dirty || newUserForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>new password</label>\n        <input minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"newUserForm.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"newUserForm.password.$dirty || newUserForm.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"newUserForm.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"confirm-account-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
 },{}],11:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -329,6 +328,7 @@ module.exports = {
   },
   url: '/buckets/new?group_id',
   template: require('./create-bucket-page.html'),
+  reloadOnSearch: false,
   controller: function(config, CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, $window) {
     $scope.accessibleGroups = CurrentUser().groups();
     $scope.bucket = Records.buckets.build({
@@ -426,6 +426,7 @@ module.exports = {
     }
   },
   template: require('./email-settings-page.html'),
+  reloadOnSearch: false,
   controller: function(CurrentUser, $location, Records, $scope, $stateParams, Toast) {
     var previousGroupId;
     $scope.currentUser = CurrentUser();
@@ -549,31 +550,20 @@ module.exports = {
       return global.cobudgetApp.membershipsLoaded;
     }
   },
-  url: '/groups/:groupId/setup',
+  url: '/setup_group',
   template: require('./group-setup-page.html'),
-  controller: function(Error, LoadBar, $location, Records, $scope, $stateParams, UserCan) {
-    var groupId;
-    LoadBar.start();
-    groupId = parseInt($stateParams.groupId);
-    Records.groups.findOrFetchById(groupId).then(function(group) {
-      $scope.group = group;
-      if (UserCan.viewGroup(group)) {
-        $scope.authorized = true;
-        return LoadBar.stop();
-      } else {
-        $scope.authorized = false;
-        LoadBar.stop();
-        return Error.set("you can't view this page");
-      }
-    })["catch"](function() {
-      LoadBar.stop();
-      return Error.set('group not found');
-    });
-    return $scope.setupGroup = function(formData) {
-      $scope.group.name = formData.name;
-      $scope.group.initialized = true;
-      return $scope.group.save().then(function() {
-        return $location.path("/groups/" + $scope.group.id);
+  controller: function($location, Records, $scope) {
+    return $scope.createGroup = function(formData) {
+      return Records.groups.build({
+        name: formData.name
+      }).save().then(function() {
+        return Records.memberships.fetchMyMemberships().then(function(data) {
+          var newGroup;
+          newGroup = _.find(data.groups, function(group) {
+            return group.name === formData.name;
+          });
+          return $location.path("/groups/" + newGroup.id);
+        });
       });
     };
   }
@@ -583,7 +573,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-setup-page.html":22}],22:[function(require,module,exports){
-module.exports = "<div class=\"group-setup-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-primary group-setup-page__toolbar\">\n    <h1 class=\"md-toolbar-tools group-setup-page__heading\" layout-align=\"center\">Group setup</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <form novalidate name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && setupGroup(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newGroupForm.name.$error\" ng-if=\"newGroupForm.name.$dirty || newGroupForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <md-button class=\"group-setup-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"group-setup-page\">\n  <md-toolbar class=\"md-primary group-setup-page__toolbar\">\n    <h1 class=\"md-toolbar-tools group-setup-page__heading\" layout-align=\"center\">Group setup</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <form novalidate name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newGroupForm.name.$error\" ng-if=\"newGroupForm.name.$dirty || newGroupForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <md-button class=\"group-setup-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
 },{}],23:[function(require,module,exports){
 module.exports = "<md-dialog class=\"profile-settings-page__discard-changes-dialog\" aria-label=\"discard changes dialog\">\n  <md-dialog-content class=\"sticky-container profile-settings-page__discard-changes-dialog-content\">\n    <h2 class=\"profile-settings-page__discard-changes-dialog-header\">Discard Changes?</h2>\n    <p class=\"profile-settings-page__discard-changes-dialog-text\">\n      Looks like you have some unsaved changes made to your <span ng-bind-html=\"unsavedFields()\"></span>.<br/><br/>\n      Any changes you have made to your account will be lost.\n    </p>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"okay()\">okay</md-button>\n  </div>\n</md-dialog>\n";
 },{}],24:[function(require,module,exports){
@@ -599,6 +589,7 @@ module.exports = {
   },
   url: '/profile_settings?previous_group_id',
   template: require('./profile-settings-page.html'),
+  reloadOnSearch: false,
   controller: function(CurrentUser, Dialog, $location, $q, Records, $scope, $stateParams, Toast, $window) {
     var previousGroupId;
     $scope.currentUser = CurrentUser();
@@ -723,6 +714,7 @@ module.exports = "<div class=\"profile-settings-page\">\n  <md-toolbar class=\"p
 module.exports = {
   url: '/reset_password?reset_password_token',
   template: require('./reset-password-page.html'),
+  reloadOnSearch: false,
   controller: function($auth, Dialog, LoadBar, $location, Records, $scope, $stateParams, Toast) {
     var resetPasswordToken;
     $scope.formData = {};
@@ -1506,14 +1498,14 @@ require('./controllers/application-controller.coffee');;
 require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
-require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
+require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
 require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/expandable-bucket-description.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":32,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":33,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":35,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":37,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":39,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":41,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":43,"./directives/error-page/error-page.coffee":45,"./directives/expandable-bucket-description.coffee":47,"./directives/group-page-buckets/group-page-buckets.coffee":48,"./directives/group-page-funders/group-page-funders.coffee":50,"./directives/group-page-sidenav/group-page-sidenav.coffee":55,"./directives/group-page-toolbar/group-page-toolbar.coffee":57,"./directives/loading-page/loading-page.coffee":59,"./filters/date-filter.coffee":61,"./models/allocation-model.coffee":63,"./models/bucket-model.coffee":64,"./models/comment-model.coffee":65,"./models/contribution-model.coffee":66,"./models/group-model.coffee":67,"./models/membership-model.coffee":68,"./models/user-model.coffee":69,"./records-interfaces/allocation-records-interface.coffee":70,"./records-interfaces/bucket-records-interface.coffee":71,"./records-interfaces/comment-records-interface.coffee":72,"./records-interfaces/contribution-records-interface.coffee":73,"./records-interfaces/group-records-interface.coffee":74,"./records-interfaces/membership-records-interface.coffee":75,"./records-interfaces/user-records-interface.coffee":76,"./services/current-user.coffee":78,"./services/dialog.coffee":79,"./services/error.coffee":80,"./services/load-bar.coffee":81,"./services/toast.coffee":82,"./services/user-can.coffee":83,"angular":101,"angular-animate":85,"angular-aria":87,"angular-cookie":88,"angular-marked":89,"angular-material":93,"angular-material-icons":91,"angular-messages":95,"angular-sanitize/angular-sanitize":96,"angular-truncate-2":97,"angular-ui-router":98,"angular-upload":99,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":30,"app/configs/auth.coffee":31,"app/routes.coffee":77,"camelize":109,"is-empty-object":110,"jquery":111,"listify":112,"lodash":113,"moment":117,"morph":118,"ng-focus-if":119,"ng-q-all-settled":120,"ng-sanitize":121,"ng-token-auth":122}],63:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":32,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":33,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":35,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":37,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":39,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":41,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":43,"./directives/error-page/error-page.coffee":45,"./directives/expandable-bucket-description.coffee":47,"./directives/group-page-buckets/group-page-buckets.coffee":48,"./directives/group-page-funders/group-page-funders.coffee":50,"./directives/group-page-sidenav/group-page-sidenav.coffee":55,"./directives/group-page-toolbar/group-page-toolbar.coffee":57,"./directives/loading-page/loading-page.coffee":59,"./filters/date-filter.coffee":61,"./models/allocation-model.coffee":63,"./models/bucket-model.coffee":64,"./models/comment-model.coffee":65,"./models/contribution-model.coffee":66,"./models/group-model.coffee":67,"./models/membership-model.coffee":68,"./models/user-model.coffee":69,"./records-interfaces/allocation-records-interface.coffee":70,"./records-interfaces/bucket-records-interface.coffee":71,"./records-interfaces/comment-records-interface.coffee":72,"./records-interfaces/contribution-records-interface.coffee":73,"./records-interfaces/group-records-interface.coffee":74,"./records-interfaces/membership-records-interface.coffee":75,"./records-interfaces/user-records-interface.coffee":76,"./services/current-user.coffee":78,"./services/dialog.coffee":79,"./services/error.coffee":80,"./services/load-bar.coffee":81,"./services/session.coffee":82,"./services/toast.coffee":83,"./services/user-can.coffee":84,"angular":102,"angular-animate":86,"angular-aria":88,"angular-cookie":89,"angular-marked":90,"angular-material":94,"angular-material-icons":92,"angular-messages":96,"angular-sanitize/angular-sanitize":97,"angular-truncate-2":98,"angular-ui-router":99,"angular-upload":100,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":30,"app/configs/auth.coffee":31,"app/routes.coffee":77,"camelize":110,"is-empty-object":111,"jquery":112,"listify":113,"lodash":114,"moment":118,"morph":119,"ng-focus-if":120,"ng-q-all-settled":121,"ng-sanitize":122,"ng-token-auth":123}],63:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1849,7 +1841,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
     };
 
     MembershipModel.prototype.isPending = function() {
-      return this.member().isPendingConfirmation;
+      return !this.member().isConfirmed();
     };
 
     MembershipModel.prototype.archive = function() {
@@ -1917,6 +1909,18 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
       return _.find(this.memberships(), function(membership) {
         return membership.groupId === group.id && membership.isAdmin;
       });
+    };
+
+    UserModel.prototype.isConfirmed = function() {
+      return !!this.confirmedAt;
+    };
+
+    UserModel.prototype.hasEverJoinedAGroup = function() {
+      return !!this.joinedFirstGroupAt;
+    };
+
+    UserModel.prototype.hasMemberships = function() {
+      return this.memberships().length > 0;
     };
 
     return UserModel;
@@ -2378,6 +2382,40 @@ null;
 
 /* @ngInject */
 
+global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "$q", function($auth, CurrentUser, $q) {
+  var Session;
+  return new (Session = (function() {
+    function Session() {}
+
+    Session.prototype.clear = function() {
+      var deferred;
+      deferred = $q.defer();
+      if (CurrentUser()) {
+        $auth.signOut().then(function() {
+          global.cobudgetApp.currentUserId = null;
+          return deferred.resolve();
+        });
+      } else {
+        deferred.resolve();
+      }
+      return deferred.promise;
+    };
+
+    return Session;
+
+  })());
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],83:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
 global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast, $location) {
   var Toast;
   return new (Toast = (function() {
@@ -2411,7 +2449,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2459,7 +2497,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6391,11 +6429,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":84}],86:[function(require,module,exports){
+},{"./angular-animate":85}],87:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6795,11 +6833,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":86}],88:[function(require,module,exports){
+},{"./angular-aria":87}],89:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -6926,7 +6964,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -7276,7 +7314,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":116}],90:[function(require,module,exports){
+},{"marked":117}],91:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -8208,11 +8246,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":90}],92:[function(require,module,exports){
+},{"./angular-material-icons":91}],93:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -25381,7 +25419,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -25395,7 +25433,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":92,"angular":101,"angular-animate":85,"angular-aria":87}],94:[function(require,module,exports){
+},{"./angular-material":93,"angular":102,"angular-animate":86,"angular-aria":88}],95:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26082,11 +26120,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":94}],96:[function(require,module,exports){
+},{"./angular-messages":95}],97:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26771,7 +26809,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -26822,10 +26860,10 @@ angular.module('truncate', [])
         };
     });
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
- * @version v0.2.15
+ * @version v0.2.13
  * @link http://angular-ui.github.com/
  * @license MIT License, http://www.opensource.org/licenses/MIT
  */
@@ -26893,7 +26931,7 @@ function objectKeys(object) {
   }
   var result = [];
 
-  forEach(object, function(val, key) {
+  angular.forEach(object, function(val, key) {
     result.push(key);
   });
   return result;
@@ -27505,7 +27543,7 @@ var $$UMFP; // reference to $UrlMatcherFactoryProvider
  * of search parameters. Multiple search parameter names are separated by '&'. Search parameters
  * do not influence whether or not a URL is matched, but their values are passed through into
  * the matched parameters returned by {@link ui.router.util.type:UrlMatcher#methods_exec exec}.
- *
+ * 
  * Path parameter placeholders can be specified using simple colon/catch-all syntax or curly brace
  * syntax, which optionally allows a regular expression for the parameter to be specified:
  *
@@ -27516,13 +27554,13 @@ var $$UMFP; // reference to $UrlMatcherFactoryProvider
  *   regexp itself contain curly braces, they must be in matched pairs or escaped with a backslash.
  *
  * Parameter names may contain only word characters (latin letters, digits, and underscore) and
- * must be unique within the pattern (across both path and search parameters). For colon
+ * must be unique within the pattern (across both path and search parameters). For colon 
  * placeholders or curly placeholders without an explicit regexp, a path parameter matches any
  * number of characters other than '/'. For catch-all placeholders the path parameter matches
  * any number of characters.
- *
+ * 
  * Examples:
- *
+ * 
  * * `'/hello/'` - Matches only if the path is exactly '/hello/'. There is no special treatment for
  *   trailing slashes, and patterns have to match the entire path, not just a prefix.
  * * `'/user/:id'` - Matches '/user/bob' or '/user/1234!!!' or even '/user/' but not '/user' or
@@ -27555,7 +27593,7 @@ var $$UMFP; // reference to $UrlMatcherFactoryProvider
  *
  * @property {string} sourceSearch  The search portion of the source property
  *
- * @property {string} regex  The constructed regex that will be used to match against the url when
+ * @property {string} regex  The constructed regex that will be used to match against the url when 
  *   it is time to determine which url will match.
  *
  * @returns {Object}  New `UrlMatcher` object
@@ -27593,13 +27631,13 @@ function UrlMatcher(pattern, config, parentMatcher) {
     return params[id];
   }
 
-  function quoteRegExp(string, pattern, squash, optional) {
+  function quoteRegExp(string, pattern, squash) {
     var surroundPattern = ['',''], result = string.replace(/[\\\[\]\^$*+?.()|{}]/g, "\\$&");
     if (!pattern) return result;
     switch(squash) {
-      case false: surroundPattern = ['(', ')' + (optional ? "?" : "")]; break;
+      case false: surroundPattern = ['(', ')'];   break;
       case true:  surroundPattern = ['?(', ')?']; break;
-      default:    surroundPattern = ['(' + squash + "|", ')?']; break;
+      default:    surroundPattern = ['(' + squash + "|", ')?'];  break;
     }
     return result + surroundPattern[0] + pattern + surroundPattern[1];
   }
@@ -27614,7 +27652,7 @@ function UrlMatcher(pattern, config, parentMatcher) {
     cfg         = config.params[id];
     segment     = pattern.substring(last, m.index);
     regexp      = isSearch ? m[4] : m[4] || (m[1] == '*' ? '.*' : null);
-    type        = $$UMFP.type(regexp || "string") || inherit($$UMFP.type("string"), { pattern: new RegExp(regexp, config.caseInsensitive ? 'i' : undefined) });
+    type        = $$UMFP.type(regexp || "string") || inherit($$UMFP.type("string"), { pattern: new RegExp(regexp) });
     return {
       id: id, regexp: regexp, segment: segment, type: type, cfg: cfg
     };
@@ -27626,7 +27664,7 @@ function UrlMatcher(pattern, config, parentMatcher) {
     if (p.segment.indexOf('?') >= 0) break; // we're into the search part
 
     param = addParameter(p.id, p.type, p.cfg, "path");
-    compiled += quoteRegExp(p.segment, param.type.pattern.source, param.squash, param.isOptional);
+    compiled += quoteRegExp(p.segment, param.type.pattern.source, param.squash);
     segments.push(p.segment);
     last = placeholder.lastIndex;
   }
@@ -27737,7 +27775,7 @@ UrlMatcher.prototype.exec = function (path, searchParams) {
 
   function decodePathArray(string) {
     function reverseString(str) { return str.split("").reverse().join(""); }
-    function unquoteDashes(str) { return str.replace(/\\-/g, "-"); }
+    function unquoteDashes(str) { return str.replace(/\\-/, "-"); }
 
     var split = reverseString(string).split(/-(?!\\)/);
     var allReversed = map(split, reverseString);
@@ -27770,7 +27808,7 @@ UrlMatcher.prototype.exec = function (path, searchParams) {
  *
  * @description
  * Returns the names of all path and search parameters of this pattern in an unspecified order.
- *
+ * 
  * @returns {Array.<string>}  An array of parameter names. Must be treated as read-only. If the
  *    pattern has no parameters, an empty array is returned.
  */
@@ -27975,11 +28013,6 @@ Type.prototype.pattern = /.*/;
 
 Type.prototype.toString = function() { return "{Type:" + this.name + "}"; };
 
-/** Given an encoded string, or a decoded object, returns a decoded object */
-Type.prototype.$normalize = function(val) {
-  return this.is(val) ? val : this.decode(val);
-};
-
 /*
  * Wraps an existing custom Type as an array of Type, depending on 'mode'.
  * e.g.:
@@ -27993,6 +28026,7 @@ Type.prototype.$normalize = function(val) {
 Type.prototype.$asArray = function(mode, isSearch) {
   if (!mode) return this;
   if (mode === "auto" && !isSearch) throw new Error("'auto' array mode is for query parameters only");
+  return new ArrayType(this, mode);
 
   function ArrayType(type, mode) {
     function bindTo(type, callbackName) {
@@ -28041,12 +28075,8 @@ Type.prototype.$asArray = function(mode, isSearch) {
     this.is     = arrayHandler(bindTo(type, 'is'), true);
     this.equals = arrayEqualsHandler(bindTo(type, 'equals'));
     this.pattern = type.pattern;
-    this.$normalize = arrayHandler(bindTo(type, '$normalize'));
-    this.name = type.name;
     this.$arrayMode = mode;
   }
-
-  return new ArrayType(this, mode);
 };
 
 
@@ -28066,14 +28096,15 @@ function $UrlMatcherFactory() {
 
   function valToString(val) { return val != null ? val.toString().replace(/\//g, "%2F") : val; }
   function valFromString(val) { return val != null ? val.toString().replace(/%2F/g, "/") : val; }
+//  TODO: in 1.0, make string .is() return false if value is undefined by default.
+//  function regexpMatches(val) { /*jshint validthis:true */ return isDefined(val) && this.pattern.test(val); }
+  function regexpMatches(val) { /*jshint validthis:true */ return this.pattern.test(val); }
 
   var $types = {}, enqueue = true, typeQueue = [], injector, defaultTypes = {
     string: {
       encode: valToString,
       decode: valFromString,
-      // TODO: in 1.0, make string .is() return false if value is undefined/null by default.
-      // In 0.2.x, string params are optional by default for backwards compat
-      is: function(val) { return val == null || !isDefined(val) || typeof val === "string"; },
+      is: regexpMatches,
       pattern: /[^/]*/
     },
     int: {
@@ -28117,6 +28148,7 @@ function $UrlMatcherFactory() {
     any: { // does not encode/decode
       encode: angular.identity,
       decode: angular.identity,
+      is: angular.identity,
       equals: angular.equals,
       pattern: /.*/
     }
@@ -28446,10 +28478,7 @@ function $UrlMatcherFactory() {
      */
     function $$getDefaultValue() {
       if (!injector) throw new Error("Injectable functions cannot be called at configuration time");
-      var defaultValue = injector.invoke(config.$$fn);
-      if (defaultValue !== null && defaultValue !== undefined && !self.type.is(defaultValue))
-        throw new Error("Default value (" + defaultValue + ") for parameter '" + self.id + "' is not an instance of Type (" + self.type.name + ")");
-      return defaultValue;
+      return injector.invoke(config.$$fn);
     }
 
     /**
@@ -28463,7 +28492,7 @@ function $UrlMatcherFactory() {
         return replacement.length ? replacement[0] : value;
       }
       value = $replace(value);
-      return !isDefined(value) ? $$getDefaultValue() : self.type.$normalize(value);
+      return isDefined(value) ? self.type.decode(value) : $$getDefaultValue();
     }
 
     function toString() { return "{Param:" + id + " " + type + " squash: '" + squash + "' optional: " + isOptional + "}"; }
@@ -28519,20 +28548,15 @@ function $UrlMatcherFactory() {
       return equal;
     },
     $$validates: function $$validate(paramValues) {
-      var keys = this.$$keys(), i, param, rawVal, normalized, encoded;
-      for (i = 0; i < keys.length; i++) {
-        param = this[keys[i]];
-        rawVal = paramValues[keys[i]];
-        if ((rawVal === undefined || rawVal === null) && param.isOptional)
-          break; // There was no parameter value, but the param is optional
-        normalized = param.type.$normalize(rawVal);
-        if (!param.type.is(normalized))
-          return false; // The value was not of the correct Type, and could not be decoded to the correct Type
-        encoded = param.type.encode(normalized);
-        if (angular.isString(encoded) && !param.type.pattern.exec(encoded))
-          return false; // The value was of the correct type, but when encoded, did not match the Type's regexp
-      }
-      return true;
+      var result = true, isOptional, val, param, self = this;
+
+      forEach(this.$$keys(), function(key) {
+        param = self[key];
+        val = paramValues[key];
+        isOptional = !val && param.isOptional;
+        result = result && (isOptional || !!param.type.is(val));
+      });
+      return result;
     },
     $$parent: undefined
   };
@@ -28825,8 +28849,7 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
       if (evt && evt.defaultPrevented) return;
       var ignoreUpdate = lastPushedUrl && $location.url() === lastPushedUrl;
       lastPushedUrl = undefined;
-      // TODO: Re-implement this in 1.0 for https://github.com/angular-ui/ui-router/issues/1573
-      //if (ignoreUpdate) return true;
+      if (ignoreUpdate) return true;
 
       function check(rule) {
         var handled = rule($injector, $location);
@@ -28898,14 +28921,7 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
       },
 
       push: function(urlMatcher, params, options) {
-         var url = urlMatcher.format(params || {});
-
-        // Handle the special hash param, if needed
-        if (url !== null && params && params['#']) {
-            url += '#' + params['#'];
-        }
-
-        $location.url(url);
+        $location.url(urlMatcher.format(params || {}));
         lastPushedUrl = options && options.$$avoidResync ? $location.url() : undefined;
         if (options && options.replace) $location.replace();
       },
@@ -28949,12 +28965,6 @@ function $UrlRouterProvider(   $locationProvider,   $urlMatcherFactory) {
         if (!isHtml5 && url !== null) {
           url = "#" + $locationProvider.hashPrefix() + url;
         }
-
-        // Handle special hash param, if needed
-        if (url !== null && params && params['#']) {
-          url += '#' + params['#'];
-        }
-
         url = appendBasePath(url, isHtml5, options.absolute);
 
         if (!options.absolute || !url) {
@@ -29189,13 +29199,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
     var globSegments = glob.split('.'),
         segments = $state.$current.name.split('.');
 
-    //match single stars
-    for (var i = 0, l = globSegments.length; i < l; i++) {
-      if (globSegments[i] === '*') {
-        segments[i] = '*';
-      }
-    }
-
     //match greedy starts
     if (globSegments[0] === '**') {
        segments = segments.slice(indexOf(segments, globSegments[1]));
@@ -29209,6 +29212,13 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
 
     if (globSegments.length != segments.length) {
       return false;
+    }
+
+    //match single stars
+    for (var i = 0, l = globSegments.length; i < l; i++) {
+      if (globSegments[i] === '*') {
+        segments[i] = '*';
+      }
     }
 
     return segments.join('') === globSegments.join('');
@@ -29419,13 +29429,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *   published to scope under the controllerAs name.
    * <pre>controllerAs: "myCtrl"</pre>
    *
-   * @param {string|object=} stateConfig.parent
-   * <a id='parent'></a>
-   * Optionally specifies the parent state of this state.
-   *
-   * <pre>parent: 'parentState'</pre>
-   * <pre>parent: parentState // JS variable</pre>
-   *
    * @param {object=} stateConfig.resolve
    * <a id='resolve'></a>
    *
@@ -29457,9 +29460,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    *   transitioned to, the `$stateParams` service will be populated with any 
    *   parameters that were passed.
    *
-   *   (See {@link ui.router.util.type:UrlMatcher UrlMatcher} `UrlMatcher`} for
-   *   more details on acceptable patterns )
-   *
    * examples:
    * <pre>url: "/home"
    * url: "/users/:userid"
@@ -29467,9 +29467,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
    * url: "/books/{categoryid:int}"
    * url: "/books/{publishername:string}/{categoryid:int}"
    * url: "/messages?before&after"
-   * url: "/messages?{before:date}&{after:date}"
+   * url: "/messages?{before:date}&{after:date}"</pre>
    * url: "/messages/:mailboxid?{before:date}&{after:date}"
-   * </pre>
    *
    * @param {object=} stateConfig.views
    * <a id='views'></a>
@@ -29773,8 +29772,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * @methodOf ui.router.state.$state
      *
      * @description
-     * A method that force reloads the current state. All resolves are re-resolved,
-     * controllers reinstantiated, and events re-fired.
+     * A method that force reloads the current state. All resolves are re-resolved, events are not re-fired, 
+     * and controllers reinstantiated (bug with controllers reinstantiating right now, fixing soon).
      *
      * @example
      * <pre>
@@ -29794,33 +29793,11 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * });
      * </pre>
      *
-     * @param {string=|object=} state - A state name or a state object, which is the root of the resolves to be re-resolved.
-     * @example
-     * <pre>
-     * //assuming app application consists of 3 states: 'contacts', 'contacts.detail', 'contacts.detail.item' 
-     * //and current state is 'contacts.detail.item'
-     * var app angular.module('app', ['ui.router']);
-     *
-     * app.controller('ctrl', function ($scope, $state) {
-     *   $scope.reload = function(){
-     *     //will reload 'contact.detail' and 'contact.detail.item' states
-     *     $state.reload('contact.detail');
-     *   }
-     * });
-     * </pre>
-     *
-     * `reload()` is just an alias for:
-     * <pre>
-     * $state.transitionTo($state.current, $stateParams, { 
-     *   reload: true, inherit: false, notify: true
-     * });
-     * </pre>
-
      * @returns {promise} A promise representing the state of the new transition. See
      * {@link ui.router.state.$state#methods_go $state.go}.
      */
-    $state.reload = function reload(state) {
-      return $state.transitionTo($state.current, $stateParams, { reload: state || true, inherit: false, notify: true});
+    $state.reload = function reload() {
+      return $state.transitionTo($state.current, $stateParams, { reload: true, inherit: false, notify: true });
     };
 
     /**
@@ -29924,11 +29901,9 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
      * - **`relative`** - {object=}, When transitioning with relative path (e.g '^'), 
      *    defines which state to be relative from.
      * - **`notify`** - {boolean=true}, If `true` will broadcast $stateChangeStart and $stateChangeSuccess events.
-     * - **`reload`** (v0.2.5) - {boolean=false|string=|object=}, If `true` will force transition even if the state or params 
+     * - **`reload`** (v0.2.5) - {boolean=false}, If `true` will force transition even if the state or params 
      *    have not changed, aka a reload of the same state. It differs from reloadOnSearch because you'd
      *    use this when you want to force a reload when *everything* is the same, including search params.
-     *    if String, then will reload the state with the name given in reload, and any children.
-     *    if Object, then a stateObj is expected, will reload the state found in stateObj, and any children.
      *
      * @returns {promise} A promise representing the state of the new transition. See
      * {@link ui.router.state.$state#methods_go $state.go}.
@@ -29941,9 +29916,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
 
       var from = $state.$current, fromParams = $state.params, fromPath = from.path;
       var evt, toState = findState(to, options.relative);
-
-      // Store the hash param for later (since it will be stripped out by various methods)
-      var hash = toParams['#'];
 
       if (!isDefined(toState)) {
         var redirect = { to: to, toParams: toParams, options: options };
@@ -29983,21 +29955,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
           keep++;
           state = toPath[keep];
         }
-      } else if (isString(options.reload) || isObject(options.reload)) {
-        if (isObject(options.reload) && !options.reload.name) {
-          throw new Error('Invalid reload state object');
-        }
-        
-        var reloadState = options.reload === true ? fromPath[0] : findState(options.reload);
-        if (options.reload && !reloadState) {
-          throw new Error("No such reload state '" + (isString(options.reload) ? options.reload : options.reload.name) + "'");
-        }
-
-        while (state && state === fromPath[keep] && state !== reloadState) {
-          locals = toLocals[keep] = state.locals;
-          keep++;
-          state = toPath[keep];
-        }
       }
 
       // If we're going to the same state and all locals are kept, we've got nothing to do.
@@ -30005,16 +29962,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
       // TODO: We may not want to bump 'transition' if we're called from a location change
       // that we've initiated ourselves, because we might accidentally abort a legitimate
       // transition initiated from code?
-      if (shouldSkipReload(to, toParams, from, fromParams, locals, options)) {
-        if (hash) toParams['#'] = hash;
-        $state.params = toParams;
-        copy($state.params, $stateParams);
-        if (options.location && to.navigable && to.navigable.url) {
-          $urlRouter.push(to.navigable.url, toParams, {
-            $$avoidResync: true, replace: options.location === 'replace'
-          });
-          $urlRouter.update(true);
-        }
+      if (shouldTriggerReload(to, from, locals, options)) {
+        if (to.self.reloadOnSearch !== false) $urlRouter.update();
         $state.transition = null;
         return $q.when($state.current);
       }
@@ -30052,7 +30001,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
          * </pre>
          */
         if ($rootScope.$broadcast('$stateChangeStart', to.self, toParams, from.self, fromParams).defaultPrevented) {
-          $rootScope.$broadcast('$stateChangeCancel', to.self, toParams, from.self, fromParams);
           $urlRouter.update();
           return TransitionPrevented;
         }
@@ -30098,9 +30046,6 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
             $injector.invoke(entering.self.onEnter, entering.self, entering.locals.globals);
           }
         }
-
-        // Re-add the saved hash before we start returning things
-        if (hash) toParams['#'] = hash;
 
         // Run it again, to catch any transitions in callbacks
         if ($state.transition !== transition) return TransitionSuperseded;
@@ -30327,7 +30272,7 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
       if (!nav || nav.url === undefined || nav.url === null) {
         return null;
       }
-      return $urlRouter.href(nav.url, filterByKeys(state.params.$$keys().concat('#'), params || {}), {
+      return $urlRouter.href(nav.url, filterByKeys(state.params.$$keys(), params || {}), {
         absolute: options.absolute
       });
     };
@@ -30369,38 +30314,30 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
       })];
       if (inherited) promises.push(inherited);
 
-      function resolveViews() {
-        var viewsPromises = [];
+      // Resolve template and dependencies for all views.
+      forEach(state.views, function (view, name) {
+        var injectables = (view.resolve && view.resolve !== state.resolve ? view.resolve : {});
+        injectables.$template = [ function () {
+          return $view.load(name, { view: view, locals: locals, params: $stateParams, notify: options.notify }) || '';
+        }];
 
-        // Resolve template and dependencies for all views.
-        forEach(state.views, function (view, name) {
-          var injectables = (view.resolve && view.resolve !== state.resolve ? view.resolve : {});
-          injectables.$template = [ function () {
-            return $view.load(name, { view: view, locals: dst.globals, params: $stateParams, notify: options.notify }) || '';
-          }];
-
-          viewsPromises.push($resolve.resolve(injectables, dst.globals, dst.resolve, state).then(function (result) {
-            // References to the controller (only instantiated at link time)
-            if (isFunction(view.controllerProvider) || isArray(view.controllerProvider)) {
-              var injectLocals = angular.extend({}, injectables, dst.globals);
-              result.$$controller = $injector.invoke(view.controllerProvider, null, injectLocals);
-            } else {
-              result.$$controller = view.controller;
-            }
-            // Provide access to the state itself for internal use
-            result.$$state = state;
-            result.$$controllerAs = view.controllerAs;
-            dst[name] = result;
-          }));
-        });
-
-        return $q.all(viewsPromises).then(function(){
-          return dst.globals;
-        });
-      }
+        promises.push($resolve.resolve(injectables, locals, dst.resolve, state).then(function (result) {
+          // References to the controller (only instantiated at link time)
+          if (isFunction(view.controllerProvider) || isArray(view.controllerProvider)) {
+            var injectLocals = angular.extend({}, injectables, locals);
+            result.$$controller = $injector.invoke(view.controllerProvider, null, injectLocals);
+          } else {
+            result.$$controller = view.controller;
+          }
+          // Provide access to the state itself for internal use
+          result.$$state = state;
+          result.$$controllerAs = view.controllerAs;
+          dst[name] = result;
+        }));
+      });
 
       // Wait for all the promises and then return the activation object
-      return $q.all(promises).then(resolveViews).then(function (values) {
+      return $q.all(promises).then(function (values) {
         return dst;
       });
     }
@@ -30408,27 +30345,8 @@ function $StateProvider(   $urlRouterProvider,   $urlMatcherFactory) {
     return $state;
   }
 
-  function shouldSkipReload(to, toParams, from, fromParams, locals, options) {
-    // Return true if there are no differences in non-search (path/object) params, false if there are differences
-    function nonSearchParamsEqual(fromAndToState, fromParams, toParams) {
-      // Identify whether all the parameters that differ between `fromParams` and `toParams` were search params.
-      function notSearchParam(key) {
-        return fromAndToState.params[key].location != "search";
-      }
-      var nonQueryParamKeys = fromAndToState.params.$$keys().filter(notSearchParam);
-      var nonQueryParams = pick.apply({}, [fromAndToState.params].concat(nonQueryParamKeys));
-      var nonQueryParamSet = new $$UMFP.ParamSet(nonQueryParams);
-      return nonQueryParamSet.$$equals(fromParams, toParams);
-    }
-
-    // If reload was not explicitly requested
-    // and we're transitioning to the same state we're already in
-    // and    the locals didn't change
-    //     or they changed in a way that doesn't merit reloading
-    //        (reloadOnParams:false, or reloadOnSearch.false and only search params changed)
-    // Then return true.
-    if (!options.reload && to === from &&
-      (locals === from.locals || (to.self.reloadOnSearch === false && nonSearchParamsEqual(from, fromParams, toParams)))) {
+  function shouldTriggerReload(to, from, locals, options) {
+    if (to === from && ((locals === from.locals && !options.reload) || (to.self.reloadOnSearch === false))) {
       return true;
     }
   }
@@ -30554,7 +30472,7 @@ function $ViewScrollProvider() {
     }
 
     return function ($element) {
-      return $timeout(function () {
+      $timeout(function () {
         $element[0].scrollIntoView();
       }, 0, false);
     };
@@ -30839,7 +30757,6 @@ function $ViewDirectiveFill (  $compile,   $controller,   $state,   $interpolate
 
         if (locals.$$controller) {
           locals.$scope = scope;
-          locals.$element = $element;
           var controller = $controller(locals.$$controller, locals);
           if (locals.$$controllerAs) {
             scope[locals.$$controllerAs] = controller;
@@ -30947,7 +30864,7 @@ function stateContext(el) {
  */
 $StateRefDirective.$inject = ['$state', '$timeout'];
 function $StateRefDirective($state, $timeout) {
-  var allowedOptions = ['location', 'inherit', 'reload', 'absolute'];
+  var allowedOptions = ['location', 'inherit', 'reload'];
 
   return {
     restrict: 'A',
@@ -30955,12 +30872,9 @@ function $StateRefDirective($state, $timeout) {
     link: function(scope, element, attrs, uiSrefActive) {
       var ref = parseStateRef(attrs.uiSref, $state.current.name);
       var params = null, url = null, base = stateContext(element) || $state.$current;
-      // SVGAElement does not use the href attribute, but rather the 'xlinkHref' attribute.
-      var hrefKind = Object.prototype.toString.call(element.prop('href')) === '[object SVGAnimatedString]' ?
-                 'xlink:href' : 'href';
-      var newHref = null, isAnchor = element.prop("tagName").toUpperCase() === "A";
+      var newHref = null, isAnchor = element.prop("tagName") === "A";
       var isForm = element[0].nodeName === "FORM";
-      var attr = isForm ? "action" : hrefKind, nav = true;
+      var attr = isForm ? "action" : "href", nav = true;
 
       var options = { relative: base, inherit: true };
       var optionsOverride = scope.$eval(attrs.uiSrefOpts) || {};
@@ -30979,7 +30893,7 @@ function $StateRefDirective($state, $timeout) {
 
         var activeDirective = uiSrefActive[1] || uiSrefActive[0];
         if (activeDirective) {
-          activeDirective.$$addStateInfo(ref.state, params);
+          activeDirective.$$setStateInfo(ref.state, params);
         }
         if (newHref === null) {
           nav = false;
@@ -31098,7 +31012,7 @@ function $StateRefActiveDirective($state, $stateParams, $interpolate) {
   return  {
     restrict: "A",
     controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
-      var states = [], activeClass;
+      var state, params, activeClass;
 
       // There probably isn't much point in $observing this
       // uiSrefActive and uiSrefActiveEq share the same directive object with some
@@ -31106,14 +31020,9 @@ function $StateRefActiveDirective($state, $stateParams, $interpolate) {
       activeClass = $interpolate($attrs.uiSrefActiveEq || $attrs.uiSrefActive || '', false)($scope);
 
       // Allow uiSref to communicate with uiSrefActive[Equals]
-      this.$$addStateInfo = function (newState, newParams) {
-        var state = $state.get(newState, stateContext($element));
-
-        states.push({
-          state: state || { name: newState },
-          params: newParams
-        });
-
+      this.$$setStateInfo = function (newState, newParams) {
+        state = $state.get(newState, stateContext($element));
+        params = newParams;
         update();
       };
 
@@ -31121,27 +31030,18 @@ function $StateRefActiveDirective($state, $stateParams, $interpolate) {
 
       // Update route state
       function update() {
-        if (anyMatch()) {
+        if (isMatch()) {
           $element.addClass(activeClass);
         } else {
           $element.removeClass(activeClass);
         }
       }
 
-      function anyMatch() {
-        for (var i = 0; i < states.length; i++) {
-          if (isMatch(states[i].state, states[i].params)) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      function isMatch(state, params) {
+      function isMatch() {
         if (typeof $attrs.uiSrefActiveEq !== 'undefined') {
-          return $state.is(state.name, params);
+          return state && $state.is(state.name, params);
         } else {
-          return $state.includes(state.name, params);
+          return state && $state.includes(state.name, params);
         }
       }
     }]
@@ -31193,7 +31093,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -31495,7 +31395,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -60514,11 +60414,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":100}],102:[function(require,module,exports){
+},{"./angular":101}],103:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -60812,7 +60712,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":107}],103:[function(require,module,exports){
+},{"./utils.coffee":108}],104:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -60970,7 +60870,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":107}],104:[function(require,module,exports){
+},{"./utils.coffee":108}],105:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -60983,7 +60883,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":102,"./base_records_interface.coffee":103,"./record_store.coffee":105,"./restful_client.coffee":106}],105:[function(require,module,exports){
+},{"./base_model.coffee":103,"./base_records_interface.coffee":104,"./record_store.coffee":106,"./restful_client.coffee":107}],106:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -61023,7 +60923,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],106:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -61148,7 +61048,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -61191,9 +61091,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],108:[function(require,module,exports){
-
 },{}],109:[function(require,module,exports){
+
+},{}],110:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -61254,7 +61154,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -61282,7 +61182,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -71115,7 +71015,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -71150,7 +71050,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -83506,7 +83406,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -84091,7 +83991,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -88514,7 +88414,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":114,"fs":108}],116:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":115,"fs":109}],117:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -89804,7 +89704,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],117:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -93411,7 +93311,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -93538,7 +93438,7 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -93570,7 +93470,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],120:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -93589,7 +93489,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -94080,7 +93980,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],122:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -94929,10 +94829,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 require('app')
 
-},{"app":62}]},{},[123])
+},{"app":62}]},{},[124])
 
 
 //# sourceMappingURL=../maps/index.js.map
