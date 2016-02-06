@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":105,"lokijs":116}],2:[function(require,module,exports){
+},{"angular_record_store":110,"lokijs":121}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -46,37 +46,14 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "Dialog", "LoadBar", "$location"
   global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
   $rootScope.$on('auth:validation-success', function(ev, user) {
     global.cobudgetApp.currentUserId = user.id;
-    return Records.memberships.fetchMyMemberships().then(function() {
-      return membershipsLoadedDeferred.resolve();
+    return Records.memberships.fetchMyMemberships().then(function(data) {
+      return membershipsLoadedDeferred.resolve(data);
     });
   });
-  $rootScope.$on('auth:login-success', function(ev, user) {
-    global.cobudgetApp.currentUserId = user.id;
-    return Records.memberships.fetchMyMemberships().then(function(data) {
-      var groupId;
-      membershipsLoadedDeferred.resolve();
-      if (CurrentUser().hasEverJoinedAGroup()) {
-        if (CurrentUser().hasMemberships()) {
-          groupId = data.groups[0].id;
-          $location.path("/groups/" + groupId);
-          Toast.show('Welcome to Cobudget!');
-          return Records.users.updateProfile({
-            utc_offset: moment().utcOffset()
-          });
-        } else {
-          return $auth.signOut().then(function() {
-            global.cobudgetApp.currentUserId = null;
-            $location.path('/');
-            Dialog.alert({
-              title: 'error!',
-              content: 'invalid credentials!'
-            });
-            return LoadBar.stop();
-          });
-        }
-      } else {
-        return LoadBar.stop();
-      }
+  $rootScope.$on('auth:login-error', function(ev, reason) {
+    return Dialog.alert({
+      title: 'error!',
+      content: reason.errors[0]
     });
   });
   return $rootScope.$on('$stateChangeError', function(e, toState, toParams, fromState, fromParams, error) {
@@ -183,9 +160,6 @@ module.exports = {
     $scope.uploadPathForGroup = function(groupId) {
       return config.apiPrefix + "/allocations/upload?group_id=" + groupId;
     };
-    $scope.onCsvUploadSuccess = function(groupId) {
-      return Records.groups.findOrFetchById(groupId);
-    };
     $scope.onCsvUploadCompletion = function() {
       return Dialog.alert({
         title: 'upload complete!'
@@ -267,8 +241,10 @@ module.exports = {
 },{"./bucket-page.html":8}],8:[function(require,module,exports){
 module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-page-toolbar></bucket-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <bucket-page-header-card></bucket-page-header-card>\n    <bucket-page-progress-card ng-if=\"bucket.status == 'live'\"></bucket-page-progress-card>\n    <bucket-page-status-card></bucket-page-status-card>\n    <bucket-page-activity-card></bucket-page-activity-card>\n  </md-content>\n</div>";
 },{}],9:[function(require,module,exports){
-(function (global){
 module.exports = {
+  onExit: function($location) {
+    return $location.url($location.path());
+  },
   resolve: {
     clearSession: function(Session) {
       return Session.clear();
@@ -289,19 +265,20 @@ module.exports = {
         confirmation_token: $scope.confirmationToken
       };
       return Records.users.confirmAccount(params).then(function(data) {
-        var loginParams, user;
-        user = data.users[0];
-        global.cobudgetApp.currentUserId = user.id;
+        var loginParams;
         loginParams = {
-          email: user.email,
+          email: data.users[0].email,
           password: formData.password
         };
-        return $auth.submitLogin(loginParams).then(function(ev, user) {
-          $location.url($location.path());
-          if ($scope.setupGroup) {
+        if ($scope.setupGroup) {
+          return Session.create(loginParams).then(function() {
             return $location.path("/setup_group");
-          }
-        });
+          });
+        } else {
+          return Session.create(loginParams, {
+            redirectTo: 'group'
+          });
+        }
       })["catch"](function() {
         Toast.show('Sorry, that confirmation token has expired.');
         return $location.path('/');
@@ -311,10 +288,8 @@ module.exports = {
 };
 
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
 },{"./confirm-account-page.html":10}],10:[function(require,module,exports){
-module.exports = "<div class=\"confirm-account-page\">\n  <md-toolbar class=\"md-primary confirm-account-page__toolbar\">\n    <h1 class=\"md-toolbar-tools confirm-account-page__heading\" layout-align=\"center\">Confirm your Account</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <form novalidate name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newUserForm.name.$error\" ng-if=\"newUserForm.name.$dirty || newUserForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>new password</label>\n        <input minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"newUserForm.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"newUserForm.password.$dirty || newUserForm.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"newUserForm.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"confirm-account-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"confirm-account-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"confirm-account-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <md-card class=\"confirm-account-page__content-card\">\n      <md-card-content>\n        <div class=\"confirm-account-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"person\"\n            size=\"60\"\n            class=\"confirm-account-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <h2 class=\"confirm-account-page__logo-subheader\">Let's set up your account</h2>\n\n        <form novalidate class=\"confirm-account-page__form\" name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n          <div class=\"confirm-account-page__input-container\">\n            <input required class=\"confirm-account-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"name\">\n            <div ng-if=\"newUserForm.name.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Name is required.</div>\n          </div>\n\n          <div class=\"confirm-account-page__input-container\">\n            <input class=\"confirm-account-page__input-field\" minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\" placeholder=\"password\">\n            <div ng-if=\"newUserForm.password.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password is required.</div>\n            <div ng-if=\"newUserForm.password.$error.minlength && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password must be longer than 8 characters.</div>\n          </div>\n\n          <md-button class=\"confirm-account-page__submit-btn\">next</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
 },{}],11:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -427,8 +402,15 @@ module.exports = {
   },
   template: require('./email-settings-page.html'),
   reloadOnSearch: false,
-  controller: function(CurrentUser, $location, Records, $scope, $stateParams, Toast) {
+  controller: function(CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, UserCan) {
     var previousGroupId;
+    if (UserCan.changeEmailSettings()) {
+      $scope.authorized = true;
+      Error.clear();
+    } else {
+      $scope.authorized = false;
+      Error.set("you can't view this page");
+    }
     $scope.currentUser = CurrentUser();
     previousGroupId = $stateParams.previous_group_id || CurrentUser().primaryGroup().id;
     $scope.settings = [
@@ -465,7 +447,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./email-settings-page.html":16}],16:[function(require,module,exports){
-module.exports = "<div class=\"email-settings-page\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\" \n          layout=\"column\" \n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button email-settings-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"email-settings-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <div layout=\"row\" layout-align=\"start start\" class=\"email-settings-page__email-setting\" ng-repeat=\"setting in settings\">\n      <md-checkbox \n        ng-model=\"currentUser[setting.property]\" \n        ng-attr-aria-label=\"{{ setting.header }}\"\n        class=\"email-settings-page__checkbox\">\n      </md-checkbox>\n\n      <div layout=\"column\" layout-align=\"start start\">\n        <div class=\"email-settings-page__setting-header\">\n          {{ setting.header }}\n        </div>\n        <div class=\"email-settings-page__setting-description\">\n          {{ setting.description }}          \n        </div>\n      </div>\n    </div>\n  </md-content>\n</div>";
+module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button email-settings-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"email-settings-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <div layout=\"row\" layout-align=\"start start\" class=\"email-settings-page__email-setting\" ng-repeat=\"setting in settings\">\n      <md-checkbox\n        ng-model=\"currentUser[setting.property]\"\n        ng-attr-aria-label=\"{{ setting.header }}\"\n        class=\"email-settings-page__checkbox\">\n      </md-checkbox>\n\n      <div layout=\"column\" layout-align=\"start start\">\n        <div class=\"email-settings-page__setting-header\">\n          {{ setting.header }}\n        </div>\n        <div class=\"email-settings-page__setting-description\">\n          {{ setting.description }}\n        </div>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
 },{}],17:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
@@ -540,20 +522,20 @@ module.exports = {
 },{"./group-page.html":20}],20:[function(require,module,exports){
 module.exports = "<div class=\"group-page\" ng-if=\"authorized\">\n  <group-page-sidenav></group-page-sidenav>\n  \n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"group-page__content\">\n    <group-page-buckets ng-if=\"tabSelected == 0\"></group-page-buckets>\n    <group-page-funders ng-if=\"tabSelected == 1\"></group-page-funders>\n  </md-content>\n</div>";
 },{}],21:[function(require,module,exports){
-(function (global){
 module.exports = {
+  onEnter: function($location) {
+    return $location.url($location.path());
+  },
   resolve: {
     userValidated: function($auth) {
       return $auth.validateUser();
-    },
-    membershipsLoaded: function() {
-      return global.cobudgetApp.membershipsLoaded;
     }
   },
   url: '/setup_group',
   template: require('./group-setup-page.html'),
-  controller: function($location, Records, $scope) {
+  controller: function(LoadBar, $location, Records, $scope) {
     return $scope.createGroup = function(formData) {
+      LoadBar.start();
       return Records.groups.build({
         name: formData.name
       }).save().then(function() {
@@ -562,7 +544,8 @@ module.exports = {
           newGroup = _.find(data.groups, function(group) {
             return group.name === formData.name;
           });
-          return $location.path("/groups/" + newGroup.id);
+          $location.path("/groups/" + newGroup.id);
+          return LoadBar.stop();
         });
       });
     };
@@ -570,13 +553,73 @@ module.exports = {
 };
 
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
 },{"./group-setup-page.html":22}],22:[function(require,module,exports){
-module.exports = "<div class=\"group-setup-page\">\n  <md-toolbar class=\"md-primary group-setup-page__toolbar\">\n    <h1 class=\"md-toolbar-tools group-setup-page__heading\" layout-align=\"center\">Group setup</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <form novalidate name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\">\n      <md-input-container>\n        <label>name</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"formData.name\">\n        <div ng-messages=\"newGroupForm.name.$error\" ng-if=\"newGroupForm.name.$dirty || newGroupForm.$submitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n      <md-button class=\"group-setup-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"group-setup-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"group-setup-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <md-card class=\"group-setup-page__content-card\">\n      <md-card-content>\n        <div class=\"group-setup-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"group\"\n            size=\"40\"\n            class=\"group-setup-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\">\n          </ng-md-icon>\n        </div>\n\n        <h2 class=\"group-setup-page__logo-subheader\">Give your group a name</h2>\n\n        <form novalidate class=\"group-setup-page__form\" name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\">\n\n          <div class=\"group-setup-page__input-container\">\n            <input required class=\"group-setup-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"name\">\n            <div ng-if=\"newGroupForm.name.$error.required && newGroupForm.$submitted\" class=\"group-setup-page__input-error\">Name is required.</div>\n          </div>\n\n          <md-button class=\"group-setup-page__submit-btn\">let's go!</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
 },{}],23:[function(require,module,exports){
+module.exports = {
+  url: '/',
+  template: require('./landing-page.html'),
+  controller: function(Dialog, LoadBar, $location, Records, $scope, Session, ValidateAndRedirectLoggedInUser) {
+    ValidateAndRedirectLoggedInUser();
+    $scope.startGroup = function() {
+      var newUser;
+      LoadBar.start();
+      newUser = Records.users.build($scope.formData);
+      return newUser.save().then(function(userData) {
+        return Session.create(userData, {
+          redirectTo: 'group setup'
+        });
+      })["catch"](function(err) {
+        LoadBar.stop();
+        return $location.path('/login').search({
+          setup_group: true,
+          email: newUser.email
+        });
+      });
+    };
+  }
+};
+
+
+},{"./landing-page.html":24}],24:[function(require,module,exports){
+module.exports = "<div class=\"landing-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n  <md-content class=\"landing-page__content\" layout=\"column\" layout-align=\"center center\">\n    <div class=\"landing-page__content-container\">\n      <img class=\"landing-page__dollar-logo\" src=\"./img/cobudget_icon_512px.png\" alt=\"Cobudget\" />\n      <img class=\"landing-page__cobudget-logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n      <h2 class=\"landing-page__logo-subheader\">Create more together</h2>\n\n      <form novalidate name=\"emailForm\" class=\"landing-page__start-group-form\" ng-submit=\"emailForm.$valid && startGroup()\">\n        <div class=\"landing-page__input-container\">\n          <input required class=\"landing-page__email-field\" type=\"email\" name=\"email\" placeholder=\"Email Address\" ng-model=\"formData.email\">\n          <div ng-if=\"emailForm.email.$error.required && emailForm.$submitted\" class=\"landing-page__input-error\">Email is required.</div>\n          <div ng-if=\"emailForm.email.$error.email && emailForm.$submitted\" class=\"landing-page__input-error\">Email address must be valid.</div>\n        </div>\n        <md-button class=\"landing-page__submit-btn\">start a group</md-button>\n      </form>\n    </div>\n  </md-content>\n</div>\n";
+},{}],25:[function(require,module,exports){
+module.exports = {
+  url: '/login',
+  template: require('./login-page.html'),
+  controller: function($auth, Dialog, Error, LoadBar, $location, Records, $scope, Session, ValidateAndRedirectLoggedInUser, $window) {
+    var email, setupGroup;
+    ValidateAndRedirectLoggedInUser();
+    $scope.formData = {};
+    email = $location.search().email;
+    setupGroup = $location.search().setup_group;
+    if (email) {
+      $location.search('email', null);
+      $scope.formData.email = email;
+    }
+    $scope.login = function(formData) {
+      var redirectTo;
+      LoadBar.start();
+      redirectTo = setupGroup ? 'group setup' : 'group';
+      return Session.create(formData, {
+        redirectTo: redirectTo
+      });
+    };
+    $scope.visitForgotPasswordPage = function() {
+      return $location.path('/forgot_password');
+    };
+    $scope.openFeedbackForm = function() {
+      return $window.location.href = 'https://docs.google.com/forms/d/1-_zDQzdMmq_WndQn2bPUEW2DZQSvjl7nIJ6YkvUcp0I/viewform?usp=send_form';
+    };
+  }
+};
+
+
+},{"./login-page.html":26}],26:[function(require,module,exports){
+module.exports = "<div class=\"login-page\">\n  <md-toolbar class=\"md-primary login-page__toolbar\">\n    <h1 class=\"md-toolbar-tools login-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"login-page__content\">\n    <form novalidate name=\"loginForm\" class=\"login-page__login-form\" ng-submit=\"login(formData)\">\n      <div class=\"login-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"loginForm.email.$error\" ng-if=\"loginForm.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"loginForm.password.$error\">\n          <div ng-message=\"required\" ng-if=\"loginForm.password.$dirty || loginForm.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n\n\n      <md-button class=\"login-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"login-page__buttons-container\">\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
+},{}],27:[function(require,module,exports){
 module.exports = "<md-dialog class=\"profile-settings-page__discard-changes-dialog\" aria-label=\"discard changes dialog\">\n  <md-dialog-content class=\"sticky-container profile-settings-page__discard-changes-dialog-content\">\n    <h2 class=\"profile-settings-page__discard-changes-dialog-header\">Discard Changes?</h2>\n    <p class=\"profile-settings-page__discard-changes-dialog-text\">\n      Looks like you have some unsaved changes made to your <span ng-bind-html=\"unsavedFields()\"></span>.<br/><br/>\n      Any changes you have made to your account will be lost.\n    </p>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"okay()\">okay</md-button>\n  </div>\n</md-dialog>\n";
-},{}],24:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -708,14 +751,14 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./discard-changes-dialog.tmpl.html":23,"./profile-settings-page.html":25}],25:[function(require,module,exports){
+},{"./discard-changes-dialog.tmpl.html":27,"./profile-settings-page.html":29}],29:[function(require,module,exports){
 module.exports = "<div class=\"profile-settings-page\">\n  <md-toolbar class=\"profile-settings-page__toolbar\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" aria-label=\"back\" ng-click=\"attemptBack()\">\n        <ng-md-icon icon=\"arrow_back\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"profile-settings-page__back-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <h1>Profile Settings</h1>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"profile-settings-page__content\">\n    <form novalidate class=\"profile-settings-page__details-form\" name=\"accountDetailsForm\" ng-submit=\"save(); accountDetailsForm.$setPristine()\">\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">NAME</label>\n        <input class=\"profile-settings-page__text-input\" type=\"text\" required name=\"name\" ng-model=\"currentUser.name\" />\n        <div ng-if=\"accountDetailsForm.name.$error.required && formSubmitted\" class=\"profile-settings-page__input-error\">Name is required.</div>\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">EMAIL</label>\n        <input class=\"profile-settings-page__text-input\" disabled type=\"email\" name=\"email\" ng-model=\"currentUser.email\" />\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\">PASSWORD</label>\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <a class=\"profile-settings-page__change-password-link\" ng-click=\"openPasswordFields()\">CHANGE PASSWORD</a>\n          <span flex></span>\n          <ng-md-icon icon=\"close\"\n            ng-if=\"showPasswordFields\"\n            ng-click=\"closePasswordFields()\"\n            size=\"20\"\n            class=\"profile-settings-page__cancel-btn\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n      </div>\n\n    <div class=\"profile-settings-page__password-fields\" ng-show=\"showPasswordFields\">\n        <md-divider class=\"profile-settings-page__form-divider\"></md-divider>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"current_password\">CURRENT PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"current_password\" ng-model=\"passwordParams.current_password\"/>\n          <div ng-if=\"passwordErrors.currentPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.currentPassword }}</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"password\">NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"password\" ng-model=\"passwordParams.password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"confirm_password\">REPEAT NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"confirm_password\" ng-model=\"passwordParams.confirm_password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.confirm_password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n      </div>\n\n      <md-button class=\"md-raised md-primary profile-settings-page__save-btn\" ng-disabled=\"accountDetailsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
-},{}],26:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = {
   url: '/reset_password?reset_password_token',
   template: require('./reset-password-page.html'),
   reloadOnSearch: false,
-  controller: function($auth, Dialog, LoadBar, $location, Records, $scope, $stateParams, Toast) {
+  controller: function(Dialog, LoadBar, $location, Records, $scope, Session, $stateParams, Toast) {
     var resetPasswordToken;
     $scope.formData = {};
     resetPasswordToken = $stateParams.reset_password_token;
@@ -733,13 +776,14 @@ module.exports = {
           reset_password_token: resetPasswordToken
         };
         return Records.users.resetPassword(requestParams).then(function(res) {
-          var loginParams, user;
-          user = res.users[0];
+          var loginParams;
           loginParams = {
-            email: user.email,
+            email: res.users[0].email,
             password: password
           };
-          return $auth.submitLogin(loginParams);
+          return Session.create(loginParams, {
+            redirectTo: 'group'
+          });
         })["catch"](function(err) {
           Toast.show('Your reset password token has expired, please request another');
           $location.path('/forgot_password');
@@ -757,49 +801,11 @@ module.exports = {
 };
 
 
-},{"./reset-password-page.html":27}],27:[function(require,module,exports){
+},{"./reset-password-page.html":31}],31:[function(require,module,exports){
 module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"form.password.$dirty || form.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"form.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\" ng-if=\"form.confirmPassword.$dirty || form.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
-},{}],28:[function(require,module,exports){
-module.exports = {
-  url: '/',
-  template: require('./welcome-page.html'),
-  controller: function($auth, Dialog, Error, LoadBar, $location, Records, $scope, $window) {
-    Error.clear();
-    LoadBar.start();
-    $auth.validateUser().then(function() {
-      return Records.memberships.fetchMyMemberships().then(function(data) {
-        var groupId;
-        groupId = data.groups[0].id;
-        return $location.path("/groups/" + groupId);
-      });
-    })["catch"](function() {
-      return LoadBar.stop();
-    });
-    $scope.login = function(formData) {
-      LoadBar.start();
-      return $auth.submitLogin(formData)["catch"](function() {
-        Dialog.alert({
-          title: 'error!',
-          content: 'invalid credentials'
-        });
-        return LoadBar.stop();
-      });
-    };
-    $scope.visitForgotPasswordPage = function() {
-      return $location.path('/forgot_password');
-    };
-    $scope.openFeedbackForm = function() {
-      return $window.location.href = 'https://docs.google.com/forms/d/1-_zDQzdMmq_WndQn2bPUEW2DZQSvjl7nIJ6YkvUcp0I/viewform?usp=send_form';
-    };
-  }
-};
-
-
-},{"./welcome-page.html":29}],29:[function(require,module,exports){
-module.exports = "<div class=\"welcome-page\" ng-hide=\"loading\">\n  <md-toolbar class=\"md-primary welcome-page__toolbar\">\n    <h1 class=\"md-toolbar-tools welcome-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"welcome-page__content\">\n    <form novalidate name=\"loginForm\" class=\"welcome-page__login-form\" ng-submit=\"login(formData)\">\n      <div class=\"welcome-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"loginForm.email.$error\" ng-if=\"loginForm.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"loginForm.password.$error\">\n          <div ng-message=\"required\" ng-if=\"loginForm.password.$dirty || loginForm.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n\n\n      <md-button class=\"welcome-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"welcome-page__buttons-container\">\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n      <md-button class=\"welcome-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
-},{}],30:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
+},{}],33:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -813,7 +819,7 @@ global.cobudgetApp.config(["$authProvider", "config", function($authProvider, co
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],32:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -822,7 +828,7 @@ global.cobudgetApp.controller('ApplicationController', ["Records", function(Reco
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 null;
 
@@ -855,9 +861,9 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-activity-card.html":34}],34:[function(require,module,exports){
+},{"./bucket-page-activity-card.html":36}],36:[function(require,module,exports){
 module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.authorName }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" placeholder=\"Add a comment, question, or offer of support\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\">submit</md-button>\n        </md-input-container>\n      </div>\n\n    </form>\n  </md-card>\n</div>\n  ";
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 (function (global){
 null;
 
@@ -881,9 +887,9 @@ global.cobudgetApp.directive('bucketPageHeaderCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-header-card.html":36}],36:[function(require,module,exports){
+},{"./bucket-page-header-card.html":38}],38:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.authorName }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" ng-if=\"bucket.target > 0\">\n      <span class=\"bucket-page__description-header\">Funding Target</span>\n      <span flex=\"10\"></span>\n      <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n      <!-- <div class=\"bucket-page__description-text-overlay\"></div> -->\n    </div>\n\n   <!--  <md-button \n      md-no-ink \n      ng-if=\"bucket.description.length > 200\"\n      class=\"md-primary bucket-page__more-button\" \n      ng-click=\"toggleMore()\"\n    >{{ moreButtonText() }}</md-button>           -->\n\n  </md-card-content>\n\n</md-card>\n";
-},{}],37:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 (function (global){
 null;
 
@@ -927,9 +933,9 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-progress-card.html":38}],38:[function(require,module,exports){
+},{"./bucket-page-progress-card.html":40}],40:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__progress-card\">\n  <md-card-content class=\"bucket-page__progress-card-content\">\n    <span class=\"bucket-page__progress-header\">Progress</span>\n\n    <div class=\"bucket-page__progress-bar-container\">\n      <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n      <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n    </div>\n\n    <div layout=\"row\" class=\"bucket-page__progress-info\">\n      <div flex=\"25\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n        <span class=\"bucket-page__progress-unit\">backers</span>\n      </div>\n\n      <div flex>\n        <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n        <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n      </div>\n\n      <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n        <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n      </div>\n    </div>\n    \n    <form class=\"bucket-page__fund-form\" layout=\"row\" ng-if=\"membership.balance() >= 1\">\n      <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n        <label>Amount</label>\n        <input class=\"bucket-page__fund-form-amount-input\" type=\"number\" step=\"any\" min=\"0\" pattern=\"[0-9]*\" ng-model=\"newContribution.amount\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" focus-if>\n      </md-input-container>\n\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='submitContribution()' ng-if=\"fundFormOpened\">Submit</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 (function (global){
 null;
 
@@ -965,9 +971,9 @@ global.cobudgetApp.directive('bucketPageStatusCardFlagpoint', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-status-card-flagpoint.html":40}],40:[function(require,module,exports){
+},{"./bucket-page-status-card-flagpoint.html":42}],42:[function(require,module,exports){
 module.exports = "<div class=\"bucket-page__status-flagpoint\">\n\n  <div layout=\"column\" layout-align=\"center center\" ng-show=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_on\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__{{status}}-icon\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-active\">{{ flagpointText() }}</span>\n  </div>\n\n  <div layout=\"column\" layout-align=\"center center\" ng-hide=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_off\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__status-icon-inactive\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-inactive\">{{ flagpointText() }}</span>\n  </div>\n</div>";
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1004,9 +1010,9 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-status-card.html":42}],42:[function(require,module,exports){
+},{"./bucket-page-status-card.html":44}],44:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n      <bucket-page-status-card-flagpoint status=\"draft\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n      <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n      <bucket-page-status-card-flagpoint status=\"live\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n      <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n      <bucket-page-status-card-flagpoint status=\"funded\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n      <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n      \n      <bucket-page-status-card-flagpoint status=\"done\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'draft'\">\n      <p><em>This bucket idea is still being discussed and designed</em></p>\n\n      <div ng-show='userCanStartFunding()'>\n        <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n        <md-button class=\"md-raised md-primary bucket-page__start-funding-btn\" ng-click='openForFunding()'>Start Funding</md-button>\n      </div>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'live'\">\n      <p><em>This bucket has been launched and can be funded.</em></p>\n    </div>\n  </md-card-content>\n</md-card>";
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1032,9 +1038,9 @@ global.cobudgetApp.directive('bucketPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-toolbar.html":44}],44:[function(require,module,exports){
+},{"./bucket-page-toolbar.html":46}],46:[function(require,module,exports){
 module.exports = "<md-toolbar class=\"bucket-page__toolbar\">\n  <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n      <ng-md-icon icon=\"arrow_back\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n      ></ng-md-icon>\n    </md-button>\n\n    <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'live'\">\n      <ng-md-icon icon=\"person\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__funds-icon\"\n      ></ng-md-icon>\n      <div layout=\"column\" layout-align=\"center center\">\n        <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n        <span class=\"bucket-page__funds-overview-amount\">{{ membership.balance() - newContribution.amount | currency : group.currencySymbol : 0 }}</span>\n      </div>\n    </span>\n\n    <span flex></span>\n\n    <span ng-show=\"userCanEditBucket()\">\n      <md-button class=\"bucket-page__edit-button\" ng-click=\"editBucket()\">Edit</md-button>\n    </span>\n  </div>\n</md-toolbar> ";
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1062,9 +1068,9 @@ global.cobudgetApp.directive('errorPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./error-page.html":46}],46:[function(require,module,exports){
+},{"./error-page.html":48}],48:[function(require,module,exports){
 module.exports = "<div class=\"error-page\" ng-show=\"error\">\n  <div class=\"error-page__shrug\">¯\\_(ツ)_/¯</div>\n  <div class=\"error-page__message\">{{ error }}</div>\n</div>\n";
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1094,7 +1100,7 @@ global.cobudgetApp.directive('expandableBucketDescription', ["$timeout", functio
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1117,9 +1123,9 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-buckets.html":49}],49:[function(require,module,exports){
+},{"./group-page-buckets.html":51}],51:[function(require,module,exports){
 module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n          \n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}               \n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.authorName }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n\n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon \n            icon=\"messenger\" \n            layout=\"column\" \n            layout-align=\"center center\" \n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n\n\n      </div>\n    </md-list-item>\n  </md-list>   \n\n  <md-list class=\"group-page__funded-buckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.authorName }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
-},{}],50:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1251,15 +1257,15 @@ global.cobudgetApp.directive('groupPageFunders', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":52,"./group-page-funders.html":51,"./reinvite-user-dialog.tmpl.html":53,"./remove-membership-dialog.tmpl.html":54}],51:[function(require,module,exports){
+},{"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":54,"./group-page-funders.html":53,"./reinvite-user-dialog.tmpl.html":55,"./remove-membership-dialog.tmpl.html":56}],53:[function(require,module,exports){
 module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" layout-align=\"start center\" flex class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n          <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center start\" flex>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"!funderMembership.isPending() && funderMembership.isAdmin\">(admin)</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isPending()\">\n            <ng-md-icon icon=\"mail\" size=\"17\" class=\"group-page__funder-invited-icon\"></ng-md-icon>\n            <span class=\"group-page__funder-invited-label\">Invited</span>\n          </span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" class=\"group-page__funder-balance-container\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance() | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon\n              icon=\"more_vert\"\n              layout=\"column\"\n              layout-align=\"center center\"\n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n\n          <md-menu-content width=\"3\">\n            <md-menu-item>\n              <md-button ng-click=\"openManageFundsDialog(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <div layout=\"column\" layout-align=\"center center\" class=\"group-page__manage-funds-icon\">\n                    <div>{{ group.currencySymbol }}</div>\n                  </div>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Manage Funds</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"portrait\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} Admin</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"inviteAgain(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"mail\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Invite Again</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n              <md-button ng-click=\"removeMembership(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"cancel\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Remove User</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
-},{}],52:[function(require,module,exports){
-module.exports = "<md-dialog class=\"group-page__manage-funds-dialog\" aria-label=\"manage funds dialog\">\n  <md-dialog-content class=\"sticky-container group-page__manage-funds-dialog-content\">\n    <div class=\"group-page__manage-funds-dialog-header\" layout=\"column\" layout-align=\"space-between center\">\n      <div class=\"group-page__manage-funds-dialog-header-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ managedMember.name[0] | uppercase }}</div>\n      </div>\n\n      <div class=\"group-page__manage-funds-dialog-header-title\">\n        Manage {{ managedMember.name }}'s funds\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__manage-funds-options\" layout=\"row\" layout-align=\"space-around center\">\n      <div ng-class=\"mode == 'add' ? 'group-page__manage-funds-option-container-add' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('add')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"add\" class=\"group-page__manage-funds-option-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Add</div>\n      </div>\n\n      <div ng-class=\"mode == 'change' ? 'group-page__manage-funds-option-container-change' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('change')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"edit\" class=\"group-page__manage-funds-option-icon group-page__manage-funds-change-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Change</div>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'add'\">\n      <div>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance() | currency : group.currencySymbol : 2 }}</span>\n        <span class=\"group-page__manage-funds-operator\">+</span>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input group-page__manage-funds-input-add\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.allocationAmount\"\n            ng-change=\"normalizeAllocationAmount()\"\n            ng-keypress=\"normalizeAllocationAmount()\"\n          >\n        </md-input-container>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <span class=\"group-page__manage-funds-operator\">=</span>\n        <span class=\"group-page__manage-funds-total-amount\">\n          {{ (formData.allocationAmount || 0) + managedMembership.balance() | currency : group.currencySymbol : 2}}\n        </span>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'change'\">\n      <div>\n        <span class=\"group-page__manage-funds-filler-text\">Change from</span>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance() | currency : group.currencySymbol : 2}}</span>\n        <span class=\"group-page__manage-funds-filler-text\">to</span>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.newBalance\"\n            ng-change=\"normalizeNewBalance()\"\n            ng-keypress=\"normalizeNewBalance()\"\n          >\n        </md-input-container>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"group-page__manage-funds-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised md-primary group-page__manage-funds-dialog-done-btn\" ng-disabled=\"!isValidForm()\" ng-click=\"createAllocation()\">done</md-button>\n  </div>\n</md-dialog>\n";
-},{}],53:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"reinvite user dialog\">\n  <md-dialog-content class=\"sticky-container group-page__reinvite-user-dialog-content\">\n    This will send another invitation to <b>{{member.name}}</b> at <b>{{member.email}}</b>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">cancel</md-button>\n    <md-button ng-click=\"proceed()\">send</md-button>\n  </div>\n</md-dialog>\n";
 },{}],54:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"remove membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"group-page__remove-membership-dialog-header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page__remove-membership-dialog-warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"group-page__remove-membership-dialog-header-text\">\n        Remove {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"group-page__remove-membership-dialog-list-container\">\n      <div class=\"group-page__remove-membership-dialog-list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"group-page__remove-membership-dialog-list\">\n        <li class=\"group-page__remove-membership-dialog-list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"start start\">\n          <ng-md-icon icon=\"check\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"group-page__remove-membership-dialog-checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"group-page__remove-membership-dialog-warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised group-page__remove-membership-dialog-remove-btn\" ng-click=\"proceed()\">remove</md-button>\n    <md-button class=\"group-page__remove-membership-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
+module.exports = "<md-dialog class=\"group-page__manage-funds-dialog\" aria-label=\"manage funds dialog\">\n  <md-dialog-content class=\"sticky-container group-page__manage-funds-dialog-content\">\n    <div class=\"group-page__manage-funds-dialog-header\" layout=\"column\" layout-align=\"space-between center\">\n      <div class=\"group-page__manage-funds-dialog-header-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ managedMember.name[0] | uppercase }}</div>\n      </div>\n\n      <div class=\"group-page__manage-funds-dialog-header-title\">\n        Manage {{ managedMember.name }}'s funds\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__manage-funds-options\" layout=\"row\" layout-align=\"space-around center\">\n      <div ng-class=\"mode == 'add' ? 'group-page__manage-funds-option-container-add' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('add')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"add\" class=\"group-page__manage-funds-option-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Add</div>\n      </div>\n\n      <div ng-class=\"mode == 'change' ? 'group-page__manage-funds-option-container-change' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('change')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"edit\" class=\"group-page__manage-funds-option-icon group-page__manage-funds-change-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Change</div>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'add'\">\n      <div>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance() | currency : group.currencySymbol : 2 }}</span>\n        <span class=\"group-page__manage-funds-operator\">+</span>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input group-page__manage-funds-input-add\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.allocationAmount\"\n            ng-change=\"normalizeAllocationAmount()\"\n            ng-keypress=\"normalizeAllocationAmount()\"\n          >\n        </md-input-container>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <span class=\"group-page__manage-funds-operator\">=</span>\n        <span class=\"group-page__manage-funds-total-amount\">\n          {{ (formData.allocationAmount || 0) + managedMembership.balance() | currency : group.currencySymbol : 2}}\n        </span>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'change'\">\n      <div>\n        <span class=\"group-page__manage-funds-filler-text\">Change from</span>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance() | currency : group.currencySymbol : 2}}</span>\n        <span class=\"group-page__manage-funds-filler-text\">to</span>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.newBalance\"\n            ng-change=\"normalizeNewBalance()\"\n            ng-keypress=\"normalizeNewBalance()\"\n          >\n        </md-input-container>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"group-page__manage-funds-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised md-primary group-page__manage-funds-dialog-done-btn\" ng-disabled=\"!isValidForm()\" ng-click=\"createAllocation()\">done</md-button>\n  </div>\n</md-dialog>\n";
 },{}],55:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"reinvite user dialog\">\n  <md-dialog-content class=\"sticky-container group-page__reinvite-user-dialog-content\">\n    This will send another invitation to <b>{{member.name}}</b> at <b>{{member.email}}</b>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">cancel</md-button>\n    <md-button ng-click=\"proceed()\">send</md-button>\n  </div>\n</md-dialog>\n";
+},{}],56:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"remove membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"group-page__remove-membership-dialog-header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page__remove-membership-dialog-warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"group-page__remove-membership-dialog-header-text\">\n        Remove {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"group-page__remove-membership-dialog-list-container\">\n      <div class=\"group-page__remove-membership-dialog-list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"group-page__remove-membership-dialog-list\">\n        <li class=\"group-page__remove-membership-dialog-list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"start start\">\n          <ng-md-icon icon=\"check\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"group-page__remove-membership-dialog-checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"group-page__remove-membership-dialog-warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised group-page__remove-membership-dialog-remove-btn\" ng-click=\"proceed()\">remove</md-button>\n    <md-button class=\"group-page__remove-membership-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
+},{}],57:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1292,9 +1298,9 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-sidenav.html":56}],56:[function(require,module,exports){
+},{"./group-page-sidenav.html":58}],58:[function(require,module,exports){
 module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
-},{}],57:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1340,37 +1346,33 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
           label: 'Profile Settings',
           onClick: $scope.openProfileSettings,
           icon: 'person',
-          adminOnly: false
+          isDisplayed: true
         }, {
           label: 'Email Settings',
           onClick: $scope.openEmailSettings,
           icon: 'mail',
-          adminOnly: false
+          isDisplayed: $scope.currentUser.isConfirmed()
         }, {
           label: 'Give Feedback',
           onClick: $scope.openFeedbackForm,
           icon: 'live_help',
-          adminOnly: false
+          isDisplayed: true
         }, {
           label: 'Admin Panel',
           onClick: $scope.openAdminPanel,
           icon: 'local_pizza',
-          adminOnly: true
+          isDisplayed: $scope.currentUser.isAdminOf($scope.group)
         }, {
           label: 'Log Out',
           onClick: $scope.signOut,
           icon: 'exit_to_app',
-          adminOnly: false
+          isDisplayed: true
         }
       ];
       $scope.accessibleMenuItems = function() {
-        if ($scope.currentUser.isAdminOf($scope.group)) {
-          return $scope.menuItems;
-        } else {
-          return _.filter($scope.menuItems, {
-            adminOnly: false
-          });
-        }
+        return _.filter($scope.menuItems, {
+          isDisplayed: true
+        });
       };
     }]
   };
@@ -1379,9 +1381,34 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-toolbar.html":58}],58:[function(require,module,exports){
+},{"./group-page-toolbar.html":60}],60:[function(require,module,exports){
 module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\"\n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n\n    <md-menu class=\"group-page__toolbar-menu\">\n      <div class=\"group-page__toolbar-menu-btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n        <ng-md-icon icon=\"person\"\n          class=\"group-page__person-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <md-menu-content class=\"group-page__toolbar-menu-content\" width=\"3\">\n        <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n          <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n            <div layout=\"row\" layout-align=\"start center\">\n              <ng-md-icon icon=\"{{ menuItem.icon }}\"\n                class=\"group-page__toolbar-menu-icon\"\n                layout=\"column\"\n                layout-align=\"center center\"\n              ></ng-md-icon>\n              <span md-menu-align-target>{{ menuItem.label }}</span>\n            </div>\n          </md-button>\n        </md-menu-item>\n      </md-menu-content>\n    </md-menu>\n  </div>\n\n  <div class=\"md-toolbar-tools group-page__funds-bar\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance() | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n\n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height>\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Funders</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\"\n      class=\"group-page__create-bucket-fab-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>\n";
-},{}],59:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('landingPageToolbar', function() {
+  return {
+    restrict: 'E',
+    template: require('./landing-page-toolbar.html'),
+    replace: true,
+    controller: ["$location", "$scope", function($location, $scope) {
+      $scope.redirectToLoginPage = function() {
+        return $location.path('/login');
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./landing-page-toolbar.html":62}],62:[function(require,module,exports){
+module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <!-- <md-button class=\"md-icon-button\" aria-label=\"menu\" ng-click=\"\">\n    <ng-md-icon icon=\"menu\"\n      size=\"25\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"landing-page__menu-icon\"\n    ></ng-md-icon>\n  </md-button> -->\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
+},{}],63:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1409,9 +1436,9 @@ global.cobudgetApp.directive('loadingPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loading-page.html":60}],60:[function(require,module,exports){
+},{"./loading-page.html":64}],64:[function(require,module,exports){
 module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
-},{}],61:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -1452,7 +1479,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],62:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -1481,7 +1508,7 @@ require("angular-truncate-2");
 require("angular-marked");
 require("ng-q-all-settled");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -1498,14 +1525,14 @@ require('./controllers/application-controller.coffee');;
 require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
-require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');;
-require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/expandable-bucket-description.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');;
+require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');require('./services/validate-and-redirect-logged-in-user.coffee');;
+require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/expandable-bucket-description.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":32,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":33,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":35,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":37,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":39,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":41,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":43,"./directives/error-page/error-page.coffee":45,"./directives/expandable-bucket-description.coffee":47,"./directives/group-page-buckets/group-page-buckets.coffee":48,"./directives/group-page-funders/group-page-funders.coffee":50,"./directives/group-page-sidenav/group-page-sidenav.coffee":55,"./directives/group-page-toolbar/group-page-toolbar.coffee":57,"./directives/loading-page/loading-page.coffee":59,"./filters/date-filter.coffee":61,"./models/allocation-model.coffee":63,"./models/bucket-model.coffee":64,"./models/comment-model.coffee":65,"./models/contribution-model.coffee":66,"./models/group-model.coffee":67,"./models/membership-model.coffee":68,"./models/user-model.coffee":69,"./records-interfaces/allocation-records-interface.coffee":70,"./records-interfaces/bucket-records-interface.coffee":71,"./records-interfaces/comment-records-interface.coffee":72,"./records-interfaces/contribution-records-interface.coffee":73,"./records-interfaces/group-records-interface.coffee":74,"./records-interfaces/membership-records-interface.coffee":75,"./records-interfaces/user-records-interface.coffee":76,"./services/current-user.coffee":78,"./services/dialog.coffee":79,"./services/error.coffee":80,"./services/load-bar.coffee":81,"./services/session.coffee":82,"./services/toast.coffee":83,"./services/user-can.coffee":84,"angular":102,"angular-animate":86,"angular-aria":88,"angular-cookie":89,"angular-marked":90,"angular-material":94,"angular-material-icons":92,"angular-messages":96,"angular-sanitize/angular-sanitize":97,"angular-truncate-2":98,"angular-ui-router":99,"angular-upload":100,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":30,"app/configs/auth.coffee":31,"app/routes.coffee":77,"camelize":110,"is-empty-object":111,"jquery":112,"listify":113,"lodash":114,"moment":118,"morph":119,"ng-focus-if":120,"ng-q-all-settled":121,"ng-sanitize":122,"ng-token-auth":123}],63:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":34,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":35,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":37,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":39,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":41,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":43,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":45,"./directives/error-page/error-page.coffee":47,"./directives/expandable-bucket-description.coffee":49,"./directives/group-page-buckets/group-page-buckets.coffee":50,"./directives/group-page-funders/group-page-funders.coffee":52,"./directives/group-page-sidenav/group-page-sidenav.coffee":57,"./directives/group-page-toolbar/group-page-toolbar.coffee":59,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":61,"./directives/loading-page/loading-page.coffee":63,"./filters/date-filter.coffee":65,"./models/allocation-model.coffee":67,"./models/bucket-model.coffee":68,"./models/comment-model.coffee":69,"./models/contribution-model.coffee":70,"./models/group-model.coffee":71,"./models/membership-model.coffee":72,"./models/user-model.coffee":73,"./records-interfaces/allocation-records-interface.coffee":74,"./records-interfaces/bucket-records-interface.coffee":75,"./records-interfaces/comment-records-interface.coffee":76,"./records-interfaces/contribution-records-interface.coffee":77,"./records-interfaces/group-records-interface.coffee":78,"./records-interfaces/membership-records-interface.coffee":79,"./records-interfaces/user-records-interface.coffee":80,"./services/current-user.coffee":82,"./services/dialog.coffee":83,"./services/error.coffee":84,"./services/load-bar.coffee":85,"./services/session.coffee":86,"./services/toast.coffee":87,"./services/user-can.coffee":88,"./services/validate-and-redirect-logged-in-user.coffee":89,"angular":107,"angular-animate":91,"angular-aria":93,"angular-cookie":94,"angular-marked":95,"angular-material":99,"angular-material-icons":97,"angular-messages":101,"angular-sanitize/angular-sanitize":102,"angular-truncate-2":103,"angular-ui-router":104,"angular-upload":105,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":32,"app/configs/auth.coffee":33,"app/routes.coffee":81,"camelize":115,"is-empty-object":116,"jquery":117,"listify":118,"lodash":119,"moment":123,"morph":124,"ng-focus-if":125,"ng-q-all-settled":126,"ng-sanitize":127,"ng-token-auth":128}],67:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1545,7 +1572,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],64:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1640,7 +1667,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],65:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1683,7 +1710,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],66:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1723,7 +1750,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],67:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1802,7 +1829,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],68:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1856,7 +1883,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],69:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1900,13 +1927,13 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
     };
 
     UserModel.prototype.isMemberOf = function(group) {
-      return _.find(this.memberships(), function(membership) {
+      return !!_.find(this.memberships(), function(membership) {
         return membership.groupId === group.id;
       });
     };
 
     UserModel.prototype.isAdminOf = function(group) {
-      return _.find(this.memberships(), function(membership) {
+      return !!_.find(this.memberships(), function(membership) {
         return membership.groupId === group.id && membership.isAdmin;
       });
     };
@@ -1931,7 +1958,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],70:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1969,7 +1996,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],71:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2007,7 +2034,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],72:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2045,7 +2072,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],73:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2091,7 +2118,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],74:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2127,7 +2154,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],75:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2175,12 +2202,12 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],76:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
 
-global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterface", "UserModel", function(config, BaseRecordsInterface, UserModel) {
+global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterface", "$q", "UserModel", function(config, BaseRecordsInterface, $q, UserModel) {
   var UserRecordsInterface;
   return UserRecordsInterface = (function(superClass) {
     extend(UserRecordsInterface, superClass);
@@ -2219,6 +2246,19 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
       return this.remote.post('update_password', params);
     };
 
+    UserRecordsInterface.prototype.fetchMe = function() {
+      var deferred;
+      deferred = $q.defer();
+      if (this.find(global.cobudgetApp.currentUserId)) {
+        deferred.resolve();
+      } else {
+        this.remote.get('me', {}).then(function() {
+          return deferred.resolve();
+        });
+      }
+      return deferred.promise;
+    };
+
     return UserRecordsInterface;
 
   })(BaseRecordsInterface);
@@ -2227,19 +2267,19 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],77:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
 global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
-  return $stateProvider.state('group', require('app/components/group-page/group-page.coffee')).state('welcome', require('app/components/welcome-page/welcome-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee'));
+  return $stateProvider.state('landing', require('app/components/landing-page/landing-page.coffee')).state('group', require('app/components/group-page/group-page.coffee')).state('login', require('app/components/login-page/login-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee'));
 }]);
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":9,"app/components/create-bucket-page/create-bucket-page.coffee":11,"app/components/edit-bucket-page/edit-bucket-page.coffee":13,"app/components/email-settings-page/email-settings-page.coffee":15,"app/components/forgot-password-page/forgot-password-page.coffee":17,"app/components/group-page/group-page.coffee":19,"app/components/group-setup-page/group-setup-page.coffee":21,"app/components/profile-settings-page/profile-settings-page.coffee":24,"app/components/reset-password-page/reset-password-page.coffee":26,"app/components/welcome-page/welcome-page.coffee":28}],78:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":9,"app/components/create-bucket-page/create-bucket-page.coffee":11,"app/components/edit-bucket-page/edit-bucket-page.coffee":13,"app/components/email-settings-page/email-settings-page.coffee":15,"app/components/forgot-password-page/forgot-password-page.coffee":17,"app/components/group-page/group-page.coffee":19,"app/components/group-setup-page/group-setup-page.coffee":21,"app/components/landing-page/landing-page.coffee":23,"app/components/login-page/login-page.coffee":25,"app/components/profile-settings-page/profile-settings-page.coffee":28,"app/components/reset-password-page/reset-password-page.coffee":30}],82:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2255,7 +2295,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],79:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2319,7 +2359,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],80:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2347,7 +2387,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],81:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2375,17 +2415,63 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],82:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 (function (global){
 null;
 
 
 /* @ngInject */
 
-global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "$q", function($auth, CurrentUser, $q) {
+global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBar", "$location", "$q", "Records", function($auth, CurrentUser, Dialog, LoadBar, $location, $q, Records) {
   var Session;
   return new (Session = (function() {
     function Session() {}
+
+    Session.prototype.create = function(formData, options) {
+      var promise;
+      if (options == null) {
+        options = {};
+      }
+      promise = $auth.submitLogin(formData);
+      promise.then((function(_this) {
+        return function(user) {
+          var membershipsLoadedDeferred;
+          global.cobudgetApp.currentUserId = user.id;
+          membershipsLoadedDeferred = $q.defer();
+          global.cobudgetApp.membershipsLoaded = membershipsLoadedDeferred.promise;
+          Records.users.updateProfile({
+            utc_offset: moment().utcOffset()
+          });
+          return Records.memberships.fetchMyMemberships().then(function(data) {
+            membershipsLoadedDeferred.resolve(data);
+            return Records.users.fetchMe().then(function() {
+              LoadBar.stop();
+              switch (options.redirectTo) {
+                case 'group':
+                  if (CurrentUser().hasMemberships()) {
+                    return $location.path("/groups/" + (CurrentUser().primaryGroup().id));
+                  } else {
+                    return _this.clear().then(function() {
+                      $location.path('/');
+                      return Dialog.alert({
+                        title: 'error!',
+                        content: 'you have no active memberships'
+                      });
+                    });
+                  }
+                  break;
+                case 'group setup':
+                  return $location.path("/setup_group");
+              }
+            });
+          });
+        };
+      })(this));
+      promise["catch"](function() {
+        return LoadBar.stop();
+      });
+      return promise;
+    };
 
     Session.prototype.clear = function() {
       var deferred;
@@ -2409,7 +2495,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "$q", function($a
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],83:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2449,7 +2535,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],84:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2489,6 +2575,10 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
       return validMemberships.length > 0;
     };
 
+    UserCan.prototype.changeEmailSettings = function() {
+      return CurrentUser().isConfirmed();
+    };
+
     return UserCan;
 
   })());
@@ -2497,7 +2587,34 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],85:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error", "LoadBar", "$location", "Records", function($auth, Error, LoadBar, $location, Records) {
+  return function() {
+    LoadBar.start();
+    Error.clear();
+    return $auth.validateUser().then(function() {
+      return global.cobudgetApp.membershipsLoaded.then(function(data) {
+        var groupId;
+        groupId = data.groups[0].id;
+        $location.path("/groups/" + groupId);
+        return LoadBar.stop();
+      });
+    })["catch"](function() {
+      return LoadBar.stop();
+    });
+  };
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],90:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6429,11 +6546,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],86:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":85}],87:[function(require,module,exports){
+},{"./angular-animate":90}],92:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6833,11 +6950,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],88:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":87}],89:[function(require,module,exports){
+},{"./angular-aria":92}],94:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -6964,7 +7081,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],90:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -7314,7 +7431,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":117}],91:[function(require,module,exports){
+},{"marked":122}],96:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -8246,11 +8363,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],92:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":91}],93:[function(require,module,exports){
+},{"./angular-material-icons":96}],98:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -25419,7 +25536,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],94:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -25433,7 +25550,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":93,"angular":102,"angular-animate":86,"angular-aria":88}],95:[function(require,module,exports){
+},{"./angular-material":98,"angular":107,"angular-animate":91,"angular-aria":93}],100:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26120,11 +26237,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],96:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":95}],97:[function(require,module,exports){
+},{"./angular-messages":100}],102:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26809,7 +26926,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],98:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -26860,7 +26977,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],99:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.13
@@ -31093,7 +31210,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],100:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -31395,7 +31512,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],101:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -60414,11 +60531,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],102:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":101}],103:[function(require,module,exports){
+},{"./angular":106}],108:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -60712,7 +60829,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":108}],104:[function(require,module,exports){
+},{"./utils.coffee":113}],109:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -60870,7 +60987,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":108}],105:[function(require,module,exports){
+},{"./utils.coffee":113}],110:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -60883,7 +61000,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":103,"./base_records_interface.coffee":104,"./record_store.coffee":106,"./restful_client.coffee":107}],106:[function(require,module,exports){
+},{"./base_model.coffee":108,"./base_records_interface.coffee":109,"./record_store.coffee":111,"./restful_client.coffee":112}],111:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -60923,7 +61040,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],107:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -61048,7 +61165,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],108:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -61091,9 +61208,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],109:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 
-},{}],110:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -61154,7 +61271,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],111:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -61182,7 +61299,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],112:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -71015,7 +71132,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],113:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -71050,7 +71167,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],114:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -83406,7 +83523,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],115:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -83991,7 +84108,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],116:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -88414,7 +88531,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":115,"fs":109}],117:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":120,"fs":114}],122:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -89704,7 +89821,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],118:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -93311,7 +93428,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],119:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -93438,7 +93555,7 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],120:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -93470,7 +93587,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],121:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -93489,7 +93606,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],122:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -93980,7 +94097,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],123:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -94829,10 +94946,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],124:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 require('app')
 
-},{"app":62}]},{},[124])
+},{"app":66}]},{},[129])
 
 
 //# sourceMappingURL=../maps/index.js.map
