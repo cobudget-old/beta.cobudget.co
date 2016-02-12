@@ -108,7 +108,7 @@ module.exports = {
     if (UserCan.viewAdminPanel()) {
       $scope.authorized = true;
       Error.clear();
-      $scope.accessibleGroups = CurrentUser().groups();
+      $scope.accessibleGroups = CurrentUser().administeredGroups();
     } else {
       $scope.authorized = false;
       Error.set("you can't view this page");
@@ -1331,7 +1331,7 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
           label: 'Admin Panel',
           onClick: $scope.openAdminPanel,
           icon: 'local_pizza',
-          isDisplayed: $scope.currentUser.isAdminOf($scope.group)
+          isDisplayed: $scope.currentUser.isAGroupAdmin()
         }, {
           label: 'Log Out',
           onClick: $scope.signOut,
@@ -1887,6 +1887,18 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
         return membership.groupId;
       });
       return this.recordStore.groups.find(groupIds);
+    };
+
+    UserModel.prototype.administeredGroups = function() {
+      return _.filter(this.groups(), (function(_this) {
+        return function(group) {
+          return _this.isAdminOf(group);
+        };
+      })(this));
+    };
+
+    UserModel.prototype.isAGroupAdmin = function() {
+      return this.administeredGroups().length > 0;
     };
 
     UserModel.prototype.primaryGroup = function() {
