@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":110,"lokijs":121}],2:[function(require,module,exports){
+},{"angular_record_store":111,"lokijs":122}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -804,7 +804,7 @@ module.exports = {
 },{"./reset-password-page.html":31}],31:[function(require,module,exports){
 module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"form.password.$dirty || form.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"form.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\" ng-if=\"form.confirmPassword.$dirty || form.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
 },{}],32:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],33:[function(require,module,exports){
 (function (global){
 
@@ -1271,6 +1271,8 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 },{"./group-page-sidenav.html":57}],57:[function(require,module,exports){
 module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
 },{}],58:[function(require,module,exports){
+module.exports = "<md-bottom-sheet class=\"group-page__bottom-sheet md-list\">\n  <md-list>\n    <md-list-item ng-repeat=\"action in adminActions\" ng-click=\"action.onClick()\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <ng-md-icon icon=\"{{ action.icon }}\"\n          class=\"group-page__toolbar-menu-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <span md-menu-align-target>{{ action.label }}</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</md-bottom-sheet>\n";
+},{}],59:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1282,7 +1284,7 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
     restrict: 'E',
     template: require('./group-page-toolbar.html'),
     replace: true,
-    controller: ["$auth", "$location", "$rootScope", "$scope", "Toast", "$window", function($auth, $location, $rootScope, $scope, Toast, $window) {
+    controller: ["$auth", "$location", "$mdBottomSheet", "$rootScope", "$scope", "Toast", "$window", function($auth, $location, $mdBottomSheet, $rootScope, $scope, Toast, $window) {
       $scope.openSidenav = function() {
         return $rootScope.$broadcast('open sidenav');
       };
@@ -1303,6 +1305,12 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
       };
       $scope.openEmailSettings = function() {
         return $location.path('/email_settings').search('previous_group_id', $scope.group.id);
+      };
+      $scope.openInvitePeople = function() {
+        return console.log('invite-people-btn clicked!');
+      };
+      $scope.openManageFunds = function() {
+        return console.log('manage-funds-btn clicked!');
       };
       $scope.signOut = function() {
         return $auth.signOut().then(function() {
@@ -1344,6 +1352,30 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
           isDisplayed: true
         });
       };
+      $scope.openBottomSheet = function() {
+        return $mdBottomSheet.show({
+          preserveScope: true,
+          scope: $scope,
+          template: require('./bottom-sheet.tmpl.html'),
+          controller: function() {
+            return $scope.adminActions = [
+              {
+                label: 'Invite People',
+                onClick: $scope.openInvitePeople,
+                icon: 'person_add'
+              }, {
+                label: 'Manage Funds',
+                onClick: $scope.openManageFunds,
+                icon: 'attach_money'
+              }, {
+                label: 'Cancel',
+                onClick: $mdBottomSheet.cancel,
+                icon: 'cancel'
+              }
+            ];
+          }
+        });
+      };
     }]
   };
 });
@@ -1351,9 +1383,9 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-toolbar.html":59}],59:[function(require,module,exports){
-module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\"\n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n\n    <md-menu class=\"group-page__toolbar-menu\">\n      <div class=\"group-page__toolbar-menu-btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n        <ng-md-icon icon=\"person\"\n          class=\"group-page__person-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <md-menu-content class=\"group-page__toolbar-menu-content\" width=\"3\">\n        <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n          <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n            <div layout=\"row\" layout-align=\"start center\">\n              <ng-md-icon icon=\"{{ menuItem.icon }}\"\n                class=\"group-page__toolbar-menu-icon\"\n                layout=\"column\"\n                layout-align=\"center center\"\n              ></ng-md-icon>\n              <span md-menu-align-target>{{ menuItem.label }}</span>\n            </div>\n          </md-button>\n        </md-menu-item>\n      </md-menu-content>\n    </md-menu>\n  </div>\n\n  <div class=\"md-toolbar-tools group-page__funds-bar\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n\n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height>\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Funders</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\"\n      class=\"group-page__create-bucket-fab-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>\n";
-},{}],60:[function(require,module,exports){
+},{"./bottom-sheet.tmpl.html":58,"./group-page-toolbar.html":60}],60:[function(require,module,exports){
+module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\"\n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n\n    <md-menu class=\"group-page__toolbar-menu\">\n      <div class=\"group-page__toolbar-menu-btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n        <ng-md-icon icon=\"person\"\n          class=\"group-page__person-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <md-menu-content class=\"group-page__toolbar-menu-content\" width=\"3\">\n        <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n          <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n            <div layout=\"row\" layout-align=\"start center\">\n              <ng-md-icon icon=\"{{ menuItem.icon }}\"\n                class=\"group-page__toolbar-menu-icon\"\n                layout=\"column\"\n                layout-align=\"center center\"\n              ></ng-md-icon>\n              <span md-menu-align-target>{{ menuItem.label }}</span>\n            </div>\n          </md-button>\n        </md-menu-item>\n      </md-menu-content>\n    </md-menu>\n  </div>\n\n  <div class=\"group-page__funds-bar\" layout=\"row\" layout-align=\"center end\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n\n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div flex></div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"currentUser.isAdminOf(group)\">\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openInvitePeople()\">\n        <ng-md-icon icon=\"person_add\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__invite-people-btn-label\">Invite People</div>\n      </div>\n\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openManageFunds()\">\n        <ng-md-icon icon=\"attach_money\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__manage-funds-btn-label\">Manage Funds</div>\n      </div>\n\n      <div class=\"group-page__admin-more-btn\" ng-click=\"openBottomSheet()\">\n        <ng-md-icon icon=\"more_vert\"\n          size=\"27\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n    </div>\n\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height>\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Funders</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\"\n      class=\"group-page__create-bucket-fab-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>\n";
+},{}],61:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1376,9 +1408,9 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./landing-page-toolbar.html":61}],61:[function(require,module,exports){
+},{"./landing-page-toolbar.html":62}],62:[function(require,module,exports){
 module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <!-- <md-button class=\"md-icon-button\" aria-label=\"menu\" ng-click=\"\">\n    <ng-md-icon icon=\"menu\"\n      size=\"25\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"landing-page__menu-icon\"\n    ></ng-md-icon>\n  </md-button> -->\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1406,9 +1438,9 @@ global.cobudgetApp.directive('loadingPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loading-page.html":63}],63:[function(require,module,exports){
+},{"./loading-page.html":64}],64:[function(require,module,exports){
 module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -1449,7 +1481,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -1479,7 +1511,7 @@ require("angular-marked");
 require("ng-q-all-settled");
 require("angular-eha.only-digits");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -1503,7 +1535,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":34,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":35,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":37,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":39,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":41,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":43,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":45,"./directives/error-page/error-page.coffee":47,"./directives/group-page-buckets/group-page-buckets.coffee":49,"./directives/group-page-funders/group-page-funders.coffee":51,"./directives/group-page-sidenav/group-page-sidenav.coffee":56,"./directives/group-page-toolbar/group-page-toolbar.coffee":58,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":60,"./directives/loading-page/loading-page.coffee":62,"./filters/date-filter.coffee":64,"./models/allocation-model.coffee":66,"./models/bucket-model.coffee":67,"./models/comment-model.coffee":68,"./models/contribution-model.coffee":69,"./models/group-model.coffee":70,"./models/membership-model.coffee":71,"./models/user-model.coffee":72,"./records-interfaces/allocation-records-interface.coffee":73,"./records-interfaces/bucket-records-interface.coffee":74,"./records-interfaces/comment-records-interface.coffee":75,"./records-interfaces/contribution-records-interface.coffee":76,"./records-interfaces/group-records-interface.coffee":77,"./records-interfaces/membership-records-interface.coffee":78,"./records-interfaces/user-records-interface.coffee":79,"./services/current-user.coffee":81,"./services/dialog.coffee":82,"./services/error.coffee":83,"./services/load-bar.coffee":84,"./services/session.coffee":85,"./services/toast.coffee":86,"./services/user-can.coffee":87,"./services/validate-and-redirect-logged-in-user.coffee":88,"angular":107,"angular-animate":90,"angular-aria":92,"angular-cookie":93,"angular-eha.only-digits":94,"angular-marked":95,"angular-material":99,"angular-material-icons":97,"angular-messages":101,"angular-sanitize/angular-sanitize":102,"angular-truncate-2":103,"angular-ui-router":104,"angular-upload":105,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":32,"app/configs/auth.coffee":33,"app/routes.coffee":80,"camelize":115,"is-empty-object":116,"jquery":117,"listify":118,"lodash":119,"moment":123,"morph":124,"ng-focus-if":125,"ng-q-all-settled":126,"ng-sanitize":127,"ng-token-auth":128}],66:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":34,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":35,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":37,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":39,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":41,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":43,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":45,"./directives/error-page/error-page.coffee":47,"./directives/group-page-buckets/group-page-buckets.coffee":49,"./directives/group-page-funders/group-page-funders.coffee":51,"./directives/group-page-sidenav/group-page-sidenav.coffee":56,"./directives/group-page-toolbar/group-page-toolbar.coffee":59,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":61,"./directives/loading-page/loading-page.coffee":63,"./filters/date-filter.coffee":65,"./models/allocation-model.coffee":67,"./models/bucket-model.coffee":68,"./models/comment-model.coffee":69,"./models/contribution-model.coffee":70,"./models/group-model.coffee":71,"./models/membership-model.coffee":72,"./models/user-model.coffee":73,"./records-interfaces/allocation-records-interface.coffee":74,"./records-interfaces/bucket-records-interface.coffee":75,"./records-interfaces/comment-records-interface.coffee":76,"./records-interfaces/contribution-records-interface.coffee":77,"./records-interfaces/group-records-interface.coffee":78,"./records-interfaces/membership-records-interface.coffee":79,"./records-interfaces/user-records-interface.coffee":80,"./services/current-user.coffee":82,"./services/dialog.coffee":83,"./services/error.coffee":84,"./services/load-bar.coffee":85,"./services/session.coffee":86,"./services/toast.coffee":87,"./services/user-can.coffee":88,"./services/validate-and-redirect-logged-in-user.coffee":89,"angular":108,"angular-animate":91,"angular-aria":93,"angular-cookie":94,"angular-eha.only-digits":95,"angular-marked":96,"angular-material":100,"angular-material-icons":98,"angular-messages":102,"angular-sanitize/angular-sanitize":103,"angular-truncate-2":104,"angular-ui-router":105,"angular-upload":106,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":32,"app/configs/auth.coffee":33,"app/routes.coffee":81,"camelize":116,"is-empty-object":117,"jquery":118,"listify":119,"lodash":120,"moment":124,"morph":125,"ng-focus-if":126,"ng-q-all-settled":127,"ng-sanitize":128,"ng-token-auth":129}],67:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1543,7 +1575,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1638,7 +1670,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1681,7 +1713,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],69:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1721,7 +1753,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1800,7 +1832,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1850,7 +1882,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],72:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1937,7 +1969,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],73:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -1975,7 +2007,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],74:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2013,7 +2045,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],75:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2051,7 +2083,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],76:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2097,7 +2129,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],77:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2133,7 +2165,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2181,7 +2213,7 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2246,7 +2278,7 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],80:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -2258,7 +2290,7 @@ global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($sta
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":9,"app/components/create-bucket-page/create-bucket-page.coffee":11,"app/components/edit-bucket-page/edit-bucket-page.coffee":13,"app/components/email-settings-page/email-settings-page.coffee":15,"app/components/forgot-password-page/forgot-password-page.coffee":17,"app/components/group-page/group-page.coffee":19,"app/components/group-setup-page/group-setup-page.coffee":21,"app/components/landing-page/landing-page.coffee":23,"app/components/login-page/login-page.coffee":25,"app/components/profile-settings-page/profile-settings-page.coffee":28,"app/components/reset-password-page/reset-password-page.coffee":30}],81:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":9,"app/components/create-bucket-page/create-bucket-page.coffee":11,"app/components/edit-bucket-page/edit-bucket-page.coffee":13,"app/components/email-settings-page/email-settings-page.coffee":15,"app/components/forgot-password-page/forgot-password-page.coffee":17,"app/components/group-page/group-page.coffee":19,"app/components/group-setup-page/group-setup-page.coffee":21,"app/components/landing-page/landing-page.coffee":23,"app/components/login-page/login-page.coffee":25,"app/components/profile-settings-page/profile-settings-page.coffee":28,"app/components/reset-password-page/reset-password-page.coffee":30}],82:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2274,7 +2306,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2338,7 +2370,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],83:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2366,7 +2398,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2394,7 +2426,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2474,7 +2506,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBa
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2514,7 +2546,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2566,7 +2598,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2593,7 +2625,7 @@ global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error",
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6525,11 +6557,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":89}],91:[function(require,module,exports){
+},{"./angular-animate":90}],92:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -6929,11 +6961,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":91}],93:[function(require,module,exports){
+},{"./angular-aria":92}],94:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -7060,7 +7092,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 'use strict';
 (function() {
 
@@ -7130,7 +7162,7 @@ factory('ipCookie', ['$document',
   }
 }());
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -7480,7 +7512,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":122}],96:[function(require,module,exports){
+},{"marked":123}],97:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -8412,11 +8444,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":96}],98:[function(require,module,exports){
+},{"./angular-material-icons":97}],99:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -25585,7 +25617,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -25599,7 +25631,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":98,"angular":107,"angular-animate":90,"angular-aria":92}],100:[function(require,module,exports){
+},{"./angular-material":99,"angular":108,"angular-animate":91,"angular-aria":93}],101:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26286,11 +26318,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":100}],102:[function(require,module,exports){
+},{"./angular-messages":101}],103:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26975,7 +27007,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],103:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -27026,7 +27058,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],104:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.13
@@ -31259,7 +31291,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],105:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -31561,7 +31593,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],106:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -60580,11 +60612,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":106}],108:[function(require,module,exports){
+},{"./angular":107}],109:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -60878,7 +60910,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":113}],109:[function(require,module,exports){
+},{"./utils.coffee":114}],110:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -61036,7 +61068,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":113}],110:[function(require,module,exports){
+},{"./utils.coffee":114}],111:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -61049,7 +61081,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":108,"./base_records_interface.coffee":109,"./record_store.coffee":111,"./restful_client.coffee":112}],111:[function(require,module,exports){
+},{"./base_model.coffee":109,"./base_records_interface.coffee":110,"./record_store.coffee":112,"./restful_client.coffee":113}],112:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -61089,7 +61121,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -61214,7 +61246,7 @@ module.exports = function($http, $upload) {
 };
 
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -61257,9 +61289,9 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],114:[function(require,module,exports){
-
 },{}],115:[function(require,module,exports){
+
+},{}],116:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -61320,7 +61352,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -61348,7 +61380,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],117:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -71181,7 +71213,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -71216,7 +71248,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -83572,7 +83604,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],120:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -84157,7 +84189,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -88580,7 +88612,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":120,"fs":114}],122:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":121,"fs":115}],123:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -89870,7 +89902,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -93477,7 +93509,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],124:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -93604,7 +93636,7 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -93636,7 +93668,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],126:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -93655,7 +93687,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],127:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -94146,7 +94178,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],128:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -94995,10 +95027,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],129:[function(require,module,exports){
+},{}],130:[function(require,module,exports){
 require('app')
 
-},{"app":65}]},{},[129])
+},{"app":66}]},{},[130])
 
 
 //# sourceMappingURL=../maps/index.js.map
