@@ -636,7 +636,7 @@ module.exports = {
   },
   url: '/groups/:groupId/manage_funds',
   template: require('./manage-group-funds-page.html'),
-  controller: function(CurrentUser, DownloadCSV, Error, LoadBar, Records, $scope, $stateParams, UserCan) {
+  controller: function(config, CurrentUser, DownloadCSV, Error, LoadBar, Records, $scope, $stateParams, UserCan) {
     var groupId;
     LoadBar.start();
     groupId = parseInt($stateParams.groupId);
@@ -661,7 +661,7 @@ module.exports = {
       timestamp = moment().format('YYYY-MM-DD-HH-mm-ss');
       filename = $scope.group.name + "-member-data-" + timestamp;
       params = {
-        url: "http://localhost:3000/api/v1/memberships.csv?group_id=" + groupId,
+        url: config.apiPrefix + "/memberships.csv?group_id=" + groupId,
         filename: filename
       };
       return DownloadCSV(params);
