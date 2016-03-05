@@ -93770,6 +93770,7 @@ module.exports.toTitle = toTitle;
         url: params.url
       }).success(function (data) {
         var anchor = angular.element('<a/>')
+        angular.element(document.body).append(anchor)
         anchor.attr({
           href: 'data:attachment/csv;charset=utf-8,' + encodeURI(data),
           target: '_self',
