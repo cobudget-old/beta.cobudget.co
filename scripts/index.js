@@ -628,7 +628,7 @@ module.exports = {
   },
   url: '/groups/:groupId/manage_funds',
   template: require('./manage-group-funds-page.html'),
-  controller: function(config, CurrentUser, DownloadCSV, Error, LoadBar, Records, $scope, $stateParams, UserCan) {
+  controller: function(config, CurrentUser, Dialog, DownloadCSV, Error, LoadBar, Records, $scope, $stateParams, UserCan) {
     var groupId;
     LoadBar.start();
     groupId = parseInt($stateParams.groupId);
