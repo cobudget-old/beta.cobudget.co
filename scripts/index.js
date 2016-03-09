@@ -33,7 +33,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":125,"lokijs":136}],2:[function(require,module,exports){
+},{"angular_record_store":125,"lokijs":137}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -649,6 +649,7 @@ module.exports = {
       LoadBar.stop();
       return Error.set('group not found');
     });
+    $scope.usingSafari = browser.safari;
     $scope.downloadCSV = function() {
       var filename, params, timestamp;
       timestamp = moment().format('YYYY-MM-DD-HH-mm-ss');
@@ -673,7 +674,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./../upload-csv-primer-dialog/upload-csv-primer-dialog.coffee":38,"./manage-group-funds-page.html":28}],28:[function(require,module,exports){
-module.exports = "<div class=\"manage-group-funds-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"manage-group-funds-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"attach_money\"\n        class=\"manage-group-funds-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"manage-group-funds-page__header-text\">\n        Manage Group Funds\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"manage-group-funds-page__content\">\n    <h2 class=\"manage-group-funds-page__subheader\">\n      Here you can change member's available funds using CSV files\n    </h2>\n\n    <md-divider></md-divider>\n\n    <div layout=\"row\" layout-align=\"center start\" class=\"manage-group-funds-page__btns-container\">\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container manage-group-funds-page__upload-btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\"  ng-click=\"openUploadCSVPrimerDialog()\">\n\n          <ng-md-icon icon=\"cloud_upload\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Update by CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Upload a csv file to update many member's funds at once. You can also invite new members at the same time. (more details)\n        </p>\n      </div>\n\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\" ng-click=\"downloadCSV()\">\n          <ng-md-icon icon=\"file_download\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Download CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Download a csv of all your group members, their emails, and their available funds.\n        </p>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          <b>Using Safari?</b><br/>\n          A bug in Safari names all downloaded CSVs as <code>Unknown</code>.\n          So after downloading, you will need to rename the file to <code>YOUR_PREFERRED_NAME.csv</code>.\n        </p>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"manage-group-funds-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"manage-group-funds-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"attach_money\"\n        class=\"manage-group-funds-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"manage-group-funds-page__header-text\">\n        Manage Group Funds\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"manage-group-funds-page__content\">\n    <h2 class=\"manage-group-funds-page__subheader\">\n      Here you can change member's available funds using CSV files\n    </h2>\n\n    <md-divider></md-divider>\n\n    <div class=\"manage-group-funds-page__btns-container\">\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container manage-group-funds-page__upload-btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\"  ng-click=\"openUploadCSVPrimerDialog()\">\n          <ng-md-icon icon=\"cloud_upload\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Update by CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Upload a csv file to update many member's funds at once. You can also invite new members at the same time. (more details)\n        </p>\n      </div>\n\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\" ng-click=\"downloadCSV()\">\n          <ng-md-icon icon=\"file_download\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Download CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Download a csv of all your group members, their emails, and their available funds.\n        </p>\n\n        <p class=\"manage-group-funds-page__btn-info manage-group-funds-page__safari-help\" ng-if=\"usingSafari\">\n          <b>Using Safari?</b><br/>\n          A bug in Safari names all downloaded CSVs as <code>Unknown</code>.\n          So after downloading, you will need to rename the file to <code>YOUR_PREFERRED_NAME.csv</code>.\n        </p>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
 },{}],29:[function(require,module,exports){
 module.exports = "<md-dialog class=\"profile-settings-page__discard-changes-dialog\" aria-label=\"discard changes dialog\">\n  <md-dialog-content class=\"sticky-container profile-settings-page__discard-changes-dialog-content\">\n    <h2 class=\"profile-settings-page__discard-changes-dialog-header\">Discard Changes?</h2>\n    <p class=\"profile-settings-page__discard-changes-dialog-text\">\n      Looks like you have some unsaved changes made to your <span ng-bind-html=\"unsavedFields()\"></span>.<br/><br/>\n      Any changes you have made to your account will be lost.\n    </p>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"okay()\">okay</md-button>\n  </div>\n</md-dialog>\n";
 },{}],30:[function(require,module,exports){
@@ -874,7 +875,29 @@ module.exports = {
   url: '/groups/:groupId/manage_funds/review_upload',
   template: require('./review-bulk-allocation-page.html'),
   params: {
-    people: null,
+    people: [
+      {
+        email: 'derek@enspiral.com',
+        name: 'Derek Razo',
+        allocation_amount: '300',
+        new_member: false
+      }, {
+        email: 'eugene@enspiral.com',
+        name: 'Eugene Lynch',
+        allocation_amount: '-100',
+        new_member: false
+      }, {
+        email: 'data@doge.com',
+        name: 'Data Doge',
+        allocation_amount: '50',
+        new_member: false
+      }, {
+        email: 'chelsearobinson@gmail.com',
+        name: '',
+        allocation_amount: '0',
+        new_member: true
+      }
+    ],
     groupId: null
   },
   controller: function(config, CurrentUser, Dialog, Error, LoadBar, $location, $q, Records, $scope, $state, $stateParams, $timeout, UserCan) {
@@ -912,14 +935,11 @@ module.exports = {
         return person;
       });
       $scope.peopleWithPositiveAllocations = [];
-      $scope.peopleWithNegativeAllocations = [];
       $scope.newMembers = [];
       $scope.existingMembers = [];
       return _.each($scope.people, function(person) {
         if (person.allocation_amount > 0) {
           $scope.peopleWithPositiveAllocations.push(person);
-        } else if (person.allocation_amount < 0) {
-          $scope.peopleWithNegativeAllocations.push(person);
         }
         if (person.new_member) {
           return $scope.newMembers.push(person);
@@ -1010,7 +1030,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./../upload-csv-primer-dialog/upload-csv-primer-dialog.coffee":38,"./review-bulk-allocation-page.html":35}],35:[function(require,module,exports){
-module.exports = "<div class=\"review-bulk-allocation-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-allocation-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-allocation-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-allocation-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-allocation-page__content\">\n    <h2 class=\"review-bulk-allocation-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-allocation-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to do the following to {{ group.name }}:\n      </div>\n\n      <ul class=\"review-bulk-allocation-page__overview-list\">\n        <li ng-if=\"peopleWithPositiveAllocations.length > 0\">\n          {{ uploadStatus == 'standby' ? 'add' : 'gave'}} <b>{{ summedAllocationsFrom(peopleWithPositiveAllocations) | currency : group.currencySymbol }} total</b> to\n          <b><ng-pluralize\n            count=\"peopleWithPositiveAllocations.length\"\n            when=\"{\n              'one': '1 person',\n              'other': '{} people'\n            }\"\n          ></ng-pluralize></b>\n        </li>\n\n        <li ng-if=\"peopleWithNegativeAllocations.length > 0\">\n          {{ uploadStatus == 'standby' ? 'subtract' : 'removed'}} <b>{{ summedAllocationsFrom(peopleWithNegativeAllocations) | currency : group.currencySymbol }} total</b> from\n          <b><ng-pluralize\n            count=\"peopleWithNegativeAllocations.length\"\n            when=\"{\n              'one': '1 person',\n              'other': '{} people'\n            }\"\n          ></ng-pluralize></b>\n        </li>\n\n        <li ng-if=\"newMembers.length > 0\">\n          {{ uploadStatus == 'standby' ? 'add' : 'added'}}\n          <b><ng-pluralize\n            count=\"newMembers.length\"\n            when=\"{\n              'one': '1 new person',\n              'other': '{} new people'\n            }\"\n          ></ng-pluralize></b>\n        </li>\n      </ul>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-allocation-page__list-header\">People & status</div>\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"start center\">\n          <div class=\"review-bulk-allocation-page__list-header\">Funds</div>\n        </div>\n      </div>\n\n      <md-divider class=\"review-bulk-allocation-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-allocation-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-allocation-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n          class=\"review-bulk-allocation-page__upload-member-complete-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-allocation-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n        </div>\n\n        <div flex></div>\n\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"review-bulk-allocation-page__funds-amount\"\n            ng-class=\"person.allocation_amount >= 0 ? 'review-bulk-allocation-page__funds-positive-amount' : 'review-bulk-allocation-page__funds-negative-amount'\"\n          >\n            <span class=\"review-bulk-allocation-page__funds-sign\">{{ person.allocation_amount >= 0 ? '+' : '-'}}</span>\n            {{ abs(person.allocation_amount) | currency : group.currencySymbol }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-allocation-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"confirmBulkAllocations()\">Confirm</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"review-bulk-allocation-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-allocation-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-allocation-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-allocation-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-allocation-page__content\">\n    <h2 class=\"review-bulk-allocation-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-allocation-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to {{ uploadStatus == 'standby' ? 'add' : 'gave'}} <b>{{ summedAllocationsFrom(peopleWithPositiveAllocations) | currency : group.currencySymbol }} total</b> to\n        <b><ng-pluralize count=\"peopleWithPositiveAllocations.length\" when=\"{ 'one': '1 person', 'other': '{} people' }\"></ng-pluralize></b>\n\n        <span ng-if=\"newMembers.length > 0\">\n          and {{ uploadStatus == 'standby' ? 'add' : 'added'}}\n          <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 new person', 'other': '{} new people' }\" ></ng-pluralize></b>\n        </span>\n\n        {{ newMembers.length > 0 ? 'to' : 'in' }} {{ group.name }}\n      </div>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-allocation-page__list-header\">People & status</div>\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"start center\">\n          <div class=\"review-bulk-allocation-page__list-header\">Funds</div>\n        </div>\n      </div>\n\n      <md-divider class=\"review-bulk-allocation-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-allocation-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-allocation-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n          class=\"review-bulk-allocation-page__upload-member-complete-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-allocation-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n        </div>\n\n        <div flex></div>\n\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"review-bulk-allocation-page__funds-amount\"\n            ng-class=\"person.allocation_amount >= 0 ? 'review-bulk-allocation-page__funds-positive-amount' : 'review-bulk-allocation-page__funds-negative-amount'\"\n          >\n            <span class=\"review-bulk-allocation-page__funds-sign\">{{ person.allocation_amount >= 0 ? '+' : '-'}}</span>\n            {{ abs(person.allocation_amount) | currency : group.currencySymbol }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-allocation-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"confirmBulkAllocations()\">Confirm</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
 },{}],36:[function(require,module,exports){
 module.exports = function(params) {
   return {
@@ -1856,6 +1876,7 @@ global.camelize = require("camelize");
 global.morph = require("morph");
 global.listify = require("listify");
 global.isEmptyObject = require("is-empty-object");
+global.browser = require("bowser");
 
 require("angular");
 require("angular-ui-router");
@@ -1901,7 +1922,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":42,"./directives/admin-toolbar/admin-toolbar.coffee":43,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":45,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":47,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":49,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":51,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":53,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":55,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":57,"./directives/error-page/error-page.coffee":59,"./directives/group-page-buckets/group-page-buckets.coffee":61,"./directives/group-page-funders/group-page-funders.coffee":63,"./directives/group-page-sidenav/group-page-sidenav.coffee":68,"./directives/group-page-toolbar/group-page-toolbar.coffee":71,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":73,"./directives/loading-page/loading-page.coffee":75,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":77,"./filters/date-filter.coffee":79,"./models/allocation-model.coffee":81,"./models/bucket-model.coffee":82,"./models/comment-model.coffee":83,"./models/contribution-model.coffee":84,"./models/group-model.coffee":85,"./models/membership-model.coffee":86,"./models/user-model.coffee":87,"./records-interfaces/allocation-records-interface.coffee":88,"./records-interfaces/bucket-records-interface.coffee":89,"./records-interfaces/comment-records-interface.coffee":90,"./records-interfaces/contribution-records-interface.coffee":91,"./records-interfaces/group-records-interface.coffee":92,"./records-interfaces/membership-records-interface.coffee":93,"./records-interfaces/user-records-interface.coffee":94,"./services/current-user.coffee":96,"./services/dialog.coffee":97,"./services/error.coffee":98,"./services/load-bar.coffee":99,"./services/session.coffee":100,"./services/toast.coffee":101,"./services/user-can.coffee":102,"./services/validate-and-redirect-logged-in-user.coffee":103,"angular":122,"angular-animate":105,"angular-aria":107,"angular-cookie":108,"angular-eha.only-digits":109,"angular-marked":110,"angular-material":114,"angular-material-icons":112,"angular-messages":116,"angular-sanitize/angular-sanitize":117,"angular-truncate-2":118,"angular-ui-router":119,"angular-upload":120,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":40,"app/configs/auth.coffee":41,"app/routes.coffee":95,"camelize":130,"is-empty-object":131,"jquery":132,"listify":133,"lodash":134,"moment":138,"morph":139,"ng-csv":140,"ng-download-csv":141,"ng-focus-if":142,"ng-q-all-settled":143,"ng-sanitize":144,"ng-token-auth":145}],81:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":42,"./directives/admin-toolbar/admin-toolbar.coffee":43,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":45,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":47,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":49,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":51,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":53,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":55,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":57,"./directives/error-page/error-page.coffee":59,"./directives/group-page-buckets/group-page-buckets.coffee":61,"./directives/group-page-funders/group-page-funders.coffee":63,"./directives/group-page-sidenav/group-page-sidenav.coffee":68,"./directives/group-page-toolbar/group-page-toolbar.coffee":71,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":73,"./directives/loading-page/loading-page.coffee":75,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":77,"./filters/date-filter.coffee":79,"./models/allocation-model.coffee":81,"./models/bucket-model.coffee":82,"./models/comment-model.coffee":83,"./models/contribution-model.coffee":84,"./models/group-model.coffee":85,"./models/membership-model.coffee":86,"./models/user-model.coffee":87,"./records-interfaces/allocation-records-interface.coffee":88,"./records-interfaces/bucket-records-interface.coffee":89,"./records-interfaces/comment-records-interface.coffee":90,"./records-interfaces/contribution-records-interface.coffee":91,"./records-interfaces/group-records-interface.coffee":92,"./records-interfaces/membership-records-interface.coffee":93,"./records-interfaces/user-records-interface.coffee":94,"./services/current-user.coffee":96,"./services/dialog.coffee":97,"./services/error.coffee":98,"./services/load-bar.coffee":99,"./services/session.coffee":100,"./services/toast.coffee":101,"./services/user-can.coffee":102,"./services/validate-and-redirect-logged-in-user.coffee":103,"angular":122,"angular-animate":105,"angular-aria":107,"angular-cookie":108,"angular-eha.only-digits":109,"angular-marked":110,"angular-material":114,"angular-material-icons":112,"angular-messages":116,"angular-sanitize/angular-sanitize":117,"angular-truncate-2":118,"angular-ui-router":119,"angular-upload":120,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":40,"app/configs/auth.coffee":41,"app/routes.coffee":95,"bowser":129,"camelize":131,"is-empty-object":132,"jquery":133,"listify":134,"lodash":135,"moment":139,"morph":140,"ng-csv":141,"ng-download-csv":142,"ng-focus-if":143,"ng-q-all-settled":144,"ng-sanitize":145,"ng-token-auth":146}],81:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -7886,7 +7907,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":137}],111:[function(require,module,exports){
+},{"marked":138}],111:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -61671,8 +61692,301 @@ module.exports = new (Utils = (function() {
 
 
 },{}],129:[function(require,module,exports){
+/*!
+  * Bowser - a browser detector
+  * https://github.com/ded/bowser
+  * MIT License | (c) Dustin Diaz 2015
+  */
+
+!function (name, definition) {
+  if (typeof module != 'undefined' && module.exports) module.exports = definition()
+  else if (typeof define == 'function' && define.amd) define(definition)
+  else this[name] = definition()
+}('bowser', function () {
+  /**
+    * See useragents.js for examples of navigator.userAgent
+    */
+
+  var t = true
+
+  function detect(ua) {
+
+    function getFirstMatch(regex) {
+      var match = ua.match(regex);
+      return (match && match.length > 1 && match[1]) || '';
+    }
+
+    function getSecondMatch(regex) {
+      var match = ua.match(regex);
+      return (match && match.length > 1 && match[2]) || '';
+    }
+
+    var iosdevice = getFirstMatch(/(ipod|iphone|ipad)/i).toLowerCase()
+      , likeAndroid = /like android/i.test(ua)
+      , android = !likeAndroid && /android/i.test(ua)
+      , chromeBook = /CrOS/.test(ua)
+      , edgeVersion = getFirstMatch(/edge\/(\d+(\.\d+)?)/i)
+      , versionIdentifier = getFirstMatch(/version\/(\d+(\.\d+)?)/i)
+      , tablet = /tablet/i.test(ua)
+      , mobile = !tablet && /[^-]mobi/i.test(ua)
+      , result
+
+    if (/opera|opr/i.test(ua)) {
+      result = {
+        name: 'Opera'
+      , opera: t
+      , version: versionIdentifier || getFirstMatch(/(?:opera|opr)[\s\/](\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/yabrowser/i.test(ua)) {
+      result = {
+        name: 'Yandex Browser'
+      , yandexbrowser: t
+      , version: versionIdentifier || getFirstMatch(/(?:yabrowser)[\s\/](\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/windows phone/i.test(ua)) {
+      result = {
+        name: 'Windows Phone'
+      , windowsphone: t
+      }
+      if (edgeVersion) {
+        result.msedge = t
+        result.version = edgeVersion
+      }
+      else {
+        result.msie = t
+        result.version = getFirstMatch(/iemobile\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/msie|trident/i.test(ua)) {
+      result = {
+        name: 'Internet Explorer'
+      , msie: t
+      , version: getFirstMatch(/(?:msie |rv:)(\d+(\.\d+)?)/i)
+      }
+    } else if (chromeBook) {
+      result = {
+        name: 'Chrome'
+      , chromeBook: t
+      , chrome: t
+      , version: getFirstMatch(/(?:chrome|crios|crmo)\/(\d+(\.\d+)?)/i)
+      }
+    } else if (/chrome.+? edge/i.test(ua)) {
+      result = {
+        name: 'Microsoft Edge'
+      , msedge: t
+      , version: edgeVersion
+      }
+    }
+    else if (/chrome|crios|crmo/i.test(ua)) {
+      result = {
+        name: 'Chrome'
+      , chrome: t
+      , version: getFirstMatch(/(?:chrome|crios|crmo)\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (iosdevice) {
+      result = {
+        name : iosdevice == 'iphone' ? 'iPhone' : iosdevice == 'ipad' ? 'iPad' : 'iPod'
+      }
+      // WTF: version is not part of user agent in web apps
+      if (versionIdentifier) {
+        result.version = versionIdentifier
+      }
+    }
+    else if (/sailfish/i.test(ua)) {
+      result = {
+        name: 'Sailfish'
+      , sailfish: t
+      , version: getFirstMatch(/sailfish\s?browser\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/seamonkey\//i.test(ua)) {
+      result = {
+        name: 'SeaMonkey'
+      , seamonkey: t
+      , version: getFirstMatch(/seamonkey\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/firefox|iceweasel/i.test(ua)) {
+      result = {
+        name: 'Firefox'
+      , firefox: t
+      , version: getFirstMatch(/(?:firefox|iceweasel)[ \/](\d+(\.\d+)?)/i)
+      }
+      if (/\((mobile|tablet);[^\)]*rv:[\d\.]+\)/i.test(ua)) {
+        result.firefoxos = t
+      }
+    }
+    else if (/silk/i.test(ua)) {
+      result =  {
+        name: 'Amazon Silk'
+      , silk: t
+      , version : getFirstMatch(/silk\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (android) {
+      result = {
+        name: 'Android'
+      , version: versionIdentifier
+      }
+    }
+    else if (/phantom/i.test(ua)) {
+      result = {
+        name: 'PhantomJS'
+      , phantom: t
+      , version: getFirstMatch(/phantomjs\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/blackberry|\bbb\d+/i.test(ua) || /rim\stablet/i.test(ua)) {
+      result = {
+        name: 'BlackBerry'
+      , blackberry: t
+      , version: versionIdentifier || getFirstMatch(/blackberry[\d]+\/(\d+(\.\d+)?)/i)
+      }
+    }
+    else if (/(web|hpw)os/i.test(ua)) {
+      result = {
+        name: 'WebOS'
+      , webos: t
+      , version: versionIdentifier || getFirstMatch(/w(?:eb)?osbrowser\/(\d+(\.\d+)?)/i)
+      };
+      /touchpad\//i.test(ua) && (result.touchpad = t)
+    }
+    else if (/bada/i.test(ua)) {
+      result = {
+        name: 'Bada'
+      , bada: t
+      , version: getFirstMatch(/dolfin\/(\d+(\.\d+)?)/i)
+      };
+    }
+    else if (/tizen/i.test(ua)) {
+      result = {
+        name: 'Tizen'
+      , tizen: t
+      , version: getFirstMatch(/(?:tizen\s?)?browser\/(\d+(\.\d+)?)/i) || versionIdentifier
+      };
+    }
+    else if (/safari/i.test(ua)) {
+      result = {
+        name: 'Safari'
+      , safari: t
+      , version: versionIdentifier
+      }
+    }
+    else {
+      result = {
+        name: getFirstMatch(/^(.*)\/(.*) /),
+        version: getSecondMatch(/^(.*)\/(.*) /)
+     };
+   }
+
+    // set webkit or gecko flag for browsers based on these engines
+    if (!result.msedge && /(apple)?webkit/i.test(ua)) {
+      result.name = result.name || "Webkit"
+      result.webkit = t
+      if (!result.version && versionIdentifier) {
+        result.version = versionIdentifier
+      }
+    } else if (!result.opera && /gecko\//i.test(ua)) {
+      result.name = result.name || "Gecko"
+      result.gecko = t
+      result.version = result.version || getFirstMatch(/gecko\/(\d+(\.\d+)?)/i)
+    }
+
+    // set OS flags for platforms that have multiple browsers
+    if (!result.msedge && (android || result.silk)) {
+      result.android = t
+    } else if (iosdevice) {
+      result[iosdevice] = t
+      result.ios = t
+    }
+
+    // OS version extraction
+    var osVersion = '';
+    if (result.windowsphone) {
+      osVersion = getFirstMatch(/windows phone (?:os)?\s?(\d+(\.\d+)*)/i);
+    } else if (iosdevice) {
+      osVersion = getFirstMatch(/os (\d+([_\s]\d+)*) like mac os x/i);
+      osVersion = osVersion.replace(/[_\s]/g, '.');
+    } else if (android) {
+      osVersion = getFirstMatch(/android[ \/-](\d+(\.\d+)*)/i);
+    } else if (result.webos) {
+      osVersion = getFirstMatch(/(?:web|hpw)os\/(\d+(\.\d+)*)/i);
+    } else if (result.blackberry) {
+      osVersion = getFirstMatch(/rim\stablet\sos\s(\d+(\.\d+)*)/i);
+    } else if (result.bada) {
+      osVersion = getFirstMatch(/bada\/(\d+(\.\d+)*)/i);
+    } else if (result.tizen) {
+      osVersion = getFirstMatch(/tizen[\/\s](\d+(\.\d+)*)/i);
+    }
+    if (osVersion) {
+      result.osversion = osVersion;
+    }
+
+    // device type extraction
+    var osMajorVersion = osVersion.split('.')[0];
+    if (tablet || iosdevice == 'ipad' || (android && (osMajorVersion == 3 || (osMajorVersion == 4 && !mobile))) || result.silk) {
+      result.tablet = t
+    } else if (mobile || iosdevice == 'iphone' || iosdevice == 'ipod' || android || result.blackberry || result.webos || result.bada) {
+      result.mobile = t
+    }
+
+    // Graded Browser Support
+    // http://developer.yahoo.com/yui/articles/gbs
+    if (result.msedge ||
+        (result.msie && result.version >= 10) ||
+        (result.yandexbrowser && result.version >= 15) ||
+        (result.chrome && result.version >= 20) ||
+        (result.firefox && result.version >= 20.0) ||
+        (result.safari && result.version >= 6) ||
+        (result.opera && result.version >= 10.0) ||
+        (result.ios && result.osversion && result.osversion.split(".")[0] >= 6) ||
+        (result.blackberry && result.version >= 10.1)
+        ) {
+      result.a = t;
+    }
+    else if ((result.msie && result.version < 10) ||
+        (result.chrome && result.version < 20) ||
+        (result.firefox && result.version < 20.0) ||
+        (result.safari && result.version < 6) ||
+        (result.opera && result.version < 10.0) ||
+        (result.ios && result.osversion && result.osversion.split(".")[0] < 6)
+        ) {
+      result.c = t
+    } else result.x = t
+
+    return result
+  }
+
+  var bowser = detect(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+
+  bowser.test = function (browserList) {
+    for (var i = 0; i < browserList.length; ++i) {
+      var browserItem = browserList[i];
+      if (typeof browserItem=== 'string') {
+        if (browserItem in bowser) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /*
+   * Set our detect method to the main bowser object so we can
+   * reuse it to test other user agents.
+   * This is needed to implement future tests.
+   */
+  bowser._detect = detect;
+
+  return bowser
+});
 
 },{}],130:[function(require,module,exports){
+
+},{}],131:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -61733,7 +62047,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],131:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -61761,7 +62075,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],132:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -71594,7 +71908,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],133:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -71629,7 +71943,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],134:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -83985,7 +84299,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],135:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -84570,7 +84884,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],136:[function(require,module,exports){
+},{}],137:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -88993,7 +89307,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":135,"fs":129}],137:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":136,"fs":130}],138:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -90283,7 +90597,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],138:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -93890,7 +94204,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],139:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -94017,10 +94331,10 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],140:[function(require,module,exports){
+},{}],141:[function(require,module,exports){
 /*! ng-csv 10-10-2015 */
 !function(a){angular.module("ngCsv.config",[]).value("ngCsv.config",{debug:!0}).config(["$compileProvider",function(a){angular.isDefined(a.urlSanitizationWhitelist)?a.urlSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/):a.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/)}]),angular.module("ngCsv.directives",["ngCsv.services"]),angular.module("ngCsv.services",[]),angular.module("ngCsv",["ngCsv.config","ngCsv.services","ngCsv.directives","ngSanitize"]),"undefined"!=typeof module&&"undefined"!=typeof exports&&module.exports===exports&&(module.exports="ngCsv"),angular.module("ngCsv.services").service("CSV",["$q",function(a){var b="\r\n",c="﻿",d={"\\t":"	","\\b":"\b","\\v":"","\\f":"\f","\\r":"\r"};this.stringifyField=function(a,b){return"locale"===b.decimalSep&&this.isFloat(a)?a.toLocaleString():"."!==b.decimalSep&&this.isFloat(a)?a.toString().replace(".",b.decimalSep):"string"==typeof a?(a=a.replace(/"/g,'""'),(b.quoteStrings||a.indexOf(",")>-1||a.indexOf("\n")>-1||a.indexOf("\r")>-1)&&(a=b.txtDelim+a+b.txtDelim),a):"boolean"==typeof a?a?"TRUE":"FALSE":a},this.isFloat=function(a){return+a===a&&(!isFinite(a)||Boolean(a%1))},this.stringify=function(d,e){var f=a.defer(),g=this,h="",i="",j=a.when(d).then(function(a){if(angular.isDefined(e.header)&&e.header){var d,j;d=[],angular.forEach(e.header,function(a){this.push(g.stringifyField(a,e))},d),j=d.join(e.fieldSep?e.fieldSep:","),i+=j+b}var k=[];if(angular.isArray(a)?k=a:angular.isFunction(a)&&(k=a()),angular.isDefined(e.label)&&e.label&&"boolean"==typeof e.label){var l,m;l=[],angular.forEach(k[0],function(a,b){this.push(g.stringifyField(b,e))},l),m=l.join(e.fieldSep?e.fieldSep:","),i+=m+b}angular.forEach(k,function(a,c){var d,f,h=angular.copy(k[c]);f=[];var j=e.columnOrder?e.columnOrder:h;angular.forEach(j,function(a){var b=e.columnOrder?h[a]:a;this.push(g.stringifyField(b,e))},f),d=f.join(e.fieldSep?e.fieldSep:","),i+=c<k.length?d+b:d}),e.addByteOrderMarker&&(h+=c),h+=i,f.resolve(h)});return"function"==typeof j["catch"]&&j["catch"](function(a){f.reject(a)}),f.promise},this.isSpecialChar=function(a){return void 0!==d[a]},this.getSpecialChar=function(a){return d[a]}}]),angular.module("ngCsv.directives").directive("ngCsv",["$parse","$q","CSV","$document","$timeout",function(b,c,d,e,f){return{restrict:"AC",scope:{data:"&ngCsv",filename:"@filename",header:"&csvHeader",columnOrder:"&csvColumnOrder",txtDelim:"@textDelimiter",decimalSep:"@decimalSeparator",quoteStrings:"@quoteStrings",fieldSep:"@fieldSeparator",lazyLoad:"@lazyLoad",addByteOrderMarker:"@addBom",ngClick:"&",charset:"@charset",label:"&csvLabel"},controller:["$scope","$element","$attrs","$transclude",function(a,b,e){function f(){var b={txtDelim:a.txtDelim?a.txtDelim:'"',decimalSep:a.decimalSep?a.decimalSep:".",quoteStrings:a.quoteStrings,addByteOrderMarker:a.addByteOrderMarker};return angular.isDefined(e.csvHeader)&&(b.header=a.$eval(a.header)),angular.isDefined(e.csvColumnOrder)&&(b.columnOrder=a.$eval(a.columnOrder)),angular.isDefined(e.csvLabel)&&(b.label=a.$eval(a.label)),b.fieldSep=a.fieldSep?a.fieldSep:",",b.fieldSep=d.isSpecialChar(b.fieldSep)?d.getSpecialChar(b.fieldSep):b.fieldSep,b}a.csv="",angular.isDefined(a.lazyLoad)&&"true"==a.lazyLoad||angular.isArray(a.data)&&a.$watch("data",function(){a.buildCSV()},!0),a.getFilename=function(){return a.filename||"download.csv"},a.buildCSV=function(){var g=c.defer();return b.addClass(e.ngCsvLoadingClass||"ng-csv-loading"),d.stringify(a.data(),f()).then(function(c){a.csv=c,b.removeClass(e.ngCsvLoadingClass||"ng-csv-loading"),g.resolve(c)}),a.$apply(),g.promise}}],link:function(b,c){function d(){var c=b.charset||"utf-8",d=new Blob([b.csv],{type:"text/csv;charset="+c+";"});if(a.navigator.msSaveOrOpenBlob)navigator.msSaveBlob(d,b.getFilename());else{var g=angular.element('<div data-tap-disabled="true"><a></a></div>'),h=angular.element(g.children()[0]);h.attr("href",a.URL.createObjectURL(d)),h.attr("download",b.getFilename()),h.attr("target","_blank"),e.find("body").append(g),f(function(){h[0].click(),h.remove()},null)}}c.bind("click",function(){b.buildCSV().then(function(){d()}),b.$apply()})}}}])}(window,document);
-},{}],141:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 (function() {
   var module = angular.module('ngDownloadCsv', [])
   module.factory('DownloadCSV', ['$http', function ($http) {
@@ -94042,7 +94356,7 @@ module.exports.toTitle = toTitle;
   }])
 }())
 
-},{}],142:[function(require,module,exports){
+},{}],143:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -94074,7 +94388,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],143:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -94093,7 +94407,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],144:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -94584,7 +94898,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],145:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -95433,10 +95747,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],146:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 require('app')
 
-},{"app":80}]},{},[146])
+},{"app":80}]},{},[147])
 
 
 //# sourceMappingURL=../maps/index.js.map
