@@ -653,7 +653,7 @@ module.exports = {
   },
   url: '/groups/:groupId/invite_members',
   template: require('./invite-members-page.html'),
-  controller: function(config, CurrentUser, Dialog, DownloadCSV, Error, $location, LoadBar, Records, $scope, $stateParams, UserCan) {
+  controller: function(config, CurrentUser, Dialog, DownloadCSV, Error, $location, LoadBar, Records, $scope, $state, $stateParams, Toast, UserCan) {
     var groupId;
     LoadBar.start();
     groupId = parseInt($stateParams.groupId);
@@ -684,6 +684,23 @@ module.exports = {
       Dialog.close();
       return $location.path("/groups/" + groupId + "/manage_funds");
     };
+    $scope.cancel = function() {
+      return $location.path("/groups/" + groupId);
+    };
+    $scope.inviteMemberFormParams = {
+      group_id: groupId
+    };
+    $scope.inviteMember = function() {
+      return Records.memberships.remote.create($scope.inviteMemberFormParams).then(function() {
+        $state.reload();
+        return Toast.show('Invitation sent!');
+      })["catch"](function() {
+        return Dialog.alert({
+          title: 'error!',
+          content: 'member already exists'
+        });
+      });
+    };
   }
 };
 
@@ -691,7 +708,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":11,"./invite-members-page.html":28}],28:[function(require,module,exports){
-module.exports = "<div class=\"invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person_add\"\n        class=\"invite-members-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"invite-members-page__header-text\">\n        Invite Members\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"invite-members-page__content\">\n    <h2 class=\"invite-members-page__subheader\">\n      Members can see, comment on, and fund buckets in {{ group.name }}\n    </h2>\n\n    <md-divider></md-divider>\n\n    <div class=\"invite-members-page__bulk-invite-btn-container\">\n      big group?\n      <a class=\"invite-members-page__bulk-invite-btn\" href=\"\" ng-click=\"openInviteMembersPrimerDialog()\">\n        Add many people at once\n      </a>\n    </div>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person_add\"\n        class=\"invite-members-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"invite-members-page__header-text\">\n        Invite Members\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"invite-members-page__content\">\n    <h2 class=\"invite-members-page__subheader\">\n      Members can see, comment on, and fund buckets in {{ group.name }}\n    </h2>\n\n    <md-divider></md-divider>\n\n    <form novalidate class=\"invite-members-page__details-form\" name=\"inviteMemberForm\">\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">EMAIL ADDRESS</label>\n        <input class=\"invite-members-page__text-input\" type=\"email\" required name=\"email\" ng-model=\"inviteMemberFormParams.email\"/>\n        <div ng-if=\"inviteMemberForm.email.$error.required && formSubmitted\" class=\"invite-members-page__input-error\">Email is required.</div>\n        <div ng-if=\"inviteMemberForm.email.$error.email && formSubmitted\" class=\"invite-members-page__input-error\">Email address must be valid.</div>\n      </div>\n\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">NAME (OPTIONAL)</label>\n        <input class=\"invite-members-page__text-input\" type=\"text\" name=\"name\" ng-model=\"inviteMemberFormParams.name\" />\n      </div>\n    </form>\n\n    <div class=\"invite-members-page__bulk-invite-btn-container\">\n      big group?\n      <a class=\"invite-members-page__bulk-invite-btn\" href=\"\" ng-click=\"openInviteMembersPrimerDialog()\">\n        Add many people at once\n      </a>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\">\n      <md-button class=\"invite-members-page__btn invite-members-page__confirm-btn\" ng-click=\"formSubmitted = true; inviteMemberForm.$valid && inviteMember(); inviteMemberForm.$setUntouched()\">Invite 1 Person</md-button>\n      <md-button class=\"invite-members-page__btn invite-members-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
 },{}],29:[function(require,module,exports){
 module.exports = {
   url: '/',
