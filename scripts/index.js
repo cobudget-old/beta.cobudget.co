@@ -232,7 +232,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page.html":8}],8:[function(require,module,exports){
-module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-page-toolbar></bucket-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <bucket-page-header-card></bucket-page-header-card>\n    <bucket-page-progress-card ng-if=\"bucket.status == 'live'\"></bucket-page-progress-card>\n    <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\"></bucket-page-backers-card> <bucket-page-status-card></bucket-page-status-card>\n    <bucket-page-activity-card></bucket-page-activity-card>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-page-toolbar></bucket-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <bucket-page-header-card></bucket-page-header-card>\n    <bucket-page-progress-card ng-if=\"bucket.status == 'live'\"></bucket-page-progress-card>\n    <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\"></bucket-page-backers-card> \n    <bucket-page-status-card></bucket-page-status-card>\n    <bucket-page-activity-card></bucket-page-activity-card>\n  </md-content>\n</div>\n";
 },{}],9:[function(require,module,exports){
 module.exports = function(params) {
   return {
@@ -1491,7 +1491,8 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
       $scope.submitContribution = function() {
         $scope.contributionSubmitted = true;
         return $scope.newContribution.save().then(function() {
-          return Records.memberships.fetchMyMemberships().then(function() {
+          return Records.memberships.findOrFetchById($scope.membership.id).then(function() {
+            $scope.newContribution = {};
             $state.reload();
             return Toast.show('You funded a bucket');
           });
@@ -1832,9 +1833,6 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
           return $location.path("/groups/" + groupId);
         }
       };
-      $scope.redirectToGroupSetupPage = function() {
-        return $location.path("/setup_group");
-      };
     }]
   };
 });
@@ -1843,7 +1841,7 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-page-sidenav.html":75}],75:[function(require,module,exports){
-module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\"\n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n      </div>\n    </md-list-item>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-click=\"redirectToGroupSetupPage()\">\n      <div layout=\"row\" layout-align=\"center center\">\n        <ng-md-icon icon=\"person_add\"\n          class=\"group-page__sidenav-create-group-btn-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n\n        <div class=\"group-page__sidenav-create-group-btn-text\">Create new group</div>\n      </div>\n    </md-list-item>\n  </md-content>\n</md-sidenav>\n";
+module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\" \n        class=\"group-page__sidenav-option-icon\" \n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n      \n      <ng-md-icon icon=\"arrow_drop_down\" \n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>    \n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__sidenav-expanded-content\">\n      <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n        </div>\n      </md-list-item>\n    </div>\n  </md-content>\n</md-sidenav>\n";
 },{}],76:[function(require,module,exports){
 module.exports = "<md-bottom-sheet class=\"group-page__bottom-sheet md-list\">\n  <md-list>\n    <md-list-item ng-repeat=\"action in adminActions\" ng-click=\"action.onClick()\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <ng-md-icon icon=\"{{ action.icon }}\"\n          class=\"group-page__bottom-sheet-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <span md-menu-align-target>{{ action.label }}</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</md-bottom-sheet>\n";
 },{}],77:[function(require,module,exports){
