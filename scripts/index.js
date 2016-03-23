@@ -1313,7 +1313,7 @@ module.exports = function(params) {
 },{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":9,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":11,"./upload-csv-primer-dialog-error.html":45}],45:[function(require,module,exports){
 module.exports = "<md-dialog class=\"upload-csv-primer-dialog-error\" aria-label=\"upload-csv-primer-dialog\">\n  <md-dialog-content class=\"sticky-container upload-csv-primer-dialog-error__content\">\n    <h2 class=\"upload-csv-primer-dialog-error__header\">\n      Looks like there was a problem...\n    </h2>\n\n    <p class=\"upload-csv-primer-dialog-error__paragraph\">\n      Sorry, but we couldn't upload your file for the following reasons:\n      <ul>\n        <li class=\"upload-csv-primer-dialog-error__error\" ng-repeat=\"error in csvUploadErrors\">\n          {{ error }}\n        </li>\n      </ul>\n    </p>\n\n    <p>\n       Please try again or <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"upload-csv-primer-dialog-error__link\">check out our help documentation</a>.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions upload-csv-primer-dialog-error__btns\" layout=\"row\">\n    <md-button class=\"upload-csv-primer-dialog-error__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"upload-csv-primer-dialog-error__ok-btn\" ng-click=\"tryAgain()\">try again</md-button>\n  </div>\n</md-dialog>\n";
 },{}],46:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],47:[function(require,module,exports){
 (function (global){
 
@@ -1500,6 +1500,8 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
             $state.reload();
             return Toast.show('You funded a bucket');
           });
+        })["catch"](function(err) {
+          return console.log('err: ', err);
         });
       };
     }]
@@ -1510,7 +1512,7 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page-progress-card.html":58}],58:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__progress-card\">\n  <md-card-content class=\"bucket-page__progress-card-content\">\n    <span class=\"bucket-page__progress-header\">Progress</span>\n\n    <div class=\"bucket-page__progress-bar-container\">\n      <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n      <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n    </div>\n\n    <div layout=\"row\" class=\"bucket-page__progress-info\">\n      <div flex=\"25\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n        <span class=\"bucket-page__progress-unit\">backers</span>\n      </div>\n\n      <div flex>\n        <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n        <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n      </div>\n\n      <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n        <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n      </div>\n    </div>\n\n    <form class=\"bucket-page__fund-form\" layout=\"row\" ng-if=\"membership.balance >= 1\">\n      <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n        <label>Amount</label>\n        <input class=\"bucket-page__fund-form-amount-input\" type=\"text\" min=\"0\" pattern=\"[0-9]*\" ng-model=\"newContribution.amount\" ng-change=\"normalizeContributionAmount()\" ng-keypress=\"normalizeContributionAmount()\" focus-if only-digits convert-to-number=\"true\">\n      </md-input-container>\n\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='submitContribution()' ng-if=\"fundFormOpened\" ng-disabled=\"contributionSubmitted\">Submit</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
+module.exports = "<md-card class=\"bucket-page__progress-card\">\n  <md-card-content class=\"bucket-page__progress-card-content\">\n    <span class=\"bucket-page__progress-header\">Progress</span>\n\n    <div class=\"bucket-page__progress-bar-container\">\n      <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n      <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n    </div>\n\n    <div layout=\"row\" class=\"bucket-page__progress-info\">\n      <div flex=\"25\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n        <span class=\"bucket-page__progress-unit\">backers</span>\n      </div>\n\n      <div flex>\n        <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n        <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n      </div>\n\n      <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n        <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n      </div>\n    </div>\n\n    <form class=\"bucket-page__fund-form\" layout=\"row\" ng-if=\"membership.balance > 0\" name=\"fundForm\">\n      <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n        <label>Amount</label>\n        <input class=\"bucket-page__fund-form-amount-input\"\n          type=\"number\"\n          name=\"amount\"\n          ng-required\n          min=\"1\"\n          pattern=\"[0-9]*\"\n          ng-model=\"newContribution.amount\"\n          ng-change=\"normalizeContributionAmount()\"\n          focus-if\n          only-digits\n        >\n      </md-input-container>\n\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='submitContribution()' ng-if=\"fundFormOpened\" ng-disabled=\"!fundForm.$valid || contributionSubmitted\">Submit</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
 },{}],59:[function(require,module,exports){
 (function (global){
 null;
@@ -1976,6 +1978,29 @@ null;
 
 /* @ngInject */
 
+global.cobudgetApp.directive('onlyDigits', function() {
+  return {
+    restrict: 'A',
+    link: function(scope, el, attrs) {
+      return el.bind('keypress', function(e) {
+        if (!_.includes(_.range(48, 57), e.keyCode)) {
+          return e.preventDefault();
+        }
+      });
+    }
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],84:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
 global.cobudgetApp.directive('toolbarDropdownMenu', function() {
   return {
     restrict: 'E',
@@ -2041,9 +2066,9 @@ global.cobudgetApp.directive('toolbarDropdownMenu', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./toolbar-dropdown-menu.html":84}],84:[function(require,module,exports){
+},{"./toolbar-dropdown-menu.html":85}],85:[function(require,module,exports){
 module.exports = "<md-menu class=\"toolbar-dropdown-menu\">\n  <div class=\"toolbar-dropdown-menu__btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n    <ng-md-icon icon=\"person\"\n      class=\"toolbar-dropdown-menu__btn-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </div>\n\n  <md-menu-content class=\"toolbar-dropdown-menu__content\" width=\"3\">\n    <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n      <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <ng-md-icon icon=\"{{ menuItem.icon }}\"\n            class=\"toolbar-dropdown-menu__item-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <span md-menu-align-target>{{ menuItem.label }}</span>\n        </div>\n      </md-button>\n    </md-menu-item>\n  </md-menu-content>\n</md-menu>\n";
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -2084,7 +2109,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -2113,16 +2138,15 @@ require("ng-sanitize");
 require("angular-truncate-2");
 require("angular-marked");
 require("ng-q-all-settled");
-require("angular-eha.only-digits");
 require("ng-csv");
 require("ng-download-csv");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
 /* @ngInject */
-global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons", "ngSanitize", "truncate", "hc.marked", "qAllSettled", "eha.only-digits", "ngCsv", "ngDownloadCsv"]).constant("config", require("app/configs/app"));
+global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons", "ngSanitize", "truncate", "hc.marked", "qAllSettled", "ngCsv", "ngDownloadCsv"]).constant("config", require("app/configs/app"));
 
 require("app/configs/auth.coffee");
 
@@ -2135,13 +2159,13 @@ require('./records-interfaces/allocation-records-interface.coffee');require('./r
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
 require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');require('./services/validate-and-redirect-logged-in-user.coffee');;
-require('./directives/admin-toolbar/admin-toolbar.coffee');require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-backers-card/bucket-page-backers-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');require('./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee');;
+require('./directives/admin-toolbar/admin-toolbar.coffee');require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-backers-card/bucket-page-backers-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');require('./directives/only-digits.coffee');require('./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":48,"./directives/admin-toolbar/admin-toolbar.coffee":49,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":51,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":53,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":55,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":57,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":59,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":61,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":63,"./directives/error-page/error-page.coffee":65,"./directives/group-page-buckets/group-page-buckets.coffee":67,"./directives/group-page-funders/group-page-funders.coffee":69,"./directives/group-page-sidenav/group-page-sidenav.coffee":74,"./directives/group-page-toolbar/group-page-toolbar.coffee":77,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":79,"./directives/loading-page/loading-page.coffee":81,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":83,"./filters/date-filter.coffee":85,"./models/allocation-model.coffee":87,"./models/bucket-model.coffee":88,"./models/comment-model.coffee":89,"./models/contribution-model.coffee":90,"./models/group-model.coffee":91,"./models/membership-model.coffee":92,"./models/user-model.coffee":93,"./records-interfaces/allocation-records-interface.coffee":94,"./records-interfaces/bucket-records-interface.coffee":95,"./records-interfaces/comment-records-interface.coffee":96,"./records-interfaces/contribution-records-interface.coffee":97,"./records-interfaces/group-records-interface.coffee":98,"./records-interfaces/membership-records-interface.coffee":99,"./records-interfaces/user-records-interface.coffee":100,"./services/current-user.coffee":102,"./services/dialog.coffee":103,"./services/error.coffee":104,"./services/load-bar.coffee":105,"./services/session.coffee":106,"./services/toast.coffee":107,"./services/user-can.coffee":108,"./services/validate-and-redirect-logged-in-user.coffee":109,"angular":128,"angular-animate":111,"angular-aria":113,"angular-cookie":114,"angular-eha.only-digits":115,"angular-marked":116,"angular-material":120,"angular-material-icons":118,"angular-messages":122,"angular-sanitize/angular-sanitize":123,"angular-truncate-2":124,"angular-ui-router":125,"angular-upload":126,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":46,"app/configs/auth.coffee":47,"app/routes.coffee":101,"bowser":135,"camelize":137,"is-empty-object":138,"jquery":139,"listify":140,"lodash":141,"moment":145,"morph":146,"ng-csv":147,"ng-download-csv":148,"ng-focus-if":149,"ng-q-all-settled":150,"ng-sanitize":151,"ng-token-auth":152}],87:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":48,"./directives/admin-toolbar/admin-toolbar.coffee":49,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":51,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":53,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":55,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":57,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":59,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":61,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":63,"./directives/error-page/error-page.coffee":65,"./directives/group-page-buckets/group-page-buckets.coffee":67,"./directives/group-page-funders/group-page-funders.coffee":69,"./directives/group-page-sidenav/group-page-sidenav.coffee":74,"./directives/group-page-toolbar/group-page-toolbar.coffee":77,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":79,"./directives/loading-page/loading-page.coffee":81,"./directives/only-digits.coffee":83,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":84,"./filters/date-filter.coffee":86,"./models/allocation-model.coffee":88,"./models/bucket-model.coffee":89,"./models/comment-model.coffee":90,"./models/contribution-model.coffee":91,"./models/group-model.coffee":92,"./models/membership-model.coffee":93,"./models/user-model.coffee":94,"./records-interfaces/allocation-records-interface.coffee":95,"./records-interfaces/bucket-records-interface.coffee":96,"./records-interfaces/comment-records-interface.coffee":97,"./records-interfaces/contribution-records-interface.coffee":98,"./records-interfaces/group-records-interface.coffee":99,"./records-interfaces/membership-records-interface.coffee":100,"./records-interfaces/user-records-interface.coffee":101,"./services/current-user.coffee":103,"./services/dialog.coffee":104,"./services/error.coffee":105,"./services/load-bar.coffee":106,"./services/session.coffee":107,"./services/toast.coffee":108,"./services/user-can.coffee":109,"./services/validate-and-redirect-logged-in-user.coffee":110,"angular":128,"angular-animate":112,"angular-aria":114,"angular-cookie":115,"angular-marked":116,"angular-material":120,"angular-material-icons":118,"angular-messages":122,"angular-sanitize/angular-sanitize":123,"angular-truncate-2":124,"angular-ui-router":125,"angular-upload":126,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":46,"app/configs/auth.coffee":47,"app/routes.coffee":102,"bowser":135,"camelize":137,"is-empty-object":138,"jquery":139,"listify":140,"lodash":141,"moment":145,"morph":146,"ng-csv":147,"ng-download-csv":148,"ng-focus-if":149,"ng-q-all-settled":150,"ng-sanitize":151,"ng-token-auth":152}],88:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2181,7 +2205,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2276,7 +2300,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],89:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2319,7 +2343,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2359,7 +2383,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2438,7 +2462,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],92:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2488,7 +2512,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2575,7 +2599,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2613,7 +2637,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2651,7 +2675,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2689,7 +2713,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2735,7 +2759,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2771,7 +2795,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2819,7 +2843,7 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2884,7 +2908,7 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -2896,7 +2920,7 @@ global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($sta
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":13,"app/components/create-bucket-page/create-bucket-page.coffee":15,"app/components/edit-bucket-page/edit-bucket-page.coffee":17,"app/components/email-settings-page/email-settings-page.coffee":19,"app/components/forgot-password-page/forgot-password-page.coffee":21,"app/components/group-page/group-page.coffee":23,"app/components/group-setup-page/group-setup-page.coffee":25,"app/components/invite-members-page/invite-members-page.coffee":27,"app/components/landing-page/landing-page.coffee":29,"app/components/login-page/login-page.coffee":31,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":33,"app/components/profile-settings-page/profile-settings-page.coffee":36,"app/components/reset-password-page/reset-password-page.coffee":38,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":40,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":42}],102:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":13,"app/components/create-bucket-page/create-bucket-page.coffee":15,"app/components/edit-bucket-page/edit-bucket-page.coffee":17,"app/components/email-settings-page/email-settings-page.coffee":19,"app/components/forgot-password-page/forgot-password-page.coffee":21,"app/components/group-page/group-page.coffee":23,"app/components/group-setup-page/group-setup-page.coffee":25,"app/components/invite-members-page/invite-members-page.coffee":27,"app/components/landing-page/landing-page.coffee":29,"app/components/login-page/login-page.coffee":31,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":33,"app/components/profile-settings-page/profile-settings-page.coffee":36,"app/components/reset-password-page/reset-password-page.coffee":38,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":40,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":42}],103:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2912,7 +2936,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],103:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2980,7 +3004,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],104:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3008,7 +3032,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],105:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3036,7 +3060,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],106:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3116,7 +3140,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBa
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3156,7 +3180,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3216,7 +3240,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],109:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3243,7 +3267,7 @@ global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error",
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],110:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7175,11 +7199,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":110}],112:[function(require,module,exports){
+},{"./angular-animate":111}],113:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7579,11 +7603,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":112}],114:[function(require,module,exports){
+},{"./angular-aria":113}],115:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -7709,76 +7733,6 @@ factory('ipCookie', ['$document',
     }());
   }
 ]);
-
-},{}],115:[function(require,module,exports){
-'use strict';
-(function() {
-
-  var ngModule = angular.module('eha.only-digits', [
-    'eha.only-digits.directive'
-  ]);
-
-  // Check for and export to commonjs environment
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ngModule;
-  }
-
-}());
-
-'use strict';
-(function() {
-
-  // Directive to restrict input element input to digits.
-  //
-  // The input field has to be of type=text, otherwise the browser
-  // will send undefined as value when there is invalid input and
-  // we cannot hook into ngModel.$parsers to remove unwanted chars.
-  // There might be a better way to handle this and have type=number.
-  //
-  // Optionally convert-to-number="true" can be set to convert the
-  // the string input value to a number before its set on the model.
-  var ngModule = angular.module('eha.only-digits.directive', []);
-
-  ngModule.directive('onlyDigits', function() {
-    return {
-      restrict: 'A',
-      require: '?ngModel',
-      scope: {
-        'convertToNumber': '@'
-      },
-
-      link: function (scope, element, attrs, ngModel) {
-        if (!ngModel) {
-          return;
-        }
-
-        var convertToNumber = false;
-        attrs.$observe('convertToNumber', function(val) {
-          convertToNumber = val === 'true';
-        });
-
-        ngModel.$parsers.unshift(function (val) {
-          if (!val) {
-            return val;
-          }
-          var digits = val.replace(/\D/g, '');
-          ngModel.$viewValue = digits;
-          ngModel.$render();
-
-          if (convertToNumber && !(typeof val === 'number')) {
-            return parseInt(digits, 10);
-          }
-          return digits;
-        });
-      }
-    };
-  });
-
-  // Check for and export to commonjs environment
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ngModule;
-  }
-}());
 
 },{}],116:[function(require,module,exports){
 /*
@@ -26249,7 +26203,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":119,"angular":128,"angular-animate":111,"angular-aria":113}],121:[function(require,module,exports){
+},{"./angular-material":119,"angular":128,"angular-animate":112,"angular-aria":114}],121:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -95973,7 +95927,7 @@ window.isEmpty = function(obj) {
 },{}],153:[function(require,module,exports){
 require('app')
 
-},{"app":86}]},{},[153])
+},{"app":87}]},{},[153])
 
 
 //# sourceMappingURL=../maps/index.js.map
