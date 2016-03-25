@@ -1265,7 +1265,7 @@ module.exports = function(params) {
 },{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":7,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":9,"./upload-csv-primer-dialog-error.html":43}],43:[function(require,module,exports){
 module.exports = "<md-dialog class=\"upload-csv-primer-dialog-error\" aria-label=\"upload-csv-primer-dialog\">\n  <md-dialog-content class=\"sticky-container upload-csv-primer-dialog-error__content\">\n    <h2 class=\"upload-csv-primer-dialog-error__header\">\n      Looks like there was a problem...\n    </h2>\n\n    <p class=\"upload-csv-primer-dialog-error__paragraph\">\n      Sorry, but we couldn't upload your file for the following reasons:\n      <ul>\n        <li class=\"upload-csv-primer-dialog-error__error\" ng-repeat=\"error in csvUploadErrors\">\n          {{ error }}\n        </li>\n      </ul>\n    </p>\n\n    <p>\n       Please try again or <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"upload-csv-primer-dialog-error__link\">check out our help documentation</a>.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions upload-csv-primer-dialog-error__btns\" layout=\"row\">\n    <md-button class=\"upload-csv-primer-dialog-error__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"upload-csv-primer-dialog-error__ok-btn\" ng-click=\"tryAgain()\">try again</md-button>\n  </div>\n</md-dialog>\n";
 },{}],44:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
+module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
 },{}],45:[function(require,module,exports){
 (function (global){
 
@@ -2095,7 +2095,7 @@ require("ng-q-all-settled");
 require("ng-csv");
 require("ng-download-csv");
 
-if ("staging" != "production") {
+if ("production" != "production") {
   global.localStorage.debug = "*";
 }
 
