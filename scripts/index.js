@@ -16,7 +16,7 @@ app.factory('RecordStore', AngularRecordStore.RecordStoreFn);
 
 app.factory('RestfulClient', ['$http', '$compile', AngularRecordStore.RestfulClientFn]);
 
-app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsInterface", "UserRecordsInterface", "AllocationRecordsInterface", "MembershipRecordsInterface", "CommentRecordsInterface", "ContributionRecordsInterface", function(RecordStore, GroupRecordsInterface, BucketRecordsInterface, UserRecordsInterface, AllocationRecordsInterface, MembershipRecordsInterface, CommentRecordsInterface, ContributionRecordsInterface) {
+app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsInterface", "UserRecordsInterface", "AllocationRecordsInterface", "MembershipRecordsInterface", "CommentRecordsInterface", "ContributionRecordsInterface", "SubscriptionTrackerRecordsInterface", function(RecordStore, GroupRecordsInterface, BucketRecordsInterface, UserRecordsInterface, AllocationRecordsInterface, MembershipRecordsInterface, CommentRecordsInterface, ContributionRecordsInterface, SubscriptionTrackerRecordsInterface) {
   var db, recordStore;
   db = new Loki('cobudgetApp');
   recordStore = new RecordStore(db);
@@ -27,13 +27,14 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
   recordStore.addRecordsInterface(MembershipRecordsInterface);
   recordStore.addRecordsInterface(CommentRecordsInterface);
   recordStore.addRecordsInterface(ContributionRecordsInterface);
+  recordStore.addRecordsInterface(SubscriptionTrackerRecordsInterface);
   return recordStore;
 }]);
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":129,"lokijs":141}],2:[function(require,module,exports){
+},{"angular_record_store":131,"lokijs":143}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -443,30 +444,42 @@ module.exports = {
       Error.set("you can't view this page");
     }
     $scope.currentUser = CurrentUser();
+    $scope.subscriptionTracker = $scope.currentUser.subscriptionTracker();
     previousGroupId = $stateParams.previous_group_id || CurrentUser().primaryGroup().id;
     $scope.settings = [
       {
-        property: "subscribedToDailyDigest",
-        header: "Daily summary email.",
-        description: "Each day, send an email with yesterday's unread activity in every group that you're part of."
+        property: 'commentsOnBucketsUserAuthored',
+        header: 'comment on your bucket'
       }, {
-        property: "subscribedToPersonalActivity",
-        header: "Activity in buckets I've created.",
-        description: "When you create a bucket, you are subscribed to all activity on that bucket."
+        property: 'commentsOnBucketsUserParticipatedIn',
+        header: 'comment on a bucket you participated in'
       }, {
-        property: "subscribedToParticipantActivity",
-        header: "Activity in buckets I've participated in.",
-        description: "When you participate in a bucket, you will get all activity from that bucket mailed to you."
+        property: 'contributionsToLiveBucketsUserAuthored',
+        header: 'funding for your bucket'
+      }, {
+        property: 'contributionsToLiveBucketsUserParticipatedIn',
+        header: 'funding in a bucket you participated in'
+      }, {
+        property: 'fundedBucketsUserAuthored',
+        header: 'your bucket funded fully'
+      }, {
+        property: 'newDraftBuckets',
+        header: 'new bucket idea created'
+      }, {
+        property: 'newLiveBuckets',
+        header: 'new bucket put up for funding'
+      }, {
+        property: 'newFundedBuckets',
+        header: 'new bucket funded'
       }
     ];
+    $scope.notificationFrequencyOptions = ['never', 'hourly', 'daily', 'weekly'];
     $scope.cancel = function() {
       $location.search('previous_group_id', null);
       return $location.path("/groups/" + previousGroupId);
     };
     $scope.done = function() {
-      var params;
-      params = _.pick($scope.currentUser, ['subscribedToDailyDigest', 'subscribedToPersonalActivity', 'subscribedToParticipantActivity']);
-      return Records.users.updateProfile(params).then(function() {
+      return Records.subscriptionTrackers.updateEmailSettings($scope.subscriptionTracker).then(function() {
         Toast.show('Email settings updated!');
         return $scope.cancel();
       });
@@ -478,7 +491,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./email-settings-page.html":18}],18:[function(require,module,exports){
-module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button email-settings-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"email-settings-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <div layout=\"row\" layout-align=\"start start\" class=\"email-settings-page__email-setting\" ng-repeat=\"setting in settings\">\n      <md-checkbox\n        ng-model=\"currentUser[setting.property]\"\n        ng-attr-aria-label=\"{{ setting.header }}\"\n        class=\"email-settings-page__checkbox\">\n      </md-checkbox>\n\n      <div layout=\"column\" layout-align=\"start start\">\n        <div class=\"email-settings-page__setting-header\">\n          {{ setting.header }}\n        </div>\n        <div class=\"email-settings-page__setting-description\">\n          {{ setting.description }}\n        </div>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button email-settings-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"email-settings-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <div>\n      <h2 class=\"email-settings-page__subheader\">What types of notifications would you like to receive?</h2>\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\" ng-repeat=\"setting in settings\">\n        <md-checkbox\n          ng-model=\"subscriptionTracker[setting.property]\"\n          ng-attr-aria-label=\"{{ setting.header }}\"\n          class=\"email-settings-page__checkbox\">\n        </md-checkbox>\n\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            {{ setting.header }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"email-settings-page__horizontal-divider\"></md-divider>\n\n    <div>\n      <h2 class=\"email-settings-page__subheader\">How often would you like to receive them?</h2>\n\n      <md-input-container>\n        <md-select required class=\"email-settings-page__notification-frequency-options\" name=\"notificationFrequency\" ng-model=\"subscriptionTracker.notificationFrequency\" aria-label=\"notification frequency options\">\n          <md-option required ng-repeat=\"option in notificationFrequencyOptions\" value=\"{{option}}\">\n            {{option}}\n          </md-option>\n        </md-select>\n      </md-input-container>\n    </div>\n  </md-content>\n</div>\n";
 },{}],19:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
@@ -1265,7 +1278,7 @@ module.exports = function(params) {
 },{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":7,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":9,"./upload-csv-primer-dialog-error.html":43}],43:[function(require,module,exports){
 module.exports = "<md-dialog class=\"upload-csv-primer-dialog-error\" aria-label=\"upload-csv-primer-dialog\">\n  <md-dialog-content class=\"sticky-container upload-csv-primer-dialog-error__content\">\n    <h2 class=\"upload-csv-primer-dialog-error__header\">\n      Looks like there was a problem...\n    </h2>\n\n    <p class=\"upload-csv-primer-dialog-error__paragraph\">\n      Sorry, but we couldn't upload your file for the following reasons:\n      <ul>\n        <li class=\"upload-csv-primer-dialog-error__error\" ng-repeat=\"error in csvUploadErrors\">\n          {{ error }}\n        </li>\n      </ul>\n    </p>\n\n    <p>\n       Please try again or <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"upload-csv-primer-dialog-error__link\">check out our help documentation</a>.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions upload-csv-primer-dialog-error__btns\" layout=\"row\">\n    <md-button class=\"upload-csv-primer-dialog-error__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"upload-csv-primer-dialog-error__ok-btn\" ng-click=\"tryAgain()\">try again</md-button>\n  </div>\n</md-dialog>\n";
 },{}],44:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
 },{}],45:[function(require,module,exports){
 (function (global){
 
@@ -2095,7 +2108,7 @@ require("ng-q-all-settled");
 require("ng-csv");
 require("ng-download-csv");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -2109,8 +2122,8 @@ require("app/angular-record-store.coffee");
 
 var concatenify = undefined;
 require('./controllers/application-controller.coffee');;
-require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
-require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/user-model.coffee');;
+require('./records-interfaces/allocation-records-interface.coffee');require('./records-interfaces/bucket-records-interface.coffee');require('./records-interfaces/comment-records-interface.coffee');require('./records-interfaces/contribution-records-interface.coffee');require('./records-interfaces/group-records-interface.coffee');require('./records-interfaces/membership-records-interface.coffee');require('./records-interfaces/subscription-tracker-records-interface.coffee');require('./records-interfaces/user-records-interface.coffee');;
+require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/subscription-tracker-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
 require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');require('./services/validate-and-redirect-logged-in-user.coffee');;
 require('./directives/admin-toolbar/admin-toolbar.coffee');require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-backers-card/bucket-page-backers-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');require('./directives/only-digits.coffee');require('./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee');;
@@ -2119,7 +2132,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":46,"./directives/admin-toolbar/admin-toolbar.coffee":47,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":49,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":51,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":53,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":55,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":57,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":59,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":61,"./directives/error-page/error-page.coffee":63,"./directives/group-page-buckets/group-page-buckets.coffee":65,"./directives/group-page-funders/group-page-funders.coffee":67,"./directives/group-page-sidenav/group-page-sidenav.coffee":72,"./directives/group-page-toolbar/group-page-toolbar.coffee":75,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":77,"./directives/loading-page/loading-page.coffee":79,"./directives/only-digits.coffee":81,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":82,"./filters/date-filter.coffee":84,"./models/allocation-model.coffee":86,"./models/bucket-model.coffee":87,"./models/comment-model.coffee":88,"./models/contribution-model.coffee":89,"./models/group-model.coffee":90,"./models/membership-model.coffee":91,"./models/user-model.coffee":92,"./records-interfaces/allocation-records-interface.coffee":93,"./records-interfaces/bucket-records-interface.coffee":94,"./records-interfaces/comment-records-interface.coffee":95,"./records-interfaces/contribution-records-interface.coffee":96,"./records-interfaces/group-records-interface.coffee":97,"./records-interfaces/membership-records-interface.coffee":98,"./records-interfaces/user-records-interface.coffee":99,"./services/current-user.coffee":101,"./services/dialog.coffee":102,"./services/error.coffee":103,"./services/load-bar.coffee":104,"./services/session.coffee":105,"./services/toast.coffee":106,"./services/user-can.coffee":107,"./services/validate-and-redirect-logged-in-user.coffee":108,"angular":126,"angular-animate":110,"angular-aria":112,"angular-cookie":113,"angular-marked":114,"angular-material":118,"angular-material-icons":116,"angular-messages":120,"angular-sanitize/angular-sanitize":121,"angular-truncate-2":122,"angular-ui-router":123,"angular-upload":124,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":44,"app/configs/auth.coffee":45,"app/routes.coffee":100,"bowser":133,"camelize":135,"is-empty-object":136,"jquery":137,"listify":138,"lodash":139,"moment":143,"morph":144,"ng-csv":145,"ng-download-csv":146,"ng-focus-if":147,"ng-q-all-settled":148,"ng-sanitize":149,"ng-token-auth":150}],86:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":46,"./directives/admin-toolbar/admin-toolbar.coffee":47,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":49,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":51,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":53,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":55,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":57,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":59,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":61,"./directives/error-page/error-page.coffee":63,"./directives/group-page-buckets/group-page-buckets.coffee":65,"./directives/group-page-funders/group-page-funders.coffee":67,"./directives/group-page-sidenav/group-page-sidenav.coffee":72,"./directives/group-page-toolbar/group-page-toolbar.coffee":75,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":77,"./directives/loading-page/loading-page.coffee":79,"./directives/only-digits.coffee":81,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":82,"./filters/date-filter.coffee":84,"./models/allocation-model.coffee":86,"./models/bucket-model.coffee":87,"./models/comment-model.coffee":88,"./models/contribution-model.coffee":89,"./models/group-model.coffee":90,"./models/membership-model.coffee":91,"./models/subscription-tracker-model.coffee":92,"./models/user-model.coffee":93,"./records-interfaces/allocation-records-interface.coffee":94,"./records-interfaces/bucket-records-interface.coffee":95,"./records-interfaces/comment-records-interface.coffee":96,"./records-interfaces/contribution-records-interface.coffee":97,"./records-interfaces/group-records-interface.coffee":98,"./records-interfaces/membership-records-interface.coffee":99,"./records-interfaces/subscription-tracker-records-interface.coffee":100,"./records-interfaces/user-records-interface.coffee":101,"./services/current-user.coffee":103,"./services/dialog.coffee":104,"./services/error.coffee":105,"./services/load-bar.coffee":106,"./services/session.coffee":107,"./services/toast.coffee":108,"./services/user-can.coffee":109,"./services/validate-and-redirect-logged-in-user.coffee":110,"angular":128,"angular-animate":112,"angular-aria":114,"angular-cookie":115,"angular-marked":116,"angular-material":120,"angular-material-icons":118,"angular-messages":122,"angular-sanitize/angular-sanitize":123,"angular-truncate-2":124,"angular-ui-router":125,"angular-upload":126,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":44,"app/configs/auth.coffee":45,"app/routes.coffee":102,"bowser":135,"camelize":137,"is-empty-object":138,"jquery":139,"listify":140,"lodash":141,"moment":145,"morph":146,"ng-csv":147,"ng-download-csv":148,"ng-focus-if":149,"ng-q-all-settled":150,"ng-sanitize":151,"ng-token-auth":152}],86:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2476,6 +2489,43 @@ null;
 
 /* @ngInject */
 
+global.cobudgetApp.factory('SubscriptionTrackerModel', ["BaseModel", function(BaseModel) {
+  var SubscriptionTrackerModel;
+  return SubscriptionTrackerModel = (function(superClass) {
+    extend(SubscriptionTrackerModel, superClass);
+
+    function SubscriptionTrackerModel() {
+      return SubscriptionTrackerModel.__super__.constructor.apply(this, arguments);
+    }
+
+    SubscriptionTrackerModel.singular = 'subscriptionTracker';
+
+    SubscriptionTrackerModel.plural = 'subscriptionTrackers';
+
+    SubscriptionTrackerModel.serializableAttributes = ['commentsOnBucketsUserAuthored', 'commentsOnBucketsUserParticipatedIn', 'contributionsToLiveBucketsUserAuthored', 'contributionsToLiveBucketsUserParticipatedIn', 'fundedBucketsUserAuthored', 'newDraftBuckets', 'newLiveBuckets', 'newFundedBuckets', 'notificationFrequency'];
+
+    SubscriptionTrackerModel.prototype.relationships = function() {
+      return this.belongsTo('user');
+    };
+
+    return SubscriptionTrackerModel;
+
+  })(BaseModel);
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],93:[function(require,module,exports){
+(function (global){
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+null;
+
+
+/* @ngInject */
+
 global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
   var UserModel;
   return UserModel = (function(superClass) {
@@ -2492,9 +2542,10 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
     UserModel.serializableAttributes = ['email', 'subscribedToPersonalActivity', 'subscribedToDailyDigest', 'subscribedToParticipantActivity', 'confirmationToken'];
 
     UserModel.prototype.relationships = function() {
-      return this.hasMany('memberships', {
+      this.hasMany('memberships', {
         "with": 'memberId'
       });
+      return this.belongsTo('subscriptionTracker');
     };
 
     UserModel.prototype.groups = function() {
@@ -2553,7 +2604,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2591,7 +2642,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2629,7 +2680,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2667,7 +2718,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2713,7 +2764,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2749,7 +2800,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],98:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2797,7 +2848,40 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
+(function (global){
+var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  hasProp = {}.hasOwnProperty;
+
+global.cobudgetApp.factory('SubscriptionTrackerRecordsInterface', ["config", "BaseRecordsInterface", "$q", "SubscriptionTrackerModel", function(config, BaseRecordsInterface, $q, SubscriptionTrackerModel) {
+  var SubscriptionTrackerRecordsInterface;
+  return SubscriptionTrackerRecordsInterface = (function(superClass) {
+    extend(SubscriptionTrackerRecordsInterface, superClass);
+
+    SubscriptionTrackerRecordsInterface.prototype.model = SubscriptionTrackerModel;
+
+    function SubscriptionTrackerRecordsInterface(recordStore) {
+      this.baseConstructor(recordStore);
+      this.remote.apiPrefix = config.apiPrefix;
+    }
+
+    SubscriptionTrackerRecordsInterface.prototype.updateEmailSettings = function(subscriptionTracker) {
+      var params;
+      params = _.pick(subscriptionTracker, ['commentsOnBucketsUserAuthored', 'commentsOnBucketsUserParticipatedIn', 'contributionsToLiveBucketsUserAuthored', 'contributionsToLiveBucketsUserParticipatedIn', 'fundedBucketsUserAuthored', 'newDraftBuckets', 'newLiveBuckets', 'newFundedBuckets', 'notificationFrequency']);
+      return this.remote.post('update_email_settings', {
+        subscription_tracker: morph.toSnake(params)
+      });
+    };
+
+    return SubscriptionTrackerRecordsInterface;
+
+  })(BaseRecordsInterface);
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],101:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2862,7 +2946,7 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],100:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -2874,7 +2958,7 @@ global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($sta
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":5,"app/components/confirm-account-page/confirm-account-page.coffee":11,"app/components/create-bucket-page/create-bucket-page.coffee":13,"app/components/edit-bucket-page/edit-bucket-page.coffee":15,"app/components/email-settings-page/email-settings-page.coffee":17,"app/components/forgot-password-page/forgot-password-page.coffee":19,"app/components/group-page/group-page.coffee":21,"app/components/group-setup-page/group-setup-page.coffee":23,"app/components/invite-members-page/invite-members-page.coffee":25,"app/components/landing-page/landing-page.coffee":27,"app/components/login-page/login-page.coffee":29,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":31,"app/components/profile-settings-page/profile-settings-page.coffee":34,"app/components/reset-password-page/reset-password-page.coffee":36,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":38,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":40}],101:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":5,"app/components/confirm-account-page/confirm-account-page.coffee":11,"app/components/create-bucket-page/create-bucket-page.coffee":13,"app/components/edit-bucket-page/edit-bucket-page.coffee":15,"app/components/email-settings-page/email-settings-page.coffee":17,"app/components/forgot-password-page/forgot-password-page.coffee":19,"app/components/group-page/group-page.coffee":21,"app/components/group-setup-page/group-setup-page.coffee":23,"app/components/invite-members-page/invite-members-page.coffee":25,"app/components/landing-page/landing-page.coffee":27,"app/components/login-page/login-page.coffee":29,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":31,"app/components/profile-settings-page/profile-settings-page.coffee":34,"app/components/reset-password-page/reset-password-page.coffee":36,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":38,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":40}],103:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2890,7 +2974,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],102:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2958,7 +3042,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],103:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2986,7 +3070,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],104:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3014,7 +3098,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],105:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3094,7 +3178,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBa
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],106:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3134,7 +3218,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],107:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3194,7 +3278,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],108:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3221,7 +3305,7 @@ global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error",
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],109:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7153,11 +7237,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],110:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":109}],111:[function(require,module,exports){
+},{"./angular-animate":111}],113:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7557,11 +7641,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],112:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":111}],113:[function(require,module,exports){
+},{"./angular-aria":113}],115:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -7688,7 +7772,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],114:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -8038,7 +8122,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":142}],115:[function(require,module,exports){
+},{"marked":144}],117:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -8970,11 +9054,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],116:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":115}],117:[function(require,module,exports){
+},{"./angular-material-icons":117}],119:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -26143,7 +26227,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],118:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -26157,7 +26241,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":117,"angular":126,"angular-animate":110,"angular-aria":112}],119:[function(require,module,exports){
+},{"./angular-material":119,"angular":128,"angular-animate":112,"angular-aria":114}],121:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26844,11 +26928,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],120:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":119}],121:[function(require,module,exports){
+},{"./angular-messages":121}],123:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -27533,7 +27617,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],122:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -27584,7 +27668,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],123:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.13
@@ -31817,7 +31901,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],124:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -32119,7 +32203,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],125:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -61138,11 +61222,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],126:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":125}],127:[function(require,module,exports){
+},{"./angular":127}],129:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -61436,7 +61520,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":132}],128:[function(require,module,exports){
+},{"./utils.coffee":134}],130:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -61594,7 +61678,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":132}],129:[function(require,module,exports){
+},{"./utils.coffee":134}],131:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -61607,7 +61691,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":127,"./base_records_interface.coffee":128,"./record_store.coffee":130,"./restful_client.coffee":131}],130:[function(require,module,exports){
+},{"./base_model.coffee":129,"./base_records_interface.coffee":130,"./record_store.coffee":132,"./restful_client.coffee":133}],132:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -61647,7 +61731,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],131:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -61779,7 +61863,7 @@ module.exports = function($http, Upload) {
 };
 
 
-},{}],132:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -61822,7 +61906,7 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],133:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 /*!
   * Bowser - a browser detector
   * https://github.com/ded/bowser
@@ -62115,9 +62199,9 @@ module.exports = new (Utils = (function() {
   return bowser
 });
 
-},{}],134:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 
-},{}],135:[function(require,module,exports){
+},{}],137:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -62178,7 +62262,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],136:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -62206,7 +62290,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],137:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -72039,7 +72123,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],138:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -72074,7 +72158,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],139:[function(require,module,exports){
+},{}],141:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -84430,7 +84514,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],140:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -85015,7 +85099,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],141:[function(require,module,exports){
+},{}],143:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -89438,7 +89522,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":140,"fs":134}],142:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":142,"fs":136}],144:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -90728,7 +90812,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],143:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -94335,7 +94419,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],144:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -94462,10 +94546,10 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],145:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 /*! ng-csv 10-10-2015 */
 !function(a){angular.module("ngCsv.config",[]).value("ngCsv.config",{debug:!0}).config(["$compileProvider",function(a){angular.isDefined(a.urlSanitizationWhitelist)?a.urlSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/):a.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/)}]),angular.module("ngCsv.directives",["ngCsv.services"]),angular.module("ngCsv.services",[]),angular.module("ngCsv",["ngCsv.config","ngCsv.services","ngCsv.directives","ngSanitize"]),"undefined"!=typeof module&&"undefined"!=typeof exports&&module.exports===exports&&(module.exports="ngCsv"),angular.module("ngCsv.services").service("CSV",["$q",function(a){var b="\r\n",c="﻿",d={"\\t":"	","\\b":"\b","\\v":"","\\f":"\f","\\r":"\r"};this.stringifyField=function(a,b){return"locale"===b.decimalSep&&this.isFloat(a)?a.toLocaleString():"."!==b.decimalSep&&this.isFloat(a)?a.toString().replace(".",b.decimalSep):"string"==typeof a?(a=a.replace(/"/g,'""'),(b.quoteStrings||a.indexOf(",")>-1||a.indexOf("\n")>-1||a.indexOf("\r")>-1)&&(a=b.txtDelim+a+b.txtDelim),a):"boolean"==typeof a?a?"TRUE":"FALSE":a},this.isFloat=function(a){return+a===a&&(!isFinite(a)||Boolean(a%1))},this.stringify=function(d,e){var f=a.defer(),g=this,h="",i="",j=a.when(d).then(function(a){if(angular.isDefined(e.header)&&e.header){var d,j;d=[],angular.forEach(e.header,function(a){this.push(g.stringifyField(a,e))},d),j=d.join(e.fieldSep?e.fieldSep:","),i+=j+b}var k=[];if(angular.isArray(a)?k=a:angular.isFunction(a)&&(k=a()),angular.isDefined(e.label)&&e.label&&"boolean"==typeof e.label){var l,m;l=[],angular.forEach(k[0],function(a,b){this.push(g.stringifyField(b,e))},l),m=l.join(e.fieldSep?e.fieldSep:","),i+=m+b}angular.forEach(k,function(a,c){var d,f,h=angular.copy(k[c]);f=[];var j=e.columnOrder?e.columnOrder:h;angular.forEach(j,function(a){var b=e.columnOrder?h[a]:a;this.push(g.stringifyField(b,e))},f),d=f.join(e.fieldSep?e.fieldSep:","),i+=c<k.length?d+b:d}),e.addByteOrderMarker&&(h+=c),h+=i,f.resolve(h)});return"function"==typeof j["catch"]&&j["catch"](function(a){f.reject(a)}),f.promise},this.isSpecialChar=function(a){return void 0!==d[a]},this.getSpecialChar=function(a){return d[a]}}]),angular.module("ngCsv.directives").directive("ngCsv",["$parse","$q","CSV","$document","$timeout",function(b,c,d,e,f){return{restrict:"AC",scope:{data:"&ngCsv",filename:"@filename",header:"&csvHeader",columnOrder:"&csvColumnOrder",txtDelim:"@textDelimiter",decimalSep:"@decimalSeparator",quoteStrings:"@quoteStrings",fieldSep:"@fieldSeparator",lazyLoad:"@lazyLoad",addByteOrderMarker:"@addBom",ngClick:"&",charset:"@charset",label:"&csvLabel"},controller:["$scope","$element","$attrs","$transclude",function(a,b,e){function f(){var b={txtDelim:a.txtDelim?a.txtDelim:'"',decimalSep:a.decimalSep?a.decimalSep:".",quoteStrings:a.quoteStrings,addByteOrderMarker:a.addByteOrderMarker};return angular.isDefined(e.csvHeader)&&(b.header=a.$eval(a.header)),angular.isDefined(e.csvColumnOrder)&&(b.columnOrder=a.$eval(a.columnOrder)),angular.isDefined(e.csvLabel)&&(b.label=a.$eval(a.label)),b.fieldSep=a.fieldSep?a.fieldSep:",",b.fieldSep=d.isSpecialChar(b.fieldSep)?d.getSpecialChar(b.fieldSep):b.fieldSep,b}a.csv="",angular.isDefined(a.lazyLoad)&&"true"==a.lazyLoad||angular.isArray(a.data)&&a.$watch("data",function(){a.buildCSV()},!0),a.getFilename=function(){return a.filename||"download.csv"},a.buildCSV=function(){var g=c.defer();return b.addClass(e.ngCsvLoadingClass||"ng-csv-loading"),d.stringify(a.data(),f()).then(function(c){a.csv=c,b.removeClass(e.ngCsvLoadingClass||"ng-csv-loading"),g.resolve(c)}),a.$apply(),g.promise}}],link:function(b,c){function d(){var c=b.charset||"utf-8",d=new Blob([b.csv],{type:"text/csv;charset="+c+";"});if(a.navigator.msSaveOrOpenBlob)navigator.msSaveBlob(d,b.getFilename());else{var g=angular.element('<div data-tap-disabled="true"><a></a></div>'),h=angular.element(g.children()[0]);h.attr("href",a.URL.createObjectURL(d)),h.attr("download",b.getFilename()),h.attr("target","_blank"),e.find("body").append(g),f(function(){h[0].click(),h.remove()},null)}}c.bind("click",function(){b.buildCSV().then(function(){d()}),b.$apply()})}}}])}(window,document);
-},{}],146:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 (function() {
   var module = angular.module('ngDownloadCsv', [])
   module.factory('DownloadCSV', ['$http', function ($http) {
@@ -94487,7 +94571,7 @@ module.exports.toTitle = toTitle;
   }])
 }())
 
-},{}],147:[function(require,module,exports){
+},{}],149:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -94519,7 +94603,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],148:[function(require,module,exports){
+},{}],150:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -94538,7 +94622,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],149:[function(require,module,exports){
+},{}],151:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -95029,7 +95113,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],150:[function(require,module,exports){
+},{}],152:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -95878,10 +95962,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],151:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 require('app')
 
-},{"app":85}]},{},[151])
+},{"app":85}]},{},[153])
 
 
 //# sourceMappingURL=../maps/index.js.map
