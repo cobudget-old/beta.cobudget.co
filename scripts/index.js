@@ -1949,7 +1949,7 @@ global.cobudgetApp.directive('onlyDigits', function() {
     link: function(scope, el, attrs) {
       return el.bind('keypress', function(e) {
         var acceptableKeyCodes;
-        acceptableKeyCodes = _.range(48, 57).concat([0, 8]);
+        acceptableKeyCodes = _.range(48, 58).concat([0, 8]);
         if (!_.includes(acceptableKeyCodes, e.which)) {
           return e.preventDefault();
         }
