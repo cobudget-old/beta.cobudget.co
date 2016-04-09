@@ -136,13 +136,23 @@ module.exports = function(params) {
   return {
     template: require('./archive-bucket-dialog.html'),
     scope: params.scope,
-    controller: function($mdDialog, $scope) {
+    controller: function(Dialog, LoadBar, $location, $mdDialog, $scope) {
       $scope.cancel = function() {
         return $mdDialog.cancel();
       };
       return $scope.proceed = function() {
         $scope.cancel();
-        return $scope.archiveBucketAndRedirect();
+        LoadBar.start();
+        return $scope.bucket.archive().then(function() {
+          var groupId;
+          groupId = $scope.bucket.groupId;
+          return $location.path("/groups/" + groupId);
+        })["catch"](function() {
+          Dialog.alert({
+            title: "Error!"
+          });
+          return LoadBar.stop();
+        });
       };
     }
   };
@@ -150,7 +160,7 @@ module.exports = function(params) {
 
 
 },{"./archive-bucket-dialog.html":6}],6:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"archive bucket dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"archive-bucket-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"archive-bucket-dialog__warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"archive-bucket-dialog__header-text\">\n        Are you sure you want to archive this bucket?\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"archive-bucket-dialog__details-container\">\n      <p class=\"archive-bucket-dialog__details\">\n        If you confirm, the money that has already been given to this bucket will be returned to its funders.\n      </p>\n\n      <div class=\"archive-bucket-dialog__final-caution\">\n        Caution: This cannot be undone\n      </div>\n    </div>\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"archive-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised archive-bucket-dialog__proceed-btn\" ng-click=\"proceed()\">proceed</md-button>\n  </div>\n</md-dialog>\n";
+module.exports = "<md-dialog aria-label=\"archive bucket dialog\" class=\"archive-bucket-dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"archive-bucket-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-warning-icon' : 'archive-bucket-dialog__yellow-warning-icon'\"\n        size=\"35\"\n      ></ng-md-icon>\n\n      <div class=\"archive-bucket-dialog__header-text\">\n        Are you sure you want to archive this bucket?\n      </div>\n    </div>\n\n    <md-divider ng-if=\"bucket.status == 'live'\"></md-divider>\n\n    <div class=\"archive-bucket-dialog__details-container\">\n      <p class=\"archive-bucket-dialog__details\" ng-if=\"bucket.status == 'live'\">\n        If you confirm, the money that has already been given to this bucket will be returned to its funders.\n      </p>\n\n      <div class=\"archive-bucket-dialog__final-caution\">\n        Caution: This cannot be undone\n      </div>\n    </div>\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"archive-bucket-dialog__btn archive-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button\n      class=\"md-raised archive-bucket-dialog__btn archive-bucket-dialog__proceed-btn\"\n      ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-proceed-btn' : 'archive-bucket-dialog__yellow-proceed-btn'\"\n      ng-click=\"proceed()\"\n    >yes, archive it</md-button>\n  </div>\n</md-dialog>\n";
 },{}],7:[function(require,module,exports){
 (function (global){
 module.exports = {
@@ -1607,7 +1617,7 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./bucket-page-status-card.html":64}],64:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div ng-if=\"!bucket.isArchived()\">\n      <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n        <bucket-page-status-card-flagpoint status=\"draft\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"live\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"funded\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"done\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'draft'\">\n        <p><em>This bucket idea is still being discussed and designed</em></p>\n\n        <div ng-show='userCanStartFunding()'>\n          <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n          <md-button class=\"md-raised md-primary bucket-page__start-funding-btn\" ng-click='openForFunding()'>Start Funding</md-button>\n        </div>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'live'\">\n        <p><em>This bucket has been launched and can be funded.</em></p>\n      </div>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-if=\"bucket.isArchived()\">\n      <p><em>This bucket was archived on {{ moment.bucket.archivedAt | exactDateWithTime }}</em></p>\n    </div>\n  </md-card-content>\n</md-card>\n";
+module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div ng-if=\"bucket.status == 'funded' || !bucket.isArchived()\">\n      <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n        <bucket-page-status-card-flagpoint status=\"draft\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"live\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"funded\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"done\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'draft'\">\n        <p><em>This bucket idea is still being discussed and designed</em></p>\n\n        <div ng-show='userCanStartFunding()'>\n          <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n          <md-button class=\"md-raised md-primary bucket-page__start-funding-btn\" ng-click='openForFunding()'>Start Funding</md-button>\n        </div>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'live'\">\n        <p><em>This bucket has been launched and can be funded.</em></p>\n      </div>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-if=\"bucket.isArchived()\">\n      <p><em>This bucket was archived on {{ moment.bucket.archivedAt | exactDateWithTime }}</em></p>\n    </div>\n  </md-card-content>\n</md-card>\n";
 },{}],65:[function(require,module,exports){
 (function (global){
 null;
@@ -1625,31 +1635,14 @@ global.cobudgetApp.directive('bucketPageToolbar', function() {
         return $location.path("/buckets/" + $scope.bucket.id + "/edit");
       };
       $scope.userCanEditBucket = function() {
-        return $scope.bucket && $scope.userCanStartFunding();
-      };
-      $scope.archiveBucketAndRedirect = function() {
-        LoadBar.start();
-        return $scope.bucket.archive().then(function() {
-          var groupId;
-          groupId = $scope.bucket.groupId;
-          return $location.path("/groups/" + groupId);
-        })["catch"](function() {
-          Dialog.alert({
-            title: "Error!"
-          });
-          return LoadBar.stop();
-        });
+        return $scope.bucket && !$scope.bucket.isArchived() && $scope.userCanStartFunding();
       };
       $scope.archive = function() {
         var archiveBucketDialog;
-        if ($scope.bucket.status === 'live') {
-          archiveBucketDialog = require('./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee')({
-            scope: $scope
-          });
-          return Dialog.open(archiveBucketDialog);
-        } else {
-          return $scope.archiveBucketAndRedirect();
-        }
+        archiveBucketDialog = require('./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee')({
+          scope: $scope
+        });
+        return Dialog.open(archiveBucketDialog);
       };
     }]
   };
@@ -1659,7 +1652,7 @@ global.cobudgetApp.directive('bucketPageToolbar', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee":5,"./bucket-page-toolbar.html":66}],66:[function(require,module,exports){
-module.exports = "<md-toolbar class=\"bucket-page__toolbar\">\n  <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n      <ng-md-icon icon=\"arrow_back\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n      ></ng-md-icon>\n    </md-button>\n\n    <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'live'\">\n      <ng-md-icon icon=\"person\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__funds-icon\"\n      ></ng-md-icon>\n      <div layout=\"column\" layout-align=\"center center\">\n        <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n        <span class=\"bucket-page__funds-overview-amount\">{{ membership.balance - newContribution.amount | currency : group.currencySymbol : 0 }}</span>\n      </div>\n    </span>\n\n    <span flex></span>\n\n    <span ng-show=\"userCanEditBucket()\">\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"archive\" ng-click=\"archive()\" ng-if=\"!bucket.isArchived()\">\n        <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"edit\" ng-click=\"edit()\">\n        <ng-md-icon icon=\"edit\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </span>\n  </div>\n</md-toolbar>\n";
+module.exports = "<md-toolbar class=\"bucket-page__toolbar\">\n  <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n      <ng-md-icon icon=\"arrow_back\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n      ></ng-md-icon>\n    </md-button>\n\n    <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'live'\">\n      <ng-md-icon icon=\"person\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__funds-icon\"\n      ></ng-md-icon>\n      <div layout=\"column\" layout-align=\"center center\">\n        <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n        <span class=\"bucket-page__funds-overview-amount\">{{ membership.balance - newContribution.amount | currency : group.currencySymbol : 0 }}</span>\n      </div>\n    </span>\n\n    <span flex></span>\n\n    <span ng-show=\"userCanEditBucket()\">\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"archive\" ng-click=\"archive()\" ng-if=\"!bucket.isArchived()\">\n        <md-tooltip>Archive</md-tooltip>\n        <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon bucket-page__toolbar-archive-btn-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"edit\" ng-click=\"edit()\">\n        <md-tooltip>Edit</md-tooltip>\n        <ng-md-icon icon=\"edit\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </span>\n  </div>\n</md-toolbar>\n";
 },{}],67:[function(require,module,exports){
 (function (global){
 null;
