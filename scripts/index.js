@@ -1946,7 +1946,8 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
     restrict: 'E',
     template: require('./landing-page-toolbar.html'),
     replace: true,
-    controller: ["$location", "$scope", function($location, $scope) {
+    controller: ["CurrentUser", "$location", "$scope", function(CurrentUser, $location, $scope) {
+      $scope.currentUser = CurrentUser();
       $scope.redirectToLoginPage = function() {
         return $location.path('/login');
       };
@@ -1958,7 +1959,7 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./landing-page-toolbar.html":81}],81:[function(require,module,exports){
-module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <!-- <md-button class=\"md-icon-button\" aria-label=\"menu\" ng-click=\"\">\n    <ng-md-icon icon=\"menu\"\n      size=\"25\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"landing-page__menu-icon\"\n    ></ng-md-icon>\n  </md-button> -->\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
+module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-if=\"!currentUser\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
 },{}],82:[function(require,module,exports){
 (function (global){
 null;
