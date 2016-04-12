@@ -464,7 +464,7 @@ module.exports = {
   },
   template: require('./email-settings-page.html'),
   reloadOnSearch: false,
-  controller: function(CurrentUser, Error, $location, Records, $scope, $stateParams, Toast, UserCan) {
+  controller: function(CurrentUser, Dialog, Error, $location, Records, $scope, $stateParams, Toast, UserCan) {
     var previousGroupId;
     if (UserCan.changeEmailSettings()) {
       $scope.authorized = true;
@@ -476,39 +476,23 @@ module.exports = {
     $scope.currentUser = CurrentUser();
     $scope.subscriptionTracker = $scope.currentUser.subscriptionTracker();
     previousGroupId = $stateParams.previous_group_id || CurrentUser().primaryGroup().id;
-    $scope.settings = [
-      {
-        property: 'commentsOnBucketsUserAuthored',
-        header: 'comment on your bucket'
-      }, {
-        property: 'commentsOnBucketsUserParticipatedIn',
-        header: 'comment on a bucket you participated in'
-      }, {
-        property: 'contributionsToLiveBucketsUserAuthored',
-        header: 'funding for your bucket'
-      }, {
-        property: 'contributionsToLiveBucketsUserParticipatedIn',
-        header: 'funding in a bucket you participated in'
-      }, {
-        property: 'fundedBucketsUserAuthored',
-        header: 'your bucket funded fully'
-      }, {
-        property: 'newDraftBuckets',
-        header: 'new bucket idea created'
-      }, {
-        property: 'newLiveBuckets',
-        header: 'new bucket put up for funding'
-      }, {
-        property: 'newFundedBuckets',
-        header: 'new bucket funded'
-      }
-    ];
-    $scope.notificationFrequencyOptions = ['never', 'hourly', 'daily', 'weekly'];
+    $scope.emailDigestDeliveryFrequencyOptions = ['never', 'daily', 'weekly'];
     $scope.cancel = function() {
       $location.search('previous_group_id', null);
       return $location.path("/groups/" + previousGroupId);
     };
-    $scope.done = function() {
+    $scope.attemptCancel = function(emailSettingsForm) {
+      if (emailSettingsForm.$dirty) {
+        return Dialog.confirm({
+          title: "Discard unsaved changes?"
+        }).then(function() {
+          return $scope.cancel();
+        });
+      } else {
+        return $scope.cancel();
+      }
+    };
+    $scope.save = function() {
       return Records.subscriptionTrackers.updateEmailSettings($scope.subscriptionTracker).then(function() {
         Toast.show('Email settings updated!');
         return $scope.cancel();
@@ -521,7 +505,7 @@ module.exports = {
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./email-settings-page.html":20}],20:[function(require,module,exports){
-module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button email-settings-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"email-settings-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <div>\n      <h2 class=\"email-settings-page__subheader\">What types of notifications would you like to receive?</h2>\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\" ng-repeat=\"setting in settings\">\n        <md-checkbox\n          ng-model=\"subscriptionTracker[setting.property]\"\n          ng-attr-aria-label=\"{{ setting.header }}\"\n          class=\"email-settings-page__checkbox\">\n        </md-checkbox>\n\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            {{ setting.header }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"email-settings-page__horizontal-divider\"></md-divider>\n\n    <div>\n      <h2 class=\"email-settings-page__subheader\">How often would you like to receive them?</h2>\n\n      <md-input-container>\n        <md-select required class=\"email-settings-page__notification-frequency-options\" name=\"notificationFrequency\" ng-model=\"subscriptionTracker.notificationFrequency\" aria-label=\"notification frequency options\">\n          <md-option required ng-repeat=\"option in notificationFrequencyOptions\" value=\"{{option}}\">\n            {{option}}\n          </md-option>\n        </md-select>\n      </md-input-container>\n    </div>\n  </md-content>\n</div>\n";
+module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"attemptCancel(emailSettingsForm)\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <form novalidate name=\"emailSettingsForm\" ng-submit=\"save(); emailSettingsForm.$setPristine()\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email notifications?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-checkbox\n          name=\"subscribedToEmailNotifications\"\n          ng-model=\"subscriptionTracker.subscribedToEmailNotifications\"\n          aria-label=\"subscribed to email notifications\"\n          class=\"email-settings-page__checkbox\">\n        </md-checkbox>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting-note\">\n        <span><b>note</b>: these updates are automatically set to hourly</span>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email digest?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-select required\n          class=\"email-settings-page__notification-frequency-options\"\n          name=\"emailDigestDeliveryFrequency\"\n          ng-model=\"subscriptionTracker.emailDigestDeliveryFrequency\"\n          aria-label=\"notification frequency options\"\n        >\n          <md-option required ng-repeat=\"option in emailDigestDeliveryFrequencyOptions\" value=\"{{option}}\">\n            {{option}}\n          </md-option>\n        </md-select>\n      </div>\n\n      <md-button class=\"md-raised md-primary email-settings-page__save-btn\" ng-disabled=\"emailSettingsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
 },{}],21:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
@@ -2572,7 +2556,7 @@ global.cobudgetApp.factory('SubscriptionTrackerModel', ["BaseModel", function(Ba
 
     SubscriptionTrackerModel.plural = 'subscriptionTrackers';
 
-    SubscriptionTrackerModel.serializableAttributes = ['commentsOnBucketsUserAuthored', 'commentsOnBucketsUserParticipatedIn', 'contributionsToLiveBucketsUserAuthored', 'contributionsToLiveBucketsUserParticipatedIn', 'fundedBucketsUserAuthored', 'newDraftBuckets', 'newLiveBuckets', 'newFundedBuckets', 'notificationFrequency'];
+    SubscriptionTrackerModel.serializableAttributes = ['subscribedToEmailNotifications', 'emailDigestDeliveryFrequency'];
 
     SubscriptionTrackerModel.prototype.relationships = function() {
       return this.belongsTo('user');
@@ -2937,7 +2921,7 @@ global.cobudgetApp.factory('SubscriptionTrackerRecordsInterface', ["config", "Ba
 
     SubscriptionTrackerRecordsInterface.prototype.updateEmailSettings = function(subscriptionTracker) {
       var params;
-      params = _.pick(subscriptionTracker, ['commentsOnBucketsUserAuthored', 'commentsOnBucketsUserParticipatedIn', 'contributionsToLiveBucketsUserAuthored', 'contributionsToLiveBucketsUserParticipatedIn', 'fundedBucketsUserAuthored', 'newDraftBuckets', 'newLiveBuckets', 'newFundedBuckets', 'notificationFrequency']);
+      params = _.pick(subscriptionTracker, ['subscribedToEmailNotifications', 'emailDigestDeliveryFrequency']);
       return this.remote.post('update_email_settings', {
         subscription_tracker: morph.toSnake(params)
       });
