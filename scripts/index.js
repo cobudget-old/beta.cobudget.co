@@ -2642,7 +2642,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
     UserModel.plural = 'users';
 
-    UserModel.serializableAttributes = ['email', 'subscribedToPersonalActivity', 'subscribedToDailyDigest', 'subscribedToParticipantActivity', 'confirmationToken'];
+    UserModel.serializableAttributes = ['email', 'subscribedToPersonalActivity', 'subscribedToDailyDigest', 'subscribedToParticipantActivity', 'confirmationToken', 'isSuperAdmin'];
 
     UserModel.prototype.relationships = function() {
       this.hasMany('memberships', {
