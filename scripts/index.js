@@ -34,7 +34,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":134,"lokijs":146}],2:[function(require,module,exports){
+},{"angular_record_store":138,"lokijs":190}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -132,6 +132,39 @@ module.exports = {
 },{"./admin-page.html":4}],4:[function(require,module,exports){
 module.exports = "<div class=\"admin-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 admin-page__toolbar\">\n    <div class=\"md-toolbar-tools\" layout=\"column\" layout-align=\"center center\">\n      hi admin\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"admin-page__content\">\n    <md-subheader class=\"admin-page__group-list-subheader\">Edit Existing Groups</md-subheader>\n\n    <md-list class=\"admin-page__group-list\">\n      <div class=\"admin-page__group-list-item-container\" ng-repeat=\"group in accessibleGroups\">\n        <md-list-item class=\"admin-page__group-list-item\">\n          <div>\n            <div class=\"admin-page__group-info\" layout=\"row\" layout-align=\"start center\">\n              <div class=\"admin-page__group-name\">\n                {{ group.name }}\n                <md-button ng-click=\"viewGroup(group.id)\">view</md-button>\n              </div>\n            </div>\n\n            <div class=\"admin-page__group-options\">\n              <span>\n                <md-input-container class='admin-page__currency-code-input'>\n                  <label>Currency</label>\n                  <md-select ng-model=\"group.currencyCode\" ng-change=\"updateGroupCurrency(group.id, group.currencyCode)\">\n                    <md-option ng-repeat=\"currency in currencies\" value=\"{{currency.code}}\">{{ currency.code + \" - \" + currency.symbol }}</md-option>\n                  </md-select>\n                </md-input-container>\n              </span>\n            </div>\n          </div>\n        </md-list-item>\n\n        <md-divider></md-divider>\n      </div>\n    </md-list>\n  </md-content>\n</div>\n";
 },{}],5:[function(require,module,exports){
+(function (global){
+module.exports = {
+  resolve: {
+    userValidated: function($auth) {
+      return $auth.validateUser();
+    },
+    membershipsLoaded: function() {
+      return global.cobudgetApp.membershipsLoaded;
+    }
+  },
+  url: '/analytics',
+  template: require('./analytics-page.html'),
+  controller: function(config, CurrentUser, Error, $http, Records, $scope, UserCan) {
+    if (UserCan.viewAnalyticsPage()) {
+      $scope.authorized = true;
+      Error.clear();
+      $http.get(config.apiPrefix + '/analytics/report').then(function(res) {
+        $scope.data = res.data;
+        return $scope.dataLoaded = true;
+      });
+    } else {
+      $scope.authorized = false;
+      Error.set("you can't view this page");
+    }
+  }
+};
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./analytics-page.html":6}],6:[function(require,module,exports){
+module.exports = "<div class=\"analytics-page\" ng-if=\"authorized && dataLoaded\">\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>cumulative user count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.cumulative_user_count_data.y]\"\n      chart-labels=\"data.cumulative_user_count_data.x\"\n      chart-series=\"['cumulative user count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>cumulative group count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.cumulative_group_count_data.y]\"\n      chart-labels=\"data.cumulative_group_count_data.x\"\n      chart-series=\"['cumulative group count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>contribution count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.contribution_count_data.y]\"\n      chart-labels=\"data.contribution_count_data.x\"\n      chart-series=\"['contribution count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__unconfirmed-user-count-container\">\n    <h2>number of unconfirmed users right now: {{ data.unconfirmed_user_count }}</h2>\n  </div>\n\n  <md-divider></md-divider>\n\n  <h2>group data</h2>\n\n  <div ng-repeat=\"group in data.group_data\">\n    <table class=\"analytics-page__group-data-table\">\n      <tr>\n        <th colspan=\"3\"> {{ group.name }} </th>\n      </tr>\n      <tr class=\"analytics-page__group-data-table-header\">\n        <td>age</td>\n        <td>last activity</td>\n        <td>number of members</td>\n      </tr>\n      <tr>\n        <td>{{ group.created_at | timeFromNowInWords }}</td>\n        <td>{{ group.last_activity_at | timeFromNowInWords }}</td>\n        <td>{{ group.membership_count }}</td>\n      </tr>\n    </table>\n\n    <div class=\"analytics-page__group-admins-container\">\n      <span>\n        <b>contact:</b>\n        <span ng-repeat=\"admin in group.admins\">{{ admin.name }} ({{admin.email}}), </span>\n      </span>\n    </div>\n  </div>\n</div>\n";
+},{}],7:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./archive-bucket-dialog.html'),
@@ -159,9 +192,9 @@ module.exports = function(params) {
 };
 
 
-},{"./archive-bucket-dialog.html":6}],6:[function(require,module,exports){
+},{"./archive-bucket-dialog.html":8}],8:[function(require,module,exports){
 module.exports = "<md-dialog aria-label=\"archive bucket dialog\" class=\"archive-bucket-dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"archive-bucket-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-warning-icon' : 'archive-bucket-dialog__yellow-warning-icon'\"\n        size=\"35\"\n      ></ng-md-icon>\n\n      <div class=\"archive-bucket-dialog__header-text\">\n        Are you sure you want to archive this bucket?\n      </div>\n    </div>\n\n    <md-divider ng-if=\"bucket.status == 'live'\"></md-divider>\n\n    <div class=\"archive-bucket-dialog__details-container\">\n      <p class=\"archive-bucket-dialog__details\" ng-if=\"bucket.status == 'live'\">\n        If you confirm, the money that has already been given to this bucket will be returned to its funders.\n      </p>\n\n      <div class=\"archive-bucket-dialog__final-caution\">\n        Caution: This cannot be undone\n      </div>\n    </div>\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"archive-bucket-dialog__btn archive-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button\n      class=\"md-raised archive-bucket-dialog__btn archive-bucket-dialog__proceed-btn\"\n      ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-proceed-btn' : 'archive-bucket-dialog__yellow-proceed-btn'\"\n      ng-click=\"proceed()\"\n    >yes, archive it</md-button>\n  </div>\n</md-dialog>\n";
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -214,9 +247,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page.html":8}],8:[function(require,module,exports){
+},{"./bucket-page.html":10}],10:[function(require,module,exports){
 module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-page-toolbar></bucket-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <bucket-page-header-card></bucket-page-header-card>\n    <div ng-if=\"!bucket.isArchived()\">\n      <bucket-page-progress-card ng-if=\"bucket.status == 'live'\"></bucket-page-progress-card>\n      <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\"></bucket-page-backers-card>\n    </div>\n    <bucket-page-status-card></bucket-page-status-card>\n    <bucket-page-activity-card></bucket-page-activity-card>\n  </md-content>\n</div>\n";
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./bulk-allocation-primer-dialog.html'),
@@ -257,9 +290,9 @@ module.exports = function(params) {
 };
 
 
-},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":46,"./bulk-allocation-primer-dialog.html":10}],10:[function(require,module,exports){
+},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":48,"./bulk-allocation-primer-dialog.html":12}],12:[function(require,module,exports){
 module.exports = "<md-dialog class=\"bulk-allocation-primer-dialog\" aria-label=\"bulk-allocation-primer-dialog\">\n  <md-dialog-content class=\"sticky-container bulk-allocation-primer-dialog__content\">\n    <h2 class=\"bulk-allocation-primer-dialog__header\">Give many members funds at once using a CSV file</h2>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      In order to give many members funds and / or invite them at the same time, you'll need to create a csv file to upload. <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"bulk-allocation-primer-dialog__link\">How do I do that?</a>\n    </p>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      Please upload a csv file with 2 columns (no headings), with email addresses in the first column, and an amount that you want to <b>ADD</b> to their account in the second column. Check out the example below.\n    </p>\n\n    <img class=\"bulk-allocation-primer-dialog__upload-csv-primer-img\" src=\"./img/example-csv.png\" alt=\"example csv\" />\n\n    <p class=\"bulk-allocation-primer-dialog__upload-csv-primer-img-caption\">\n      Example spreadsheet\n    </p>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      <b>PS.</b> Don't worry, you'll be able to review and confirm changes before they are applied.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions bulk-allocation-primer-dialog__btns\" layout=\"row\">\n    <md-button class=\"bulk-allocation-primer-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n\n    <md-button class=\"bulk-allocation-primer-dialog__ok-btn\" ng-click=\"openCSVUploadDialog()\">ok, select file</md-button>\n\n    <div upload-button\n      class=\"bulk-allocation-primer-dialog__hidden-btn\"\n      url=\"{{ uploadPath() }}\"\n      param=\"csv\"\n      accept=\"text/csv\"\n      on-success=\"onCSVUploadSuccess(response)\"\n      on-complete=\"onCSVUploadCompletion()\"\n      on-error=\"onCSVUploadError(response)\"\n    ></div>\n  </div>\n</md-dialog>\n";
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./bulk-invite-members-primer-dialog.html'),
@@ -300,9 +333,9 @@ module.exports = function(params) {
 };
 
 
-},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":46,"./bulk-invite-members-primer-dialog.html":12}],12:[function(require,module,exports){
+},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":48,"./bulk-invite-members-primer-dialog.html":14}],14:[function(require,module,exports){
 module.exports = "<md-dialog class=\"bulk-invite-members-primer-dialog\" aria-label=\"bulk-invite-members-primer-dialog\">\n  <md-dialog-content class=\"sticky-container bulk-invite-members-primer-dialog__content\">\n    <h2 class=\"bulk-invite-members-primer-dialog__header\">Invite many members at once using a CSV file</h2>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      In order to invite many members at the same time, you'll need to create a csv file to upload. <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"bulk-invite-members-primer-dialog__link\">How do I do that?</a>\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      Please upload a csv file with 1 column (no heading), with the email addresses of the members you want to invite. Check out the example below.\n    </p>\n\n    <img class=\"bulk-invite-members-primer-dialog__upload-csv-primer-img\" src=\"./img/example-members-csv.png\" alt=\"example csv\" />\n\n    <p class=\"bulk-invite-members-primer-dialog__upload-csv-primer-img-caption\">\n      Example spreadsheet\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      If you want to add many members and give them funds at the same time,  <a href=\"\" class=\"bulk-invite-members-primer-dialog__link\" ng-click=\"redirectToManageGroupFundsPage()\">click here.</a>\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      <b>PS.</b> Don't worry, you'll be able to review and confirm changes before they are applied.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions bulk-invite-members-primer-dialog__btns\" layout=\"row\">\n    <md-button class=\"bulk-invite-members-primer-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n\n    <md-button class=\"bulk-invite-members-primer-dialog__ok-btn\" ng-click=\"openCSVUploadDialog()\">ok, select file</md-button>\n\n    <div upload-button\n      class=\"bulk-invite-members-primer-dialog__hidden-btn\"\n      url=\"{{ uploadPath() }}\"\n      param=\"csv\"\n      accept=\"text/csv\"\n      on-success=\"onCSVUploadSuccess(response)\"\n      on-complete=\"onCSVUploadCompletion()\"\n      on-error=\"onCSVUploadError(response)\"\n    ></div>\n  </div>\n</md-dialog>\n";
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = {
   onExit: function($location) {
     return $location.url($location.path());
@@ -350,9 +383,9 @@ module.exports = {
 };
 
 
-},{"./confirm-account-page.html":14}],14:[function(require,module,exports){
+},{"./confirm-account-page.html":16}],16:[function(require,module,exports){
 module.exports = "<div class=\"confirm-account-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"confirm-account-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <md-card class=\"confirm-account-page__content-card\">\n      <md-card-content>\n        <div class=\"confirm-account-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"person\"\n            size=\"60\"\n            class=\"confirm-account-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <h2 class=\"confirm-account-page__logo-subheader\">Let's set up your account</h2>\n\n        <form novalidate class=\"confirm-account-page__form\" name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\">\n          <div class=\"confirm-account-page__input-container\">\n            <input required class=\"confirm-account-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"name\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.name.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Name is required.</div>\n          </div>\n\n          <div class=\"confirm-account-page__input-container\">\n            <input class=\"confirm-account-page__input-field\" minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\" placeholder=\"password\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.password.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password is required.</div>\n            <div ng-if=\"newUserForm.password.$error.minlength && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password must be longer than 8 characters.</div>\n          </div>\n\n          <md-button class=\"confirm-account-page__submit-btn\">next</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -402,9 +435,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./create-bucket-page.html":16}],16:[function(require,module,exports){
+},{"./create-bucket-page.html":18}],18:[function(require,module,exports){
 module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">Members in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\" ng-if=\"bucketForm.name.$dirty || formSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\" ng-if=\"bucketForm.description.$dirty || formSubmitted\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select required name=\"groupId\" ng-model=\"bucket.groupId\">\n          <md-option required ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.groupId.$error\" ng-if=\"bucketForm.groupId.$dirty || formSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"text\" ng-model=\"bucket.target\" min=\"1\" only-digits>\n        <div ng-messages=\"bucketForm.target.$error\" ng-if=\"bucketForm.target.$dirty || formSubmitted\">\n          <div ng-message=\"min\">Bucket target must be greater than zero</div>\n        </div>\n      </md-input-container>\n    </form>\n  </md-content>\n</div>\n";
-},{}],17:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -448,9 +481,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./edit-bucket-page.html":18}],18:[function(require,module,exports){
+},{"./edit-bucket-page.html":20}],20:[function(require,module,exports){
 module.exports = "<div class=\"edit-bucket-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 edit-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"edit-bucket-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"edit-bucket-page__header-text\">Edit {{ bucket.status == 'draft' ? 'Idea' : 'Bucket' }}</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button edit-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done(bucketForm)\">\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"edit-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"edit-bucket-page__content\">\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-title\">You're about to edit a {{ bucket.status == 'draft' ? 'bucket idea' : 'bucket' }}</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-text\">\n        You can continue to edit this {{ bucket.status == 'draft' ? 'idea' : 'bucket' }}, propose it to your peers, and get feedback.\n        <span ng-if=\"bucket.status == 'draft'\">When you're ready, you can request funding.</span>\n      </md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"edit-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"edit-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"edit-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input ng-disabled=\"bucket.status != 'draft'\" name=\"target\" min=\"1\" type=\"text\" ng-model=\"bucket.target\" only-digits>\n        <div ng-messages=\"bucketForm.target.$error\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"min\">Bucket target must be greater than zero</div>\n        </div>\n      </md-input-container>\n    </form>\n  </md-content>\n</div>\n";
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 module.exports = {
   url: '/email_settings?previous_group_id',
@@ -504,9 +537,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./email-settings-page.html":20}],20:[function(require,module,exports){
+},{"./email-settings-page.html":22}],22:[function(require,module,exports){
 module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"attemptCancel(emailSettingsForm)\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <form novalidate name=\"emailSettingsForm\" class=\"email-settings-page__form\" ng-submit=\"save(); emailSettingsForm.$setPristine()\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email notifications?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-checkbox\n          name=\"subscribedToEmailNotifications\"\n          ng-model=\"subscriptionTracker.subscribedToEmailNotifications\"\n          aria-label=\"subscribed to email notifications\"\n          class=\"email-settings-page__checkbox\">\n        </md-checkbox>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting-note\">\n        <span>Check the box to get updates on buckets you create or participate in.</span>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email digest?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-select required\n          class=\"email-settings-page__notification-frequency-options\"\n          name=\"emailDigestDeliveryFrequency\"\n          ng-model=\"subscriptionTracker.emailDigestDeliveryFrequency\"\n          aria-label=\"notification frequency options\"\n        >\n          <md-option required ng-repeat=\"option in emailDigestDeliveryFrequencyOptions\" value=\"{{option}}\">\n            {{option}}\n          </md-option>\n        </md-select>\n      </div>\n      \n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting-note\">\n        <span>Choose how frequently you would like to receive email about new activity in your groups.</span>\n      </div>\n\n      <md-button class=\"md-raised md-primary email-settings-page__save-btn\" ng-disabled=\"emailSettingsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
   template: require('./forgot-password-page.html'),
@@ -531,9 +564,9 @@ module.exports = {
 };
 
 
-},{"./forgot-password-page.html":22}],22:[function(require,module,exports){
+},{"./forgot-password-page.html":24}],24:[function(require,module,exports){
 module.exports = "<div class=\"forgot-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary forgot-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools forgot-password-page__heading\" layout-align=\"center\">Having trouble logging in?</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"forgot-password-page__content\">\n    <div class=\"forgot-password-page__subheading\">\n      Enter your email address here and we'll send you an email to reset your account.\n    </div>\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && requestPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"form.email.$error\" ng-if=\"form.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"forgot-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -583,9 +616,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page.html":24}],24:[function(require,module,exports){
+},{"./group-page.html":26}],26:[function(require,module,exports){
 module.exports = "<div class=\"group-page\" ng-if=\"authorized\">\n  <group-page-sidenav></group-page-sidenav>\n  \n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"group-page__content\">\n    <group-page-buckets ng-if=\"tabSelected == 0\"></group-page-buckets>\n    <group-page-funders ng-if=\"tabSelected == 1\"></group-page-funders>\n  </md-content>\n</div>";
-},{}],25:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 module.exports = {
   onEnter: function($location) {
     return $location.url($location.path());
@@ -617,9 +650,9 @@ module.exports = {
 };
 
 
-},{"./group-setup-page.html":26}],26:[function(require,module,exports){
+},{"./group-setup-page.html":28}],28:[function(require,module,exports){
 module.exports = "<div class=\"group-setup-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"group-setup-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <md-card class=\"group-setup-page__content-card\">\n      <md-card-content>\n        <div class=\"group-setup-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"group\"\n            size=\"40\"\n            class=\"group-setup-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\">\n          </ng-md-icon>\n        </div>\n\n        <h2 class=\"group-setup-page__logo-subheader\">Give your group a name</h2>\n\n        <form novalidate class=\"group-setup-page__form\" name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\">\n\n          <div class=\"group-setup-page__input-container\">\n            <input required class=\"group-setup-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"group name\">\n            <div ng-if=\"newGroupForm.name.$error.required && newGroupForm.$submitted\" class=\"group-setup-page__input-error\">Name is required.</div>\n          </div>\n\n          <md-button class=\"group-setup-page__submit-btn\">let's go!</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
-},{}],27:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -690,9 +723,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":11,"./invite-members-page.html":28}],28:[function(require,module,exports){
+},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./invite-members-page.html":30}],30:[function(require,module,exports){
 module.exports = "<div class=\"invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person_add\"\n        class=\"invite-members-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"invite-members-page__header-text\">\n        Invite Members\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"invite-members-page__content\">\n    <h2 class=\"invite-members-page__subheader\">\n      Members can see, comment on, and fund buckets in {{ group.name }}\n    </h2>\n\n    <md-divider></md-divider>\n\n    <form novalidate class=\"invite-members-page__details-form\" name=\"inviteMemberForm\">\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">EMAIL ADDRESS</label>\n        <input class=\"invite-members-page__text-input\" type=\"email\" required name=\"email\" ng-model=\"inviteMemberFormParams.email\"/>\n        <div ng-if=\"inviteMemberForm.email.$error.required && formSubmitted\" class=\"invite-members-page__input-error\">Email is required.</div>\n        <div ng-if=\"inviteMemberForm.email.$error.email && formSubmitted\" class=\"invite-members-page__input-error\">Email address must be valid.</div>\n      </div>\n\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">NAME (OPTIONAL)</label>\n        <input class=\"invite-members-page__text-input\" type=\"text\" name=\"name\" ng-model=\"inviteMemberFormParams.name\" />\n      </div>\n    </form>\n\n    <div class=\"invite-members-page__bulk-invite-btn-container\">\n      big group?\n      <a class=\"invite-members-page__bulk-invite-btn\" href=\"\" ng-click=\"openInviteMembersPrimerDialog()\">\n        Add many members at once\n      </a>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\">\n      <md-button class=\"invite-members-page__btn invite-members-page__confirm-btn\" ng-click=\"formSubmitted = true; inviteMemberForm.$valid && inviteMember(); inviteMemberForm.$setUntouched()\">Invite 1 Member</md-button>\n      <md-button class=\"invite-members-page__btn invite-members-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = {
   url: '/',
   template: require('./landing-page.html'),
@@ -718,9 +751,9 @@ module.exports = {
 };
 
 
-},{"./landing-page.html":30}],30:[function(require,module,exports){
+},{"./landing-page.html":32}],32:[function(require,module,exports){
 module.exports = "<div class=\"landing-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n  <md-content class=\"landing-page__content\" layout=\"column\" layout-align=\"center center\">\n    <div class=\"landing-page__content-container\">\n      <img class=\"landing-page__dollar-logo\" src=\"./img/cobudget_icon_512px.png\" alt=\"Cobudget\" />\n      <img class=\"landing-page__cobudget-logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n      <h2 class=\"landing-page__logo-subheader\">Create more together</h2>\n\n      <form novalidate name=\"emailForm\" class=\"landing-page__start-group-form\" ng-submit=\"emailForm.$valid && startGroup()\">\n        <div class=\"landing-page__input-container\">\n          <input required class=\"landing-page__email-field\" type=\"email\" name=\"email\" placeholder=\"Email Address\" ng-model=\"formData.email\">\n          <div ng-if=\"emailForm.email.$error.required && emailForm.$submitted\" class=\"landing-page__input-error\">Email is required.</div>\n          <div ng-if=\"emailForm.email.$error.email && emailForm.$submitted\" class=\"landing-page__input-error\">Email address must be valid.</div>\n        </div>\n        <md-button class=\"landing-page__submit-btn\">start a group</md-button>\n      </form>\n    </div>\n  </md-content>\n</div>\n";
-},{}],31:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 module.exports = {
   url: '/login',
   template: require('./login-page.html'),
@@ -752,9 +785,9 @@ module.exports = {
 };
 
 
-},{"./login-page.html":32}],32:[function(require,module,exports){
+},{"./login-page.html":34}],34:[function(require,module,exports){
 module.exports = "<div class=\"login-page\">\n  <md-toolbar class=\"md-primary login-page__toolbar\">\n    <h1 class=\"md-toolbar-tools login-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"login-page__content\">\n    <form novalidate name=\"loginForm\" class=\"login-page__login-form\" ng-submit=\"login(formData)\">\n      <div class=\"login-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"loginForm.email.$error\" ng-if=\"loginForm.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"loginForm.password.$error\">\n          <div ng-message=\"required\" ng-if=\"loginForm.password.$dirty || loginForm.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n\n\n      <md-button class=\"login-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"login-page__buttons-container\">\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
-},{}],33:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -811,11 +844,11 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":9,"./manage-group-funds-page.html":34}],34:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./manage-group-funds-page.html":36}],36:[function(require,module,exports){
 module.exports = "<div class=\"manage-group-funds-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"manage-group-funds-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"attach_money\"\n        class=\"manage-group-funds-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"manage-group-funds-page__header-text\">\n        Manage Group Funds\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"manage-group-funds-page__content\">\n    <h2 class=\"manage-group-funds-page__subheader\">\n      Here you can change members' available funds using CSV files\n    </h2>\n\n    <md-divider></md-divider>\n\n    <div class=\"manage-group-funds-page__btns-container\">\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container manage-group-funds-page__upload-btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\"  ng-click=\"openUploadCSVPrimerDialog()\">\n          <ng-md-icon icon=\"cloud_upload\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Update by CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Upload a csv file to update many members' funds at once. You can also invite new members at the same time. (more details)\n        </p>\n      </div>\n\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\" ng-click=\"downloadCSV()\">\n          <ng-md-icon icon=\"file_download\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Download CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Download a csv of all your group members, their emails, and their available funds.\n        </p>\n\n        <p class=\"manage-group-funds-page__btn-info manage-group-funds-page__safari-help\" ng-if=\"usingSafari\">\n          <b>Using Safari?</b><br/>\n          A bug in Safari names all downloaded CSVs as <code>Unknown</code>.\n          So after downloading, you will need to rename the file to <code>YOUR_PREFERRED_NAME.csv</code>.\n        </p>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
-},{}],35:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = "<md-dialog class=\"profile-settings-page__discard-changes-dialog\" aria-label=\"discard changes dialog\">\n  <md-dialog-content class=\"sticky-container profile-settings-page__discard-changes-dialog-content\">\n    <h2 class=\"profile-settings-page__discard-changes-dialog-header\">Discard Changes?</h2>\n    <p class=\"profile-settings-page__discard-changes-dialog-text\">\n      Looks like you have some unsaved changes made to your <span ng-bind-html=\"unsavedFields()\"></span>.<br/><br/>\n      Any changes you have made to your account will be lost.\n    </p>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"okay()\">okay</md-button>\n  </div>\n</md-dialog>\n";
-},{}],36:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -947,9 +980,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./discard-changes-dialog.tmpl.html":35,"./profile-settings-page.html":37}],37:[function(require,module,exports){
+},{"./discard-changes-dialog.tmpl.html":37,"./profile-settings-page.html":39}],39:[function(require,module,exports){
 module.exports = "<div class=\"profile-settings-page\">\n  <md-toolbar class=\"profile-settings-page__toolbar\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" aria-label=\"back\" ng-click=\"attemptBack()\">\n        <ng-md-icon icon=\"arrow_back\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"profile-settings-page__back-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <h1>Profile Settings</h1>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"profile-settings-page__content\">\n    <form novalidate class=\"profile-settings-page__details-form\" name=\"accountDetailsForm\" ng-submit=\"save(); accountDetailsForm.$setPristine()\">\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">NAME</label>\n        <input class=\"profile-settings-page__text-input\" type=\"text\" required name=\"name\" ng-model=\"currentUser.name\" />\n        <div ng-if=\"accountDetailsForm.name.$error.required && formSubmitted\" class=\"profile-settings-page__input-error\">Name is required.</div>\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">EMAIL</label>\n        <input class=\"profile-settings-page__text-input\" disabled type=\"email\" name=\"email\" ng-model=\"currentUser.email\" />\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\">PASSWORD</label>\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <a class=\"profile-settings-page__change-password-link\" ng-click=\"openPasswordFields()\">CHANGE PASSWORD</a>\n          <span flex></span>\n          <ng-md-icon icon=\"close\"\n            ng-if=\"showPasswordFields\"\n            ng-click=\"closePasswordFields()\"\n            size=\"20\"\n            class=\"profile-settings-page__cancel-btn\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n      </div>\n\n    <div class=\"profile-settings-page__password-fields\" ng-show=\"showPasswordFields\">\n        <md-divider class=\"profile-settings-page__form-divider\"></md-divider>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"current_password\">CURRENT PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"current_password\" ng-model=\"passwordParams.current_password\"/>\n          <div ng-if=\"passwordErrors.currentPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.currentPassword }}</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"password\">NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"password\" ng-model=\"passwordParams.password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"confirm_password\">REPEAT NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"confirm_password\" ng-model=\"passwordParams.confirm_password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.confirm_password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n      </div>\n\n      <md-button class=\"md-raised md-primary profile-settings-page__save-btn\" ng-disabled=\"accountDetailsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
-},{}],38:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./remove-membership-dialog.html'),
@@ -980,9 +1013,9 @@ module.exports = function(params) {
 };
 
 
-},{"./remove-membership-dialog.html":39}],39:[function(require,module,exports){
+},{"./remove-membership-dialog.html":41}],41:[function(require,module,exports){
 module.exports = "<md-dialog aria-label=\"remove membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"remove-membership-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"remove-membership-dialog__warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"remove-membership-dialog__header-text\">\n        Remove {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"remove-membership-dialog__list-container\">\n      <div class=\"remove-membership-dialog__list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"remove-membership-dialog__list\">\n        <li class=\"remove-membership-dialog__list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"start start\">\n          <ng-md-icon icon=\"check\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"remove-membership-dialog__checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"remove-membership-dialog__warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised remove-membership-dialog__remove-btn\" ng-click=\"proceed()\">remove</md-button>\n    <md-button class=\"remove-membership-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = {
   url: '/reset_password?reset_password_token',
   template: require('./reset-password-page.html'),
@@ -1030,9 +1063,9 @@ module.exports = {
 };
 
 
-},{"./reset-password-page.html":41}],41:[function(require,module,exports){
+},{"./reset-password-page.html":43}],43:[function(require,module,exports){
 module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"form.password.$dirty || form.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"form.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\" ng-if=\"form.confirmPassword.$dirty || form.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -1178,9 +1211,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":9,"./review-bulk-allocation-page.html":43}],43:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./review-bulk-allocation-page.html":45}],45:[function(require,module,exports){
 module.exports = "<div class=\"review-bulk-allocation-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-allocation-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-allocation-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-allocation-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-allocation-page__content\">\n    <h2 class=\"review-bulk-allocation-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-allocation-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to {{ uploadStatus == 'standby' ? 'add' : 'gave'}} <b>{{ summedAllocationsFrom(peopleWithPositiveAllocations) | currency : group.currencySymbol }} total</b> to\n        <b><ng-pluralize count=\"peopleWithPositiveAllocations.length\" when=\"{ 'one': '1 member', 'other': '{} members' }\"></ng-pluralize></b>\n\n        <span ng-if=\"newMembers.length > 0\">\n          and {{ uploadStatus == 'standby' ? 'add' : 'added'}}\n          <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 new member', 'other': '{} new members' }\" ></ng-pluralize></b>\n        </span>\n\n        {{ newMembers.length > 0 ? 'to' : 'in' }} {{ group.name }}\n      </div>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-allocation-page__list-header\">Members & status</div>\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"start center\">\n          <div class=\"review-bulk-allocation-page__list-header\">Funds</div>\n        </div>\n      </div>\n\n      <md-divider class=\"review-bulk-allocation-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-allocation-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-allocation-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n          class=\"review-bulk-allocation-page__upload-member-complete-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-allocation-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n        </div>\n\n        <div flex></div>\n\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"review-bulk-allocation-page__funds-amount\"\n            ng-class=\"person.allocation_amount >= 0 ? 'review-bulk-allocation-page__funds-positive-amount' : 'review-bulk-allocation-page__funds-negative-amount'\"\n          >\n            <span class=\"review-bulk-allocation-page__funds-sign\">{{ person.allocation_amount >= 0 ? '+' : '-'}}</span>\n            {{ abs(person.allocation_amount) | currency : group.currencySymbol }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-allocation-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"confirmBulkAllocations()\">Confirm</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -1292,9 +1325,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":11,"./review-bulk-invite-members-page.html":45}],45:[function(require,module,exports){
+},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./review-bulk-invite-members-page.html":47}],47:[function(require,module,exports){
 module.exports = "<div class=\"review-bulk-invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-invite-members-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-invite-members-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-invite-members-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-invite-members-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-invite-members-page__content\">\n    <h2 class=\"review-bulk-invite-members-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-invite-members-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to add\n        <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 new member', 'other': '{} new members' }\" ></ng-pluralize></b>\n        to {{ group.name }}\n      </div>\n\n      <div ng-if=\"uploadStatus == 'complete'\">\n        You invited\n        <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 member', 'other': '{} members' }\" ></ng-pluralize></b>\n        to {{ group.name }}\n      </div>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-invite-members-page__list-header\">Members & status</div>\n      </div>\n\n      <md-divider class=\"review-bulk-invite-members-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-invite-members-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-invite-members-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-invite-members-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-invite-members-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n            class=\"{{person.new_member ?  'review-bulk-invite-members-page__upload-member-complete-icon' : 'review-bulk-invite-members-page__upload-member-skipped-icon'}}\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-invite-members-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-invite-members-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-invite-members-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-invite-members-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-invite-members-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"person\"\n              class=\"review-bulk-invite-members-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Already a member</div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-invite-members-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__confirm-btn\" ng-click=\"confirmBulkInvites()\">Confirm</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
-},{}],46:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./upload-csv-primer-dialog-error.html'),
@@ -1322,11 +1355,11 @@ module.exports = function(params) {
 };
 
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":9,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":11,"./upload-csv-primer-dialog-error.html":47}],47:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./upload-csv-primer-dialog-error.html":49}],49:[function(require,module,exports){
 module.exports = "<md-dialog class=\"upload-csv-primer-dialog-error\" aria-label=\"upload-csv-primer-dialog\">\n  <md-dialog-content class=\"sticky-container upload-csv-primer-dialog-error__content\">\n    <h2 class=\"upload-csv-primer-dialog-error__header\">\n      Looks like there was a problem...\n    </h2>\n\n    <p class=\"upload-csv-primer-dialog-error__paragraph\">\n      Sorry, but we couldn't upload your file for the following reasons:\n      <ul>\n        <li class=\"upload-csv-primer-dialog-error__error\" ng-repeat=\"error in csvUploadErrors\">\n          {{ error }}\n        </li>\n      </ul>\n    </p>\n\n    <p>\n       Please try again or <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"upload-csv-primer-dialog-error__link\">check out our help documentation</a>.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions upload-csv-primer-dialog-error__btns\" layout=\"row\">\n    <md-button class=\"upload-csv-primer-dialog-error__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"upload-csv-primer-dialog-error__ok-btn\" ng-click=\"tryAgain()\">try again</md-button>\n  </div>\n</md-dialog>\n";
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
-},{}],49:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1340,7 +1373,21 @@ global.cobudgetApp.config(["$authProvider", "config", function($authProvider, co
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],50:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
+(function (global){
+
+/* @ngInject */
+global.cobudgetApp.config(["ChartJsProvider", "config", function(ChartJsProvider, config) {
+  return ChartJsProvider.setOptions({
+    maintainAspectRatio: false,
+    responsive: true
+  });
+}]);
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],53:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1349,7 +1396,7 @@ global.cobudgetApp.controller('ApplicationController', ["Records", function(Reco
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],51:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1374,9 +1421,9 @@ global.cobudgetApp.directive('adminToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./admin-toolbar.html":52}],52:[function(require,module,exports){
+},{"./admin-toolbar.html":55}],55:[function(require,module,exports){
 module.exports = "<div class=\"admin-toolbar\" layout=\"row\" layout-align=\"center center\">\n  <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"cancel()\">\n    <ng-md-icon icon=\"clear\"\n      class=\"admin-toolbar__cancel-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n\n  <span flex></span>\n\n  <toolbar-dropdown-menu></toolbar-dropdown-menu>\n</div>\n";
-},{}],53:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1409,9 +1456,9 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-activity-card.html":54}],54:[function(require,module,exports){
+},{"./bucket-page-activity-card.html":57}],57:[function(require,module,exports){
 module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.authorName }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n        <div class=\"bucket-page__comment-timestamp\">{{ comment.createdAt | timeFromNowInWords }} ago</div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" required placeholder=\"Add a comment, question, or offer of support\" name=\"body\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\" ng-disabled=\"commentForm.$invalid\">submit</md-button>\n        </md-input-container>\n      </div>\n    </form>\n  </md-card>\n</div>\n";
-},{}],55:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1447,9 +1494,9 @@ global.cobudgetApp.directive('bucketPageBackersCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-backers-card.html":56}],56:[function(require,module,exports){
+},{"./bucket-page-backers-card.html":59}],59:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__backers-card\">\n  <md-card-content class=\"bucket-page__backers-card-content\">\n    <div class=\"bucket-page__status-header\">Backers</div>\n    </div>\n\n    <p>\n      <ul class=\"bucket-page__backers-card-backers-list\">\n        <li ng-repeat=\"backer in backers\">\n          <b>{{ backer.name }}</b>: {{ backer.contributionAmount | currency : group.currencySymbol }}\n        </li>\n      </ul>\n    </p>\n  </md-card-content>\n</md-card>\n";
-},{}],57:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1473,9 +1520,9 @@ global.cobudgetApp.directive('bucketPageHeaderCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-header-card.html":58}],58:[function(require,module,exports){
+},{"./bucket-page-header-card.html":61}],61:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.authorName }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" ng-if=\"bucket.target > 0\">\n      <span class=\"bucket-page__description-header\">Funding Target</span>\n      <span flex=\"10\"></span>\n      <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n      <!-- <div class=\"bucket-page__description-text-overlay\"></div> -->\n    </div>\n\n   <!--  <md-button \n      md-no-ink \n      ng-if=\"bucket.description.length > 200\"\n      class=\"md-primary bucket-page__more-button\" \n      ng-click=\"toggleMore()\"\n    >{{ moreButtonText() }}</md-button>           -->\n\n  </md-card-content>\n\n</md-card>\n";
-},{}],59:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1523,9 +1570,9 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-progress-card.html":60}],60:[function(require,module,exports){
+},{"./bucket-page-progress-card.html":63}],63:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__progress-card\">\n  <md-card-content class=\"bucket-page__progress-card-content\">\n    <span class=\"bucket-page__progress-header\">Progress</span>\n\n    <div class=\"bucket-page__progress-bar-container\">\n      <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n      <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n    </div>\n\n    <div layout=\"row\" class=\"bucket-page__progress-info\">\n      <div flex=\"25\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n        <span class=\"bucket-page__progress-unit\">backers</span>\n      </div>\n\n      <div flex>\n        <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n        <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n      </div>\n\n      <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n        <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n      </div>\n    </div>\n\n    <form class=\"bucket-page__fund-form\" layout=\"row\" ng-if=\"membership.balance > 0\" name=\"fundForm\">\n      <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n        <label>Amount</label>\n        <input class=\"bucket-page__fund-form-amount-input\"\n          type=\"number\"\n          name=\"amount\"\n          ng-required\n          min=\"1\"\n          pattern=\"[0-9]*\"\n          ng-model=\"newContribution.amount\"\n          ng-change=\"normalizeContributionAmount()\"\n          focus-if\n          only-digits\n        >\n      </md-input-container>\n\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='submitContribution()' ng-if=\"fundFormOpened\" ng-disabled=\"!fundForm.$valid || contributionSubmitted\">Submit</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
-},{}],61:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1561,9 +1608,9 @@ global.cobudgetApp.directive('bucketPageStatusCardFlagpoint', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-status-card-flagpoint.html":62}],62:[function(require,module,exports){
+},{"./bucket-page-status-card-flagpoint.html":65}],65:[function(require,module,exports){
 module.exports = "<div class=\"bucket-page__status-flagpoint\">\n\n  <div layout=\"column\" layout-align=\"center center\" ng-show=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_on\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__{{status}}-icon\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-active\">{{ flagpointText() }}</span>\n  </div>\n\n  <div layout=\"column\" layout-align=\"center center\" ng-hide=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_off\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__status-icon-inactive\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-inactive\">{{ flagpointText() }}</span>\n  </div>\n</div>";
-},{}],63:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1600,9 +1647,9 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-status-card.html":64}],64:[function(require,module,exports){
+},{"./bucket-page-status-card.html":67}],67:[function(require,module,exports){
 module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div ng-if=\"bucket.status == 'funded' || !bucket.isArchived()\">\n      <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n        <bucket-page-status-card-flagpoint status=\"draft\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"live\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"funded\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"done\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'draft'\">\n        <p><em>This bucket idea is still being discussed and designed</em></p>\n\n        <div ng-show='userCanStartFunding()'>\n          <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n          <md-button class=\"md-raised md-primary bucket-page__start-funding-btn\" ng-click='openForFunding()'>Start Funding</md-button>\n        </div>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'live'\">\n        <p><em>This bucket has been launched and can be funded.</em></p>\n      </div>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-if=\"bucket.isArchived()\">\n      <p><em>This bucket was archived on {{ moment.bucket.archivedAt | exactDateWithTime }}</em></p>\n    </div>\n  </md-card-content>\n</md-card>\n";
-},{}],65:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1635,9 +1682,9 @@ global.cobudgetApp.directive('bucketPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee":5,"./bucket-page-toolbar.html":66}],66:[function(require,module,exports){
+},{"./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee":7,"./bucket-page-toolbar.html":69}],69:[function(require,module,exports){
 module.exports = "<md-toolbar class=\"bucket-page__toolbar\">\n  <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n      <ng-md-icon icon=\"arrow_back\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n      ></ng-md-icon>\n    </md-button>\n\n    <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'live'\">\n      <ng-md-icon icon=\"person\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__funds-icon\"\n      ></ng-md-icon>\n      <div layout=\"column\" layout-align=\"center center\">\n        <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n        <span class=\"bucket-page__funds-overview-amount\">{{ membership.balance - newContribution.amount | currency : group.currencySymbol : 0 }}</span>\n      </div>\n    </span>\n\n    <span flex></span>\n\n    <span ng-show=\"userCanEditBucket()\">\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"archive\" ng-click=\"archive()\" ng-if=\"!bucket.isArchived()\">\n        <md-tooltip>Archive</md-tooltip>\n        <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"edit\" ng-click=\"edit()\">\n        <md-tooltip>Edit</md-tooltip>\n        <ng-md-icon icon=\"edit\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </span>\n  </div>\n</md-toolbar>\n";
-},{}],67:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1665,9 +1712,9 @@ global.cobudgetApp.directive('errorPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./error-page.html":68}],68:[function(require,module,exports){
+},{"./error-page.html":71}],71:[function(require,module,exports){
 module.exports = "<div class=\"error-page\" ng-show=\"error\">\n  <div class=\"error-page__shrug\">¯\\_(ツ)_/¯</div>\n  <div class=\"error-page__message\">{{ error }}</div>\n</div>\n";
-},{}],69:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1693,9 +1740,9 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-buckets.html":70}],70:[function(require,module,exports){
+},{"./group-page-buckets.html":73}],73:[function(require,module,exports){
 module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\" ng-if=\"group.liveBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n\n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}\n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\" ng-if=\"group.draftBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.authorName }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n\n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon\n            icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__funded-buckets\" ng-if=\"group.fundedBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.authorName }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page-buckets__archived-buckets\" ng-if=\"group.archivedBuckets().length > 0 && showArchivedBuckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">ARCHIVED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"archivedBucket in group.archivedBuckets()\" ng-click=\"showBucket(archivedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ archivedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ archivedBucket.authorName }} {{ archivedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <div class=\"group-page-buckets__archived-buckets-btn-container\" layout=\"row\" ng-if=\"group.archivedBuckets().length > 0\">\n    <div class=\"group-page-buckets__archived-buckets-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"toggleArchivedBuckets()\">\n      <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page-buckets__archived-buckets-btn-icon\"\n      ></ng-md-icon>\n\n      <div class=\"group-page-buckets__archived-buckets-btn-label\">\n        {{ showArchivedBuckets ? 'Hide' : 'Show' }} Archived Buckets\n      </div>\n    </div>\n  </div>\n</div>\n";
-},{}],71:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1809,13 +1856,13 @@ global.cobudgetApp.directive('groupPageFunders', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../../components/remove-membership-dialog/remove-membership-dialog.coffee":38,"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":73,"./group-page-funders.html":72,"./reinvite-user-dialog.tmpl.html":74}],72:[function(require,module,exports){
+},{"./../../components/remove-membership-dialog/remove-membership-dialog.coffee":40,"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":76,"./group-page-funders.html":75,"./reinvite-user-dialog.tmpl.html":77}],75:[function(require,module,exports){
 module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n          <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funder-name-container\" flex>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"!funderMembership.isPending() && funderMembership.isAdmin\">(admin)</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isPending()\">\n            <ng-md-icon icon=\"mail\" size=\"17\" class=\"group-page__funder-invited-icon\"></ng-md-icon>\n            <span class=\"group-page__funder-invited-label\">Invited</span>\n          </span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" class=\"group-page__funder-balance-container\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon\n              icon=\"more_vert\"\n              layout=\"column\"\n              layout-align=\"center center\"\n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n\n          <md-menu-content width=\"3\">\n            <md-menu-item>\n              <md-button ng-click=\"openManageFundsDialog(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <div layout=\"column\" layout-align=\"center center\" class=\"group-page__manage-funds-icon\">\n                    <div>{{ group.currencySymbol }}</div>\n                  </div>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Manage Funds</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"portrait\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} Admin</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"inviteAgain(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"mail\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Invite Again</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n              <md-button ng-click=\"removeMembership(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"cancel\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Remove User</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
-},{}],73:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 module.exports = "<md-dialog class=\"group-page__manage-funds-dialog\" aria-label=\"manage funds dialog\">\n  <md-dialog-content class=\"sticky-container group-page__manage-funds-dialog-content\">\n    <div class=\"group-page__manage-funds-dialog-header\" layout=\"column\" layout-align=\"space-between center\">\n      <div class=\"group-page__manage-funds-dialog-header-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ managedMember.name[0] | uppercase }}</div>\n      </div>\n\n      <div class=\"group-page__manage-funds-dialog-header-title\">\n        Manage {{ managedMember.name }}'s funds\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__manage-funds-options\" layout=\"row\" layout-align=\"space-around center\">\n      <div ng-class=\"mode == 'add' ? 'group-page__manage-funds-option-container-add' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('add')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"add\" class=\"group-page__manage-funds-option-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Add</div>\n      </div>\n\n      <div ng-class=\"mode == 'change' ? 'group-page__manage-funds-option-container-change' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('change')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"edit\" class=\"group-page__manage-funds-option-icon group-page__manage-funds-change-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Change</div>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'add'\">\n      <div>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2 }}</span>\n        <span class=\"group-page__manage-funds-operator\">+</span>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input group-page__manage-funds-input-add\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.allocationAmount\"\n            ng-change=\"normalizeAllocationAmount()\"\n            ng-keypress=\"normalizeAllocationAmount()\"\n          >\n        </md-input-container>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <span class=\"group-page__manage-funds-operator\">=</span>\n        <span class=\"group-page__manage-funds-total-amount\">\n          {{ (formData.allocationAmount || 0) + managedMembership.balance | currency : group.currencySymbol : 2}}\n        </span>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'change'\">\n      <div>\n        <span class=\"group-page__manage-funds-filler-text\">Change from</span>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2}}</span>\n        <span class=\"group-page__manage-funds-filler-text\">to</span>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.newBalance\"\n            ng-change=\"normalizeNewBalance()\"\n            ng-keypress=\"normalizeNewBalance()\"\n          >\n        </md-input-container>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"group-page__manage-funds-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised md-primary group-page__manage-funds-dialog-done-btn\" ng-disabled=\"!isValidForm()\" ng-click=\"createAllocation()\">done</md-button>\n  </div>\n</md-dialog>\n";
-},{}],74:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 module.exports = "<md-dialog aria-label=\"reinvite user dialog\">\n  <md-dialog-content class=\"sticky-container group-page__reinvite-user-dialog-content\">\n    This will send another invitation to <b>{{member.name}}</b> at <b>{{member.email}}</b>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">cancel</md-button>\n    <md-button ng-click=\"proceed()\">send</md-button>\n  </div>\n</md-dialog>\n";
-},{}],75:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1851,11 +1898,11 @@ global.cobudgetApp.directive('groupPageSidenav', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-sidenav.html":76}],76:[function(require,module,exports){
+},{"./group-page-sidenav.html":79}],79:[function(require,module,exports){
 module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\"\n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n      </div>\n    </md-list-item>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-click=\"redirectToGroupSetupPage()\">\n      <div layout=\"row\" layout-align=\"center center\">\n        <ng-md-icon icon=\"person_add\"\n          class=\"group-page__sidenav-create-group-btn-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n\n        <div class=\"group-page__sidenav-create-group-btn-text\">Create new group</div>\n      </div>\n    </md-list-item>\n  </md-content>\n</md-sidenav>\n";
-},{}],77:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 module.exports = "<md-bottom-sheet class=\"group-page__bottom-sheet md-list\">\n  <md-list>\n    <md-list-item ng-repeat=\"action in adminActions\" ng-click=\"action.onClick()\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <ng-md-icon icon=\"{{ action.icon }}\"\n          class=\"group-page__bottom-sheet-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <span md-menu-align-target>{{ action.label }}</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</md-bottom-sheet>\n";
-},{}],78:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1916,9 +1963,9 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bottom-sheet.tmpl.html":77,"./group-page-toolbar.html":79}],79:[function(require,module,exports){
+},{"./bottom-sheet.tmpl.html":80,"./group-page-toolbar.html":82}],82:[function(require,module,exports){
 module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\"\n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n\n    <toolbar-dropdown-menu></toolbar-dropdown-menu>\n  </div>\n\n  <div class=\"group-page__funds-bar\" layout=\"row\" layout-align=\"center end\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n\n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div flex></div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"currentUser.isAdminOf(group)\">\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openInvitePeople()\">\n        <ng-md-icon icon=\"person_add\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__invite-people-btn-label\">Invite People</div>\n      </div>\n\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openManageFunds()\">\n        <ng-md-icon icon=\"attach_money\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__manage-funds-btn-label\">Manage Funds</div>\n      </div>\n\n      <div class=\"group-page__admin-more-btn\" ng-click=\"openBottomSheet()\">\n        <ng-md-icon icon=\"more_vert\"\n          size=\"27\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n    </div>\n\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height md-selected=\"tabSelected\">\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Members</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\"\n      class=\"group-page__create-bucket-fab-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>\n";
-},{}],80:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1942,9 +1989,9 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./landing-page-toolbar.html":81}],81:[function(require,module,exports){
+},{"./landing-page-toolbar.html":84}],84:[function(require,module,exports){
 module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-if=\"!currentUser\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
-},{}],82:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1972,9 +2019,9 @@ global.cobudgetApp.directive('loadingPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loading-page.html":83}],83:[function(require,module,exports){
+},{"./loading-page.html":86}],86:[function(require,module,exports){
 module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
-},{}],84:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1999,7 +2046,7 @@ global.cobudgetApp.directive('onlyDigits', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],85:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2071,9 +2118,9 @@ global.cobudgetApp.directive('toolbarDropdownMenu', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./toolbar-dropdown-menu.html":86}],86:[function(require,module,exports){
+},{"./toolbar-dropdown-menu.html":89}],89:[function(require,module,exports){
 module.exports = "<md-menu class=\"toolbar-dropdown-menu\">\n  <div class=\"toolbar-dropdown-menu__btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n    <ng-md-icon icon=\"person\"\n      class=\"toolbar-dropdown-menu__btn-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </div>\n\n  <md-menu-content class=\"toolbar-dropdown-menu__content\" width=\"3\">\n    <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n      <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <ng-md-icon icon=\"{{ menuItem.icon }}\"\n            class=\"toolbar-dropdown-menu__item-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <span md-menu-align-target>{{ menuItem.label }}</span>\n        </div>\n      </md-button>\n    </md-menu-item>\n  </md-menu-content>\n</md-menu>\n";
-},{}],87:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -2114,7 +2161,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],88:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -2145,15 +2192,17 @@ require("angular-marked");
 require("ng-q-all-settled");
 require("ng-csv");
 require("ng-download-csv");
+require("angular-chart.js");
 
 if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
 /* @ngInject */
-global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons", "ngSanitize", "truncate", "hc.marked", "qAllSettled", "ngCsv", "ngDownloadCsv"]).constant("config", require("app/configs/app"));
+global.cobudgetApp = angular.module("cobudget", ["ui.router", "ng-token-auth", "ngMaterial", "ngMessages", "ipCookie", "focus-if", "lr.upload", "ngMdIcons", "ngSanitize", "truncate", "hc.marked", "qAllSettled", "ngCsv", "ngDownloadCsv", "chart.js"]).constant("config", require("app/configs/app"));
 
 require("app/configs/auth.coffee");
+require("app/configs/chart-js.coffee");
 
 require("app/routes.coffee");
 require("app/angular-record-store.coffee");
@@ -2170,7 +2219,7 @@ require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":50,"./directives/admin-toolbar/admin-toolbar.coffee":51,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":53,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":55,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":57,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":59,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":61,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":63,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":65,"./directives/error-page/error-page.coffee":67,"./directives/group-page-buckets/group-page-buckets.coffee":69,"./directives/group-page-funders/group-page-funders.coffee":71,"./directives/group-page-sidenav/group-page-sidenav.coffee":75,"./directives/group-page-toolbar/group-page-toolbar.coffee":78,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":80,"./directives/loading-page/loading-page.coffee":82,"./directives/only-digits.coffee":84,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":85,"./filters/date-filter.coffee":87,"./models/allocation-model.coffee":89,"./models/bucket-model.coffee":90,"./models/comment-model.coffee":91,"./models/contribution-model.coffee":92,"./models/group-model.coffee":93,"./models/membership-model.coffee":94,"./models/subscription-tracker-model.coffee":95,"./models/user-model.coffee":96,"./records-interfaces/allocation-records-interface.coffee":97,"./records-interfaces/bucket-records-interface.coffee":98,"./records-interfaces/comment-records-interface.coffee":99,"./records-interfaces/contribution-records-interface.coffee":100,"./records-interfaces/group-records-interface.coffee":101,"./records-interfaces/membership-records-interface.coffee":102,"./records-interfaces/subscription-tracker-records-interface.coffee":103,"./records-interfaces/user-records-interface.coffee":104,"./services/current-user.coffee":106,"./services/dialog.coffee":107,"./services/error.coffee":108,"./services/load-bar.coffee":109,"./services/session.coffee":110,"./services/toast.coffee":111,"./services/user-can.coffee":112,"./services/validate-and-redirect-logged-in-user.coffee":113,"angular":131,"angular-animate":115,"angular-aria":117,"angular-cookie":118,"angular-marked":119,"angular-material":123,"angular-material-icons":121,"angular-messages":125,"angular-sanitize/angular-sanitize":126,"angular-truncate-2":127,"angular-ui-router":128,"angular-upload":129,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":48,"app/configs/auth.coffee":49,"app/routes.coffee":105,"bowser":138,"camelize":140,"is-empty-object":141,"jquery":142,"listify":143,"lodash":144,"moment":148,"morph":149,"ng-csv":150,"ng-download-csv":151,"ng-focus-if":152,"ng-q-all-settled":153,"ng-sanitize":154,"ng-token-auth":155}],89:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":53,"./directives/admin-toolbar/admin-toolbar.coffee":54,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":56,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":58,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":60,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":62,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":64,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":66,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":68,"./directives/error-page/error-page.coffee":70,"./directives/group-page-buckets/group-page-buckets.coffee":72,"./directives/group-page-funders/group-page-funders.coffee":74,"./directives/group-page-sidenav/group-page-sidenav.coffee":78,"./directives/group-page-toolbar/group-page-toolbar.coffee":81,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":83,"./directives/loading-page/loading-page.coffee":85,"./directives/only-digits.coffee":87,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":88,"./filters/date-filter.coffee":90,"./models/allocation-model.coffee":92,"./models/bucket-model.coffee":93,"./models/comment-model.coffee":94,"./models/contribution-model.coffee":95,"./models/group-model.coffee":96,"./models/membership-model.coffee":97,"./models/subscription-tracker-model.coffee":98,"./models/user-model.coffee":99,"./records-interfaces/allocation-records-interface.coffee":100,"./records-interfaces/bucket-records-interface.coffee":101,"./records-interfaces/comment-records-interface.coffee":102,"./records-interfaces/contribution-records-interface.coffee":103,"./records-interfaces/group-records-interface.coffee":104,"./records-interfaces/membership-records-interface.coffee":105,"./records-interfaces/subscription-tracker-records-interface.coffee":106,"./records-interfaces/user-records-interface.coffee":107,"./services/current-user.coffee":109,"./services/dialog.coffee":110,"./services/error.coffee":111,"./services/load-bar.coffee":112,"./services/session.coffee":113,"./services/toast.coffee":114,"./services/user-can.coffee":115,"./services/validate-and-redirect-logged-in-user.coffee":116,"angular":135,"angular-animate":118,"angular-aria":120,"angular-chart.js":121,"angular-cookie":122,"angular-marked":123,"angular-material":127,"angular-material-icons":125,"angular-messages":129,"angular-sanitize/angular-sanitize":130,"angular-truncate-2":131,"angular-ui-router":132,"angular-upload":133,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":50,"app/configs/auth.coffee":51,"app/configs/chart-js.coffee":52,"app/routes.coffee":108,"bowser":142,"camelize":144,"is-empty-object":185,"jquery":186,"listify":187,"lodash":188,"moment":192,"morph":193,"ng-csv":194,"ng-download-csv":195,"ng-focus-if":196,"ng-q-all-settled":197,"ng-sanitize":198,"ng-token-auth":199}],92:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2210,7 +2259,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],90:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2310,7 +2359,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],91:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2353,7 +2402,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],92:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2393,7 +2442,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],93:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2483,7 +2532,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],94:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2533,7 +2582,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],95:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2570,7 +2619,7 @@ global.cobudgetApp.factory('SubscriptionTrackerModel', ["BaseModel", function(Ba
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],96:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2658,7 +2707,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],97:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2696,7 +2745,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],98:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2734,7 +2783,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],99:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2772,7 +2821,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],100:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2818,7 +2867,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],101:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2854,7 +2903,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],102:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2902,7 +2951,7 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],103:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2935,7 +2984,7 @@ global.cobudgetApp.factory('SubscriptionTrackerRecordsInterface', ["config", "Ba
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],104:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3000,19 +3049,19 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],105:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
 global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
-  return $stateProvider.state('landing', require('app/components/landing-page/landing-page.coffee')).state('group', require('app/components/group-page/group-page.coffee')).state('login', require('app/components/login-page/login-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee')).state('manage-group-funds', require('app/components/manage-group-funds-page/manage-group-funds-page.coffee')).state('review-bulk-allocation', require('app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee')).state('invite-members', require('app/components/invite-members-page/invite-members-page.coffee')).state('review-bulk-invite-members', require('app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee'));
+  return $stateProvider.state('landing', require('app/components/landing-page/landing-page.coffee')).state('group', require('app/components/group-page/group-page.coffee')).state('login', require('app/components/login-page/login-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee')).state('manage-group-funds', require('app/components/manage-group-funds-page/manage-group-funds-page.coffee')).state('review-bulk-allocation', require('app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee')).state('invite-members', require('app/components/invite-members-page/invite-members-page.coffee')).state('review-bulk-invite-members', require('app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee')).state('analytics', require('app/components/analytics-page/analytics-page.coffee'));
 }]);
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/bucket-page/bucket-page.coffee":7,"app/components/confirm-account-page/confirm-account-page.coffee":13,"app/components/create-bucket-page/create-bucket-page.coffee":15,"app/components/edit-bucket-page/edit-bucket-page.coffee":17,"app/components/email-settings-page/email-settings-page.coffee":19,"app/components/forgot-password-page/forgot-password-page.coffee":21,"app/components/group-page/group-page.coffee":23,"app/components/group-setup-page/group-setup-page.coffee":25,"app/components/invite-members-page/invite-members-page.coffee":27,"app/components/landing-page/landing-page.coffee":29,"app/components/login-page/login-page.coffee":31,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":33,"app/components/profile-settings-page/profile-settings-page.coffee":36,"app/components/reset-password-page/reset-password-page.coffee":40,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":42,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":44}],106:[function(require,module,exports){
+},{"app/components/admin-page/admin-page.coffee":3,"app/components/analytics-page/analytics-page.coffee":5,"app/components/bucket-page/bucket-page.coffee":9,"app/components/confirm-account-page/confirm-account-page.coffee":15,"app/components/create-bucket-page/create-bucket-page.coffee":17,"app/components/edit-bucket-page/edit-bucket-page.coffee":19,"app/components/email-settings-page/email-settings-page.coffee":21,"app/components/forgot-password-page/forgot-password-page.coffee":23,"app/components/group-page/group-page.coffee":25,"app/components/group-setup-page/group-setup-page.coffee":27,"app/components/invite-members-page/invite-members-page.coffee":29,"app/components/landing-page/landing-page.coffee":31,"app/components/login-page/login-page.coffee":33,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":35,"app/components/profile-settings-page/profile-settings-page.coffee":38,"app/components/reset-password-page/reset-password-page.coffee":42,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":44,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":46}],109:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3028,7 +3077,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],107:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3096,7 +3145,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],108:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3124,7 +3173,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],109:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3152,7 +3201,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],110:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3232,7 +3281,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBa
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],111:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3272,7 +3321,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],112:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3324,6 +3373,10 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
       return this.manageFundsForGroup(group);
     };
 
+    UserCan.prototype.viewAnalyticsPage = function() {
+      return CurrentUser().isSuperAdmin;
+    };
+
     return UserCan;
 
   })());
@@ -3332,7 +3385,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],113:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3359,7 +3412,7 @@ global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error",
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],114:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7291,11 +7344,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],115:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":114}],116:[function(require,module,exports){
+},{"./angular-animate":117}],119:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7695,11 +7748,346 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],117:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":116}],118:[function(require,module,exports){
+},{"./angular-aria":119}],121:[function(require,module,exports){
+(function (factory) {
+  'use strict';
+  if (typeof exports === 'object') {
+    // Node/CommonJS
+    module.exports = factory(
+      typeof angular !== 'undefined' ? angular : require('angular'),
+      typeof Chart !== 'undefined' ? Chart : require('chart.js'));
+  }  else if (typeof define === 'function' && define.amd) {
+    // AMD. Register as an anonymous module.
+    define(['angular', 'chart'], factory);
+  } else {
+    // Browser globals
+    factory(angular, Chart);
+  }
+}(function (angular, Chart) {
+  'use strict';
+
+  Chart.defaults.global.multiTooltipTemplate = '<%if (datasetLabel){%><%=datasetLabel%>: <%}%><%= value %>';
+  Chart.defaults.global.elements.line.borderWidth = 2;
+  Chart.defaults.global.elements.rectangle.borderWidth = 2;
+  Chart.defaults.global.colors = [
+    '#97BBCD', // blue
+    '#DCDCDC', // light grey
+    '#F7464A', // red
+    '#46BFBD', // green
+    '#FDB45C', // yellow
+    '#949FB1', // grey
+    '#4D5360'  // dark grey
+  ];
+
+  var usingExcanvas = typeof window.G_vmlCanvasManager === 'object' &&
+    window.G_vmlCanvasManager !== null &&
+    typeof window.G_vmlCanvasManager.initElement === 'function';
+
+  if (usingExcanvas) Chart.defaults.global.animation = false;
+
+  return angular.module('chart.js', [])
+    .provider('ChartJs', ChartJsProvider)
+    .factory('ChartJsFactory', ['ChartJs', '$timeout', ChartJsFactory])
+    .directive('chartBase', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory(); }])
+    .directive('chartLine', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('line'); }])
+    .directive('chartBar', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('bar'); }])
+    .directive('chartRadar', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('radar'); }])
+    .directive('chartDoughnut', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('doughnut'); }])
+    .directive('chartPie', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('pie'); }])
+    .directive('chartPolarArea', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('polarArea'); }]);
+
+  /**
+   * Wrapper for chart.js
+   * Allows configuring chart js using the provider
+   *
+   * angular.module('myModule', ['chart.js']).config(function(ChartJsProvider) {
+   *   ChartJsProvider.setOptions({ responsive: true });
+   *   ChartJsProvider.setOptions('Line', { responsive: false });
+   * })))
+   */
+  function ChartJsProvider () {
+    var options = {};
+    var ChartJs = {
+      Chart: Chart,
+      getOptions: function (type) {
+        var typeOptions = type && options[type] || {};
+        return angular.extend({}, options, typeOptions);
+      }
+    };
+
+    /**
+     * Allow to set global options during configuration
+     */
+    this.setOptions = function (type, customOptions) {
+      // If no type was specified set option for the global object
+      if (! customOptions) {
+        customOptions = type;
+        options = angular.extend(options, customOptions);
+        return;
+      }
+      // Set options for the specific chart
+      options[type] = angular.extend(options[type] || {}, customOptions);
+    };
+
+    this.$get = function () {
+      return ChartJs;
+    };
+  }
+
+  function ChartJsFactory (ChartJs, $timeout) {
+    return function chart (type) {
+      return {
+        restrict: 'CA',
+        scope: {
+          chartGetColor: '=?',
+          chartType: '=',
+          chartData: '=?',
+          chartLabels: '=?',
+          chartOptions: '=?',
+          chartSeries: '=?',
+          chartColors: '=?',
+          chartClick: '=?',
+          chartHover: '=?',
+          chartYAxes: '=?'
+        },
+        link: function (scope, elem/*, attrs */) {
+          var chart;
+
+          if (usingExcanvas) window.G_vmlCanvasManager.initElement(elem[0]);
+
+          // Order of setting "watch" matter
+
+          scope.$watch('chartData', function (newVal, oldVal) {
+            if (! newVal || ! newVal.length || (Array.isArray(newVal[0]) && ! newVal[0].length)) {
+              destroyChart(chart, scope);
+              return;
+            }
+            var chartType = type || scope.chartType;
+            if (! chartType) return;
+
+            if (chart && canUpdateChart(newVal, oldVal))
+              return updateChart(chart, newVal, scope);
+
+            createChart(chartType);
+          }, true);
+
+          scope.$watch('chartSeries', resetChart, true);
+          scope.$watch('chartLabels', resetChart, true);
+          scope.$watch('chartOptions', resetChart, true);
+          scope.$watch('chartColors', resetChart, true);
+
+          scope.$watch('chartType', function (newVal, oldVal) {
+            if (isEmpty(newVal)) return;
+            if (angular.equals(newVal, oldVal)) return;
+            createChart(newVal);
+          });
+
+          scope.$on('$destroy', function () {
+            destroyChart(chart, scope);
+          });
+
+          function resetChart (newVal, oldVal) {
+            if (isEmpty(newVal)) return;
+            if (angular.equals(newVal, oldVal)) return;
+            var chartType = type || scope.chartType;
+            if (! chartType) return;
+
+            // chart.update() doesn't work for series and labels
+            // so we have to re-create the chart entirely
+            createChart(chartType);
+          }
+
+          function createChart (type) {
+            // TODO: check parent?
+            if (isResponsive(type, scope) && elem[0].clientHeight === 0) {
+              return $timeout(function () {
+                createChart(type);
+              }, 50, false);
+            }
+            if (! scope.chartData || ! scope.chartData.length) return;
+            scope.chartGetColor = typeof scope.chartGetColor === 'function' ? scope.chartGetColor : getRandomColor;
+            var colors = getColors(type, scope);
+            var cvs = elem[0], ctx = cvs.getContext('2d');
+            var data = Array.isArray(scope.chartData[0]) ?
+              getDataSets(scope.chartLabels, scope.chartData, scope.chartSeries || [], colors, scope.chartYAxes) :
+              getData(scope.chartLabels, scope.chartData, colors);
+
+            var options = angular.extend({}, ChartJs.getOptions(type), scope.chartOptions);
+            // Destroy old chart if it exists to avoid ghost charts issue
+            // https://github.com/jtblin/angular-chart.js/issues/187
+            destroyChart(chart, scope);
+
+            chart = new ChartJs.Chart(ctx, {
+              type: type,
+              data: data,
+              options: options
+            });
+            scope.$emit('chart-create', chart);
+
+            // Bind events
+            cvs.onclick = scope.chartClick ? getEventHandler(scope, chart, 'chartClick', false) : angular.noop;
+            cvs.onmousemove = scope.chartHover ? getEventHandler(scope, chart, 'chartHover', true) : angular.noop;
+          }
+        }
+      };
+    };
+
+    function canUpdateChart (newVal, oldVal) {
+      if (newVal && oldVal && newVal.length && oldVal.length) {
+        return Array.isArray(newVal[0]) ?
+        newVal.length === oldVal.length && newVal.every(function (element, index) {
+          return element.length === oldVal[index].length; }) :
+          oldVal.reduce(sum, 0) > 0 ? newVal.length === oldVal.length : false;
+      }
+      return false;
+    }
+
+    function sum (carry, val) {
+      return carry + val;
+    }
+
+    function getEventHandler (scope, chart, action, triggerOnlyOnChange) {
+      var lastState = null;
+      return function (evt) {
+        var atEvent = chart.getElementsAtEvent || chart.getPointsAtEvent;
+        if (atEvent) {
+          var activePoints = atEvent.call(chart, evt);
+          if (triggerOnlyOnChange === false || angular.equals(lastState, activePoints) === false) {
+            lastState = activePoints;
+            scope[action](activePoints, evt);
+          }
+        }
+      };
+    }
+
+    function getColors (type, scope) {
+      var colors = angular.copy(scope.chartColors ||
+        ChartJs.getOptions(type).chartColors ||
+        Chart.defaults.global.colors
+      );
+      var notEnoughColors = colors.length < scope.chartData.length;
+      while (colors.length < scope.chartData.length) {
+        colors.push(scope.chartGetColor());
+      }
+      // mutate colors in this case as we don't want
+      // the colors to change on each refresh
+      if (notEnoughColors) scope.chartColors = colors;
+      return colors.map(convertColor);
+    }
+
+    function convertColor (color) {
+      if (typeof color === 'object' && color !== null) return color;
+      if (typeof color === 'string' && color[0] === '#') return getColor(hexToRgb(color.substr(1)));
+      return getRandomColor();
+    }
+
+    function getRandomColor () {
+      var color = [getRandomInt(0, 255), getRandomInt(0, 255), getRandomInt(0, 255)];
+      return getColor(color);
+    }
+
+    function getColor (color) {
+      return {
+        backgroundColor: rgba(color, 0.2),
+        borderColor: rgba(color, 1),
+        pointBackgroundColor: rgba(color, 1),
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: rgba(color, 0.8)
+      };
+    }
+
+    function getRandomInt (min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function rgba (color, alpha) {
+      if (usingExcanvas) {
+        // rgba not supported by IE8
+        return 'rgb(' + color.join(',') + ')';
+      } else {
+        return 'rgba(' + color.concat(alpha).join(',') + ')';
+      }
+    }
+
+    // Credit: http://stackoverflow.com/a/11508164/1190235
+    function hexToRgb (hex) {
+      var bigint = parseInt(hex, 16),
+        r = (bigint >> 16) & 255,
+        g = (bigint >> 8) & 255,
+        b = bigint & 255;
+
+      return [r, g, b];
+    }
+
+    function getDataSets (labels, data, series, colors, yaxis) {
+      return {
+        labels: labels,
+        datasets: data.map(function (item, i) {
+          var dataset = angular.extend({}, colors[i], {
+            label: series[i],
+            data: item
+          });
+          if (yaxis) {
+            dataset.yAxisID = 'y-axis-' + (i + 1);
+          }
+          return dataset;
+        })
+      };
+    }
+
+    function getData (labels, data, colors) {
+      return {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors.map(function (color) {
+            return color.pointBackgroundColor;
+          }),
+          hoverBackgroundColor: colors.map(function (color) {
+            return color.backgroundColor;
+          })
+        }]
+      };
+    }
+
+    function updateChart (chart, values, scope) {
+      if (Array.isArray(scope.chartData[0])) {
+        chart.data.datasets.forEach(function (dataset, i) {
+          dataset.data = values[i];
+        });
+      } else {
+        chart.data.datasets[0].data = values;
+      }
+
+      chart.update();
+      scope.$emit('chart-update', chart);
+    }
+
+    function isEmpty (value) {
+      return ! value ||
+        (Array.isArray(value) && ! value.length) ||
+        (typeof value === 'object' && ! Object.keys(value).length);
+    }
+
+    function isResponsive (type, scope) {
+      var options = angular.extend({}, Chart.defaults.global, ChartJs.getOptions(type), scope.chartOptions);
+      return options.responsive;
+    }
+
+    function destroyChart(chart, scope) {
+      if(! chart) return;
+      chart.destroy();
+      scope.$emit('chart-destroy', chart);
+    }
+  }
+}));
+
+},{"angular":135,"chart.js":145}],122:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -7826,7 +8214,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],119:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -8176,7 +8564,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":147}],120:[function(require,module,exports){
+},{"marked":191}],124:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -9108,11 +9496,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],121:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":120}],122:[function(require,module,exports){
+},{"./angular-material-icons":124}],126:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -26281,7 +26669,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],123:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -26295,7 +26683,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":122,"angular":131,"angular-animate":115,"angular-aria":117}],124:[function(require,module,exports){
+},{"./angular-material":126,"angular":135,"angular-animate":118,"angular-aria":120}],128:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -26982,11 +27370,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],125:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":124}],126:[function(require,module,exports){
+},{"./angular-messages":128}],130:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -27671,7 +28059,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],127:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -27722,7 +28110,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],128:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.13
@@ -31955,7 +32343,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],129:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -32257,7 +32645,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],130:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -61276,11 +61664,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],131:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":130}],132:[function(require,module,exports){
+},{"./angular":134}],136:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -61574,7 +61962,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":137}],133:[function(require,module,exports){
+},{"./utils.coffee":141}],137:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -61732,7 +62120,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":137}],134:[function(require,module,exports){
+},{"./utils.coffee":141}],138:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -61745,7 +62133,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":132,"./base_records_interface.coffee":133,"./record_store.coffee":135,"./restful_client.coffee":136}],135:[function(require,module,exports){
+},{"./base_model.coffee":136,"./base_records_interface.coffee":137,"./record_store.coffee":139,"./restful_client.coffee":140}],139:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -61785,7 +62173,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],136:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -61917,7 +62305,7 @@ module.exports = function($http, Upload) {
 };
 
 
-},{}],137:[function(require,module,exports){
+},{}],141:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -61960,7 +62348,7 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],138:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 /*!
   * Bowser - a browser detector
   * https://github.com/ded/bowser
@@ -62253,9 +62641,9 @@ module.exports = new (Utils = (function() {
   return bowser
 });
 
-},{}],139:[function(require,module,exports){
+},{}],143:[function(require,module,exports){
 
-},{}],140:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -62316,7 +62704,9153 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],141:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
+/*!
+ * Chart.js
+ * http://chartjs.org/
+ * Version: {{ version }}
+ *
+ * Copyright 2015 Nick Downie
+ * Released under the MIT license
+ * https://github.com/nnnick/Chart.js/blob/master/LICENSE.md
+ */
+
+
+var Chart = require('./core/core.js')();
+
+require('./core/core.helpers')(Chart);
+require('./core/core.element')(Chart);
+require('./core/core.animation')(Chart);
+require('./core/core.controller')(Chart);
+require('./core/core.datasetController')(Chart);
+require('./core/core.layoutService')(Chart);
+require('./core/core.legend')(Chart);
+require('./core/core.scale')(Chart);
+require('./core/core.scaleService')(Chart);
+require('./core/core.title')(Chart);
+require('./core/core.tooltip')(Chart);
+
+require('./controllers/controller.bar')(Chart);
+require('./controllers/controller.bubble')(Chart);
+require('./controllers/controller.doughnut')(Chart);
+require('./controllers/controller.line')(Chart);
+require('./controllers/controller.polarArea')(Chart);
+require('./controllers/controller.radar')(Chart);
+
+require('./scales/scale.category')(Chart);
+require('./scales/scale.linear')(Chart);
+require('./scales/scale.logarithmic')(Chart);
+require('./scales/scale.radialLinear')(Chart);
+require('./scales/scale.time')(Chart);
+
+require('./elements/element.arc')(Chart);
+require('./elements/element.line')(Chart);
+require('./elements/element.point')(Chart);
+require('./elements/element.rectangle')(Chart);
+
+require('./charts/Chart.Bar')(Chart);
+require('./charts/Chart.Bubble')(Chart);
+require('./charts/Chart.Doughnut')(Chart);
+require('./charts/Chart.Line')(Chart);
+require('./charts/Chart.PolarArea')(Chart);
+require('./charts/Chart.Radar')(Chart);
+require('./charts/Chart.Scatter')(Chart);
+
+window.Chart = module.exports = Chart;
+
+},{"./charts/Chart.Bar":146,"./charts/Chart.Bubble":147,"./charts/Chart.Doughnut":148,"./charts/Chart.Line":149,"./charts/Chart.PolarArea":150,"./charts/Chart.Radar":151,"./charts/Chart.Scatter":152,"./controllers/controller.bar":153,"./controllers/controller.bubble":154,"./controllers/controller.doughnut":155,"./controllers/controller.line":156,"./controllers/controller.polarArea":157,"./controllers/controller.radar":158,"./core/core.animation":159,"./core/core.controller":160,"./core/core.datasetController":161,"./core/core.element":162,"./core/core.helpers":163,"./core/core.js":164,"./core/core.layoutService":165,"./core/core.legend":166,"./core/core.scale":167,"./core/core.scaleService":168,"./core/core.title":169,"./core/core.tooltip":170,"./elements/element.arc":171,"./elements/element.line":172,"./elements/element.point":173,"./elements/element.rectangle":174,"./scales/scale.category":175,"./scales/scale.linear":176,"./scales/scale.logarithmic":177,"./scales/scale.radialLinear":178,"./scales/scale.time":179}],146:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	Chart.Bar = function(context, config) {
+		config.type = 'bar';
+
+		return new Chart(context, config);
+	};
+
+};
+},{}],147:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	Chart.Bubble = function(context, config) {
+		config.type = 'bubble';
+		return new Chart(context, config);
+	};
+
+};
+},{}],148:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	Chart.Doughnut = function(context, config) {
+		config.type = 'doughnut';
+
+		return new Chart(context, config);
+	};
+
+};
+},{}],149:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	Chart.Line = function(context, config) {
+		config.type = 'line';
+
+		return new Chart(context, config);
+	};
+
+};
+},{}],150:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	Chart.PolarArea = function(context, config) {
+		config.type = 'polarArea';
+
+		return new Chart(context, config);
+	};
+
+};
+},{}],151:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	var defaultConfig = {
+		aspectRatio: 1
+	};
+
+	Chart.Radar = function(context, config) {
+		config.options = helpers.configMerge(defaultConfig, config.options);
+		config.type = 'radar';
+
+		return new Chart(context, config);
+	};
+
+};
+
+},{}],152:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var defaultConfig = {
+		hover: {
+			mode: 'single'
+		},
+
+		scales: {
+			xAxes: [{
+				type: "linear", // scatter should not use a category axis
+				position: "bottom",
+				id: "x-axis-1" // need an ID so datasets can reference the scale
+			}],
+			yAxes: [{
+				type: "linear",
+				position: "left",
+				id: "y-axis-1"
+			}]
+		},
+
+		tooltips: {
+			callbacks: {
+				title: function(tooltipItems, data) {
+					// Title doesn't make sense for scatter since we format the data as a point
+					return '';
+				},
+				label: function(tooltipItem, data) {
+					return '(' + tooltipItem.xLabel + ', ' + tooltipItem.yLabel + ')';
+				}
+			}
+		}
+	};
+
+	// Register the default config for this type
+	Chart.defaults.scatter = defaultConfig;
+
+	// Scatter charts use line controllers
+	Chart.controllers.scatter = Chart.controllers.line;
+
+	Chart.Scatter = function(context, config) {
+		config.type = 'scatter';
+		return new Chart(context, config);
+	};
+
+};
+},{}],153:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.bar = {
+		hover: {
+			mode: "label"
+		},
+
+		scales: {
+			xAxes: [{
+				type: "category",
+
+				// Specific to Bar Controller
+				categoryPercentage: 0.8,
+				barPercentage: 0.9,
+
+				// grid line settings
+				gridLines: {
+					offsetGridLines: true
+				}
+			}],
+			yAxes: [{
+				type: "linear"
+			}]
+		}
+	};
+
+	Chart.controllers.bar = Chart.DatasetController.extend({
+		initialize: function(chart, datasetIndex) {
+			Chart.DatasetController.prototype.initialize.call(this, chart, datasetIndex);
+
+			// Use this to indicate that this is a bar dataset.
+			this.getDataset().bar = true;
+		},
+		// Get the number of datasets that display bars. We use this to correctly calculate the bar width
+		getBarCount: function getBarCount() {
+			var barCount = 0;
+			helpers.each(this.chart.data.datasets, function(dataset) {
+				if (helpers.isDatasetVisible(dataset) && dataset.bar) {
+					++barCount;
+				}
+			});
+			return barCount;
+		},
+
+		addElements: function() {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Rectangle({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index
+				});
+			}, this);
+		},
+		addElementAndReset: function(index) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var rectangle = new Chart.elements.Rectangle({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			var numBars = this.getBarCount();
+
+			this.updateElement(rectangle, index, true, numBars);
+			this.getDataset().metaData.splice(index, 0, rectangle);
+		},
+
+		update: function update(reset) {
+			var numBars = this.getBarCount();
+
+			helpers.each(this.getDataset().metaData, function(rectangle, index) {
+				this.updateElement(rectangle, index, reset, numBars);
+			}, this);
+		},
+
+		updateElement: function updateElement(rectangle, index, reset, numBars) {
+
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+
+			var yScalePoint;
+
+			if (yScale.min < 0 && yScale.max < 0) {
+				// all less than 0. use the top
+				yScalePoint = yScale.getPixelForValue(yScale.max);
+			} else if (yScale.min > 0 && yScale.max > 0) {
+				yScalePoint = yScale.getPixelForValue(yScale.min);
+			} else {
+				yScalePoint = yScale.getPixelForValue(0);
+			}
+
+			helpers.extend(rectangle, {
+				// Utility
+				_chart: this.chart.chart,
+				_xScale: xScale,
+				_yScale: yScale,
+				_datasetIndex: this.index,
+				_index: index,
+
+
+				// Desired view properties
+				_model: {
+					x: this.calculateBarX(index, this.index),
+					y: reset ? yScalePoint : this.calculateBarY(index, this.index),
+
+					// Tooltip
+					label: this.chart.data.labels[index],
+					datasetLabel: this.getDataset().label,
+
+					// Appearance
+					base: reset ? yScalePoint : this.calculateBarBase(this.index, index),
+					width: this.calculateBarWidth(numBars),
+					backgroundColor: rectangle.custom && rectangle.custom.backgroundColor ? rectangle.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.rectangle.backgroundColor),
+					borderSkipped: rectangle.custom && rectangle.custom.borderSkipped ? rectangle.custom.borderSkipped : this.chart.options.elements.rectangle.borderSkipped,
+					borderColor: rectangle.custom && rectangle.custom.borderColor ? rectangle.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.rectangle.borderColor),
+					borderWidth: rectangle.custom && rectangle.custom.borderWidth ? rectangle.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.rectangle.borderWidth)
+				}
+			});
+			rectangle.pivot();
+		},
+
+		calculateBarBase: function(datasetIndex, index) {
+
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+
+			var base = 0;
+
+			if (yScale.options.stacked) {
+
+				var value = this.chart.data.datasets[datasetIndex].data[index];
+
+				if (value < 0) {
+					for (var i = 0; i < datasetIndex; i++) {
+						var negDS = this.chart.data.datasets[i];
+						if (helpers.isDatasetVisible(negDS) && negDS.yAxisID === yScale.id && negDS.bar) {
+							base += negDS.data[index] < 0 ? negDS.data[index] : 0;
+						}
+					}
+				} else {
+					for (var j = 0; j < datasetIndex; j++) {
+						var posDS = this.chart.data.datasets[j];
+						if (helpers.isDatasetVisible(posDS) && posDS.yAxisID === yScale.id && posDS.bar) {
+							base += posDS.data[index] > 0 ? posDS.data[index] : 0;
+						}
+					}
+				}
+
+				return yScale.getPixelForValue(base);
+			}
+
+			base = yScale.getPixelForValue(yScale.min);
+
+			if (yScale.beginAtZero || ((yScale.min <= 0 && yScale.max >= 0) || (yScale.min >= 0 && yScale.max <= 0))) {
+				base = yScale.getPixelForValue(0, 0);
+				//base += yScale.options.gridLines.lineWidth;
+			} else if (yScale.min < 0 && yScale.max < 0) {
+				// All values are negative. Use the top as the base
+				base = yScale.getPixelForValue(yScale.max);
+			}
+
+			return base;
+
+		},
+
+		getRuler: function() {
+
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var datasetCount = this.getBarCount();
+
+			var tickWidth = (function() {
+				var min = xScale.getPixelForTick(1) - xScale.getPixelForTick(0);
+				for (var i = 2; i < this.getDataset().data.length; i++) {
+					min = Math.min(xScale.getPixelForTick(i) - xScale.getPixelForTick(i - 1), min);
+				}
+				return min;
+			}).call(this);
+			var categoryWidth = tickWidth * xScale.options.categoryPercentage;
+			var categorySpacing = (tickWidth - (tickWidth * xScale.options.categoryPercentage)) / 2;
+			var fullBarWidth = categoryWidth / datasetCount;
+			var barWidth = fullBarWidth * xScale.options.barPercentage;
+			var barSpacing = fullBarWidth - (fullBarWidth * xScale.options.barPercentage);
+
+			return {
+				datasetCount: datasetCount,
+				tickWidth: tickWidth,
+				categoryWidth: categoryWidth,
+				categorySpacing: categorySpacing,
+				fullBarWidth: fullBarWidth,
+				barWidth: barWidth,
+				barSpacing: barSpacing
+			};
+		},
+
+		calculateBarWidth: function() {
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var ruler = this.getRuler();
+			return xScale.options.stacked ? ruler.categoryWidth : ruler.barWidth;
+		},
+
+		// Get bar index from the given dataset index accounting for the fact that not all bars are visible
+		getBarIndex: function(datasetIndex) {
+			var barIndex = 0;
+
+			for (var j = 0; j < datasetIndex; ++j) {
+				if (helpers.isDatasetVisible(this.chart.data.datasets[j]) && this.chart.data.datasets[j].bar) {
+					++barIndex;
+				}
+			}
+
+			return barIndex;
+		},
+
+		calculateBarX: function(index, datasetIndex) {
+
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var barIndex = this.getBarIndex(datasetIndex);
+
+			var ruler = this.getRuler();
+			var leftTick = xScale.getPixelForValue(null, index, datasetIndex, this.chart.isCombo);
+			leftTick -= this.chart.isCombo ? (ruler.tickWidth / 2) : 0;
+
+			if (xScale.options.stacked) {
+				return leftTick + (ruler.categoryWidth / 2) + ruler.categorySpacing;
+			}
+
+			return leftTick +
+				(ruler.barWidth / 2) +
+				ruler.categorySpacing +
+				(ruler.barWidth * barIndex) +
+				(ruler.barSpacing / 2) +
+				(ruler.barSpacing * barIndex);
+		},
+
+		calculateBarY: function(index, datasetIndex) {
+
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+
+			var value = this.getDataset().data[index];
+
+			if (yScale.options.stacked) {
+
+				var sumPos = 0,
+					sumNeg = 0;
+
+				for (var i = 0; i < datasetIndex; i++) {
+					var ds = this.chart.data.datasets[i];
+					if (helpers.isDatasetVisible(ds) && ds.bar && ds.yAxisID === yScale.id) {
+						if (ds.data[index] < 0) {
+							sumNeg += ds.data[index] || 0;
+						} else {
+							sumPos += ds.data[index] || 0;
+						}
+					}
+				}
+
+				if (value < 0) {
+					return yScale.getPixelForValue(sumNeg + value);
+				} else {
+					return yScale.getPixelForValue(sumPos + value);
+				}
+
+				return yScale.getPixelForValue(value);
+			}
+
+			return yScale.getPixelForValue(value);
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+			helpers.each(this.getDataset().metaData, function(rectangle, index) {
+				var d = this.getDataset().data[index];
+				if (d !== null && d !== undefined && !isNaN(d)) {
+					rectangle.transition(easingDecimal).draw();
+				}
+			}, this);
+		},
+
+		setHoverStyle: function(rectangle) {
+			var dataset = this.chart.data.datasets[rectangle._datasetIndex];
+			var index = rectangle._index;
+
+			rectangle._model.backgroundColor = rectangle.custom && rectangle.custom.hoverBackgroundColor ? rectangle.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.hoverBackgroundColor, index, helpers.color(rectangle._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			rectangle._model.borderColor = rectangle.custom && rectangle.custom.hoverBorderColor ? rectangle.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.hoverBorderColor, index, helpers.color(rectangle._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			rectangle._model.borderWidth = rectangle.custom && rectangle.custom.hoverBorderWidth ? rectangle.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.hoverBorderWidth, index, rectangle._model.borderWidth);
+		},
+
+		removeHoverStyle: function(rectangle) {
+			var dataset = this.chart.data.datasets[rectangle._datasetIndex];
+			var index = rectangle._index;
+
+			rectangle._model.backgroundColor = rectangle.custom && rectangle.custom.backgroundColor ? rectangle.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.rectangle.backgroundColor);
+			rectangle._model.borderColor = rectangle.custom && rectangle.custom.borderColor ? rectangle.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.rectangle.borderColor);
+			rectangle._model.borderWidth = rectangle.custom && rectangle.custom.borderWidth ? rectangle.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.rectangle.borderWidth);
+		}
+
+	});
+};
+
+},{}],154:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.bubble = {
+		hover: {
+			mode: "single"
+		},
+
+		scales: {
+			xAxes: [{
+				type: "linear", // bubble should probably use a linear scale by default
+				position: "bottom",
+				id: "x-axis-0" // need an ID so datasets can reference the scale
+			}],
+			yAxes: [{
+				type: "linear",
+				position: "left",
+				id: "y-axis-0"
+			}]
+		},
+
+		tooltips: {
+			callbacks: {
+				title: function(tooltipItems, data) {
+					// Title doesn't make sense for scatter since we format the data as a point
+					return '';
+				},
+				label: function(tooltipItem, data) {
+					var datasetLabel = data.datasets[tooltipItem.datasetIndex].label || '';
+					var dataPoint = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+					return datasetLabel + ': (' + dataPoint.x + ', ' + dataPoint.y + ', ' + dataPoint.r + ')';
+				}
+			}
+		}
+	};
+
+
+	Chart.controllers.bubble = Chart.DatasetController.extend({
+		addElements: function() {
+
+			this.getDataset().metaData = this.getDataset().metaData || [];
+
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Point({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index
+				});
+			}, this);
+		},
+		addElementAndReset: function(index) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var point = new Chart.elements.Point({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			// Reset the point
+			this.updateElement(point, index, true);
+
+			// Add to the points array
+			this.getDataset().metaData.splice(index, 0, point);
+		},
+
+		update: function update(reset) {
+			var points = this.getDataset().metaData;
+
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var scaleBase;
+
+			if (yScale.min < 0 && yScale.max < 0) {
+				scaleBase = yScale.getPixelForValue(yScale.max);
+			} else if (yScale.min > 0 && yScale.max > 0) {
+				scaleBase = yScale.getPixelForValue(yScale.min);
+			} else {
+				scaleBase = yScale.getPixelForValue(0);
+			}
+
+			// Update Points
+			helpers.each(points, function(point, index) {
+				this.updateElement(point, index, reset);
+			}, this);
+
+		},
+
+		updateElement: function(point, index, reset) {
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var scaleBase;
+
+			if (yScale.min < 0 && yScale.max < 0) {
+				scaleBase = yScale.getPixelForValue(yScale.max);
+			} else if (yScale.min > 0 && yScale.max > 0) {
+				scaleBase = yScale.getPixelForValue(yScale.min);
+			} else {
+				scaleBase = yScale.getPixelForValue(0);
+			}
+
+			helpers.extend(point, {
+				// Utility
+				_chart: this.chart.chart,
+				_xScale: xScale,
+				_yScale: yScale,
+				_datasetIndex: this.index,
+				_index: index,
+
+				// Desired view properties
+				_model: {
+					x: reset ? xScale.getPixelForDecimal(0.5) : xScale.getPixelForValue(this.getDataset().data[index], index, this.index, this.chart.isCombo),
+					y: reset ? scaleBase : yScale.getPixelForValue(this.getDataset().data[index], index, this.index),
+					// Appearance
+					radius: reset ? 0 : point.custom && point.custom.radius ? point.custom.radius : this.getRadius(this.getDataset().data[index]),
+					backgroundColor: point.custom && point.custom.backgroundColor ? point.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.point.backgroundColor),
+					borderColor: point.custom && point.custom.borderColor ? point.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.point.borderColor),
+					borderWidth: point.custom && point.custom.borderWidth ? point.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.point.borderWidth),
+
+					// Tooltip
+					hitRadius: point.custom && point.custom.hitRadius ? point.custom.hitRadius : helpers.getValueAtIndexOrDefault(this.getDataset().hitRadius, index, this.chart.options.elements.point.hitRadius)
+				}
+			});
+
+			point._model.skip = point.custom && point.custom.skip ? point.custom.skip : (isNaN(point._model.x) || isNaN(point._model.y));
+
+			point.pivot();
+		},
+
+		getRadius: function(value) {
+			return value.r || this.chart.options.elements.point.radius;
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+
+			// Transition and Draw the Points
+			helpers.each(this.getDataset().metaData, function(point, index) {
+				point.transition(easingDecimal);
+				point.draw();
+			});
+
+		},
+
+		setHoverStyle: function(point) {
+			// Point
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.hoverRadius ? point.custom.hoverRadius : (helpers.getValueAtIndexOrDefault(dataset.hoverRadius, index, this.chart.options.elements.point.hoverRadius)) + this.getRadius(this.getDataset().data[point._index]);
+			point._model.backgroundColor = point.custom && point.custom.hoverBackgroundColor ? point.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.hoverBackgroundColor, index, helpers.color(point._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderColor = point.custom && point.custom.hoverBorderColor ? point.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.hoverBorderColor, index, helpers.color(point._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderWidth = point.custom && point.custom.hoverBorderWidth ? point.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.hoverBorderWidth, index, point._model.borderWidth);
+		},
+
+		removeHoverStyle: function(point) {
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.radius ? point.custom.radius : this.getRadius(this.getDataset().data[point._index]);
+			point._model.backgroundColor = point.custom && point.custom.backgroundColor ? point.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.point.backgroundColor);
+			point._model.borderColor = point.custom && point.custom.borderColor ? point.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.point.borderColor);
+			point._model.borderWidth = point.custom && point.custom.borderWidth ? point.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.point.borderWidth);
+		}
+	});
+};
+},{}],155:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.doughnut = {
+		animation: {
+			//Boolean - Whether we animate the rotation of the Doughnut
+			animateRotate: true,
+			//Boolean - Whether we animate scaling the Doughnut from the centre
+			animateScale: false
+		},
+		aspectRatio: 1,
+		hover: {
+			mode: 'single'
+		},
+		legendCallback: function(chart) {
+			var text = [];
+			text.push('<ul class="' + chart.id + '-legend">');
+
+			if (chart.data.datasets.length) {
+				for (var i = 0; i < chart.data.datasets[0].data.length; ++i) {
+					text.push('<li><span style="background-color:' + chart.data.datasets[0].backgroundColor[i] + '">');
+					if (chart.data.labels[i]) {
+						text.push(chart.data.labels[i]);
+					}
+					text.push('</span></li>');
+				}
+			}
+
+			text.push('</ul>');
+			return text.join("");
+		},
+		legend: {
+			labels: {
+				generateLabels: function(data) {
+					if (data.labels.length && data.datasets.length) {
+						return data.labels.map(function(label, i) {
+							return {
+								text: label,
+								fillStyle: data.datasets[0].backgroundColor[i],
+								hidden: isNaN(data.datasets[0].data[i]),
+
+								// Extra data used for toggling the correct item
+								index: i
+							};
+						});
+					} else {
+						return [];
+					}
+				}
+			},
+			onClick: function(e, legendItem) {
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					dataset.metaHiddenData = dataset.metaHiddenData || [];
+					var idx = legendItem.index;
+
+					if (!isNaN(dataset.data[idx])) {
+						dataset.metaHiddenData[idx] = dataset.data[idx];
+						dataset.data[idx] = NaN;
+					} else if (!isNaN(dataset.metaHiddenData[idx])) {
+						dataset.data[idx] = dataset.metaHiddenData[idx];
+					}
+				});
+
+				this.chart.update();
+			}
+		},
+
+		//The percentage of the chart that we cut out of the middle.
+		cutoutPercentage: 50,
+
+		// Need to override these to give a nice default
+		tooltips: {
+			callbacks: {
+				title: function() {
+					return '';
+				},
+				label: function(tooltipItem, data) {
+					return data.labels[tooltipItem.index] + ': ' + data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+				}
+			}
+		}
+	};
+
+	Chart.defaults.pie = helpers.clone(Chart.defaults.doughnut);
+	helpers.extend(Chart.defaults.pie, {
+		cutoutPercentage: 0
+	});
+
+
+	Chart.controllers.doughnut = Chart.controllers.pie = Chart.DatasetController.extend({
+		linkScales: function() {
+			// no scales for doughnut
+		},
+
+		addElements: function() {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Arc({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index
+				});
+			}, this);
+		},
+		addElementAndReset: function(index, colorForNewElement) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var arc = new Chart.elements.Arc({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			if (colorForNewElement && helpers.isArray(this.getDataset().backgroundColor)) {
+				this.getDataset().backgroundColor.splice(index, 0, colorForNewElement);
+			}
+
+			// Reset the point
+			this.updateElement(arc, index, true);
+
+			// Add to the points array
+			this.getDataset().metaData.splice(index, 0, arc);
+		},
+
+		getVisibleDatasetCount: function getVisibleDatasetCount() {
+			return helpers.where(this.chart.data.datasets, function(ds) {
+				return helpers.isDatasetVisible(ds);
+			}).length;
+		},
+
+		// Get index of the dataset in relation to the visible datasets. This allows determining the inner and outer radius correctly
+		getRingIndex: function getRingIndex(datasetIndex) {
+			var ringIndex = 0;
+
+			for (var j = 0; j < datasetIndex; ++j) {
+				if (helpers.isDatasetVisible(this.chart.data.datasets[j])) {
+					++ringIndex;
+				}
+			}
+
+			return ringIndex;
+		},
+
+		update: function update(reset) {
+			var minSize = Math.min(this.chart.chartArea.right - this.chart.chartArea.left, this.chart.chartArea.bottom - this.chart.chartArea.top);
+
+			this.chart.outerRadius = Math.max((minSize / 2) - this.chart.options.elements.arc.borderWidth / 2, 0);
+			this.chart.innerRadius = Math.max(this.chart.options.cutoutPercentage ? (this.chart.outerRadius / 100) * (this.chart.options.cutoutPercentage) : 1, 0);
+			this.chart.radiusLength = (this.chart.outerRadius - this.chart.innerRadius) / this.getVisibleDatasetCount();
+
+			this.getDataset().total = 0;
+			helpers.each(this.getDataset().data, function(value) {
+				if (!isNaN(value)) {
+					this.getDataset().total += Math.abs(value);
+				}
+			}, this);
+
+			this.outerRadius = this.chart.outerRadius - (this.chart.radiusLength * this.getRingIndex(this.index));
+			this.innerRadius = this.outerRadius - this.chart.radiusLength;
+
+			helpers.each(this.getDataset().metaData, function(arc, index) {
+				this.updateElement(arc, index, reset);
+			}, this);
+		},
+		updateElement: function(arc, index, reset) {
+			var centerX = (this.chart.chartArea.left + this.chart.chartArea.right) / 2;
+			var centerY = (this.chart.chartArea.top + this.chart.chartArea.bottom) / 2;
+			var startAngle = Math.PI * -0.5; // non reset case handled later
+			var endAngle = Math.PI * -0.5; // non reset case handled later
+			var circumference = reset && this.chart.options.animation.animateRotate ? 0 : this.calculateCircumference(this.getDataset().data[index]);
+			var innerRadius = reset && this.chart.options.animation.animateScale ? 0 : this.innerRadius;
+			var outerRadius = reset && this.chart.options.animation.animateScale ? 0 : this.outerRadius;
+
+			helpers.extend(arc, {
+				// Utility
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index,
+
+				// Desired view properties
+				_model: {
+					x: centerX,
+					y: centerY,
+					startAngle: startAngle,
+					endAngle: endAngle,
+					circumference: circumference,
+					outerRadius: outerRadius,
+					innerRadius: innerRadius,
+
+					backgroundColor: arc.custom && arc.custom.backgroundColor ? arc.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.arc.backgroundColor),
+					hoverBackgroundColor: arc.custom && arc.custom.hoverBackgroundColor ? arc.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().hoverBackgroundColor, index, this.chart.options.elements.arc.hoverBackgroundColor),
+					borderWidth: arc.custom && arc.custom.borderWidth ? arc.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.arc.borderWidth),
+					borderColor: arc.custom && arc.custom.borderColor ? arc.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.arc.borderColor),
+
+					label: helpers.getValueAtIndexOrDefault(this.getDataset().label, index, this.chart.data.labels[index])
+				}
+			});
+
+			// Set correct angles if not resetting
+			if (!reset) {
+
+				if (index === 0) {
+					arc._model.startAngle = Math.PI * -0.5; // use - PI / 2 instead of 3PI / 2 to make animations better. It means that we never deal with overflow during the transition function
+				} else {
+					arc._model.startAngle = this.getDataset().metaData[index - 1]._model.endAngle;
+				}
+
+				arc._model.endAngle = arc._model.startAngle + arc._model.circumference;
+			}
+
+			arc.pivot();
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+			helpers.each(this.getDataset().metaData, function(arc, index) {
+				arc.transition(easingDecimal).draw();
+			});
+		},
+
+		setHoverStyle: function(arc) {
+			var dataset = this.chart.data.datasets[arc._datasetIndex];
+			var index = arc._index;
+
+			arc._model.backgroundColor = arc.custom && arc.custom.hoverBackgroundColor ? arc.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.hoverBackgroundColor, index, helpers.color(arc._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			arc._model.borderColor = arc.custom && arc.custom.hoverBorderColor ? arc.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.hoverBorderColor, index, helpers.color(arc._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			arc._model.borderWidth = arc.custom && arc.custom.hoverBorderWidth ? arc.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.hoverBorderWidth, index, arc._model.borderWidth);
+		},
+
+		removeHoverStyle: function(arc) {
+			var dataset = this.chart.data.datasets[arc._datasetIndex];
+			var index = arc._index;
+
+			arc._model.backgroundColor = arc.custom && arc.custom.backgroundColor ? arc.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.arc.backgroundColor);
+			arc._model.borderColor = arc.custom && arc.custom.borderColor ? arc.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.arc.borderColor);
+			arc._model.borderWidth = arc.custom && arc.custom.borderWidth ? arc.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.arc.borderWidth);
+		},
+
+		calculateCircumference: function(value) {
+			if (this.getDataset().total > 0 && !isNaN(value)) {
+				return (Math.PI * 1.999999) * (value / this.getDataset().total);
+			} else {
+				return 0;
+			}
+		}
+	});
+};
+},{}],156:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.line = {
+		showLines: true,
+
+		hover: {
+			mode: "label"
+		},
+
+		scales: {
+			xAxes: [{
+				type: "category",
+				id: 'x-axis-0'
+			}],
+			yAxes: [{
+				type: "linear",
+				id: 'y-axis-0'
+			}]
+		}
+	};
+
+
+	Chart.controllers.line = Chart.DatasetController.extend({
+		addElements: function() {
+
+			this.getDataset().metaData = this.getDataset().metaData || [];
+
+			this.getDataset().metaDataset = this.getDataset().metaDataset || new Chart.elements.Line({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_points: this.getDataset().metaData
+			});
+
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Point({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index
+				});
+			}, this);
+		},
+		addElementAndReset: function(index) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var point = new Chart.elements.Point({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			// Reset the point
+			this.updateElement(point, index, true);
+
+			// Add to the points array
+			this.getDataset().metaData.splice(index, 0, point);
+
+			// Make sure bezier control points are updated
+			if (this.chart.options.showLines && this.chart.options.elements.line.tension !== 0)
+				this.updateBezierControlPoints();
+		},
+
+		update: function update(reset) {
+			var line = this.getDataset().metaDataset;
+			var points = this.getDataset().metaData;
+
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var scaleBase;
+
+			if (yScale.min < 0 && yScale.max < 0) {
+				scaleBase = yScale.getPixelForValue(yScale.max);
+			} else if (yScale.min > 0 && yScale.max > 0) {
+				scaleBase = yScale.getPixelForValue(yScale.min);
+			} else {
+				scaleBase = yScale.getPixelForValue(0);
+			}
+
+			// Update Line
+			if (this.chart.options.showLines) {
+				// Utility
+				line._scale = yScale;
+				line._datasetIndex = this.index;
+				// Data
+				line._children = points;
+				// Model
+				line._model = {
+					// Appearance
+					tension: line.custom && line.custom.tension ? line.custom.tension : helpers.getValueOrDefault(this.getDataset().tension, this.chart.options.elements.line.tension),
+					backgroundColor: line.custom && line.custom.backgroundColor ? line.custom.backgroundColor : (this.getDataset().backgroundColor || this.chart.options.elements.line.backgroundColor),
+					borderWidth: line.custom && line.custom.borderWidth ? line.custom.borderWidth : (this.getDataset().borderWidth || this.chart.options.elements.line.borderWidth),
+					borderColor: line.custom && line.custom.borderColor ? line.custom.borderColor : (this.getDataset().borderColor || this.chart.options.elements.line.borderColor),
+					borderCapStyle: line.custom && line.custom.borderCapStyle ? line.custom.borderCapStyle : (this.getDataset().borderCapStyle || this.chart.options.elements.line.borderCapStyle),
+					borderDash: line.custom && line.custom.borderDash ? line.custom.borderDash : (this.getDataset().borderDash || this.chart.options.elements.line.borderDash),
+					borderDashOffset: line.custom && line.custom.borderDashOffset ? line.custom.borderDashOffset : (this.getDataset().borderDashOffset || this.chart.options.elements.line.borderDashOffset),
+					borderJoinStyle: line.custom && line.custom.borderJoinStyle ? line.custom.borderJoinStyle : (this.getDataset().borderJoinStyle || this.chart.options.elements.line.borderJoinStyle),
+					fill: line.custom && line.custom.fill ? line.custom.fill : (this.getDataset().fill !== undefined ? this.getDataset().fill : this.chart.options.elements.line.fill),
+					// Scale
+					scaleTop: yScale.top,
+					scaleBottom: yScale.bottom,
+					scaleZero: scaleBase
+				};
+				line.pivot();
+			}
+
+			// Update Points
+			helpers.each(points, function(point, index) {
+				this.updateElement(point, index, reset);
+			}, this);
+
+			if (this.chart.options.showLines && this.chart.options.elements.line.tension !== 0)
+				this.updateBezierControlPoints();
+		},
+
+		getPointBackgroundColor: function(point, index) {
+			var backgroundColor = this.chart.options.elements.point.backgroundColor;
+			var dataset = this.getDataset();
+
+			if (point.custom && point.custom.backgroundColor) {
+				backgroundColor = point.custom.backgroundColor;
+			} else if (dataset.pointBackgroundColor) {
+				backgroundColor = helpers.getValueAtIndexOrDefault(dataset.pointBackgroundColor, index, backgroundColor);
+			} else if (dataset.backgroundColor) {
+				backgroundColor = dataset.backgroundColor;
+			}
+
+			return backgroundColor;
+		},
+		getPointBorderColor: function(point, index) {
+			var borderColor = this.chart.options.elements.point.borderColor;
+			var dataset = this.getDataset();
+
+			if (point.custom && point.custom.borderColor) {
+				borderColor = point.custom.borderColor;
+			} else if (dataset.pointBorderColor) {
+				borderColor = helpers.getValueAtIndexOrDefault(this.getDataset().pointBorderColor, index, borderColor);
+			} else if (dataset.borderColor) {
+				borderColor = dataset.borderColor;
+			}
+
+			return borderColor;
+		},
+		getPointBorderWidth: function(point, index) {
+			var borderWidth = this.chart.options.elements.point.borderWidth;
+			var dataset = this.getDataset();
+
+			if (point.custom && point.custom.borderWidth !== undefined) {
+				borderWidth = point.custom.borderWidth;
+			} else if (dataset.pointBorderWidth !== undefined) {
+				borderWidth = helpers.getValueAtIndexOrDefault(dataset.pointBorderWidth, index, borderWidth);
+			} else if (dataset.borderWidth !== undefined) {
+				borderWidth = dataset.borderWidth;
+			}
+
+			return borderWidth;
+		},
+
+		updateElement: function(point, index, reset) {
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var scaleBase;
+
+			if (yScale.min < 0 && yScale.max < 0) {
+				scaleBase = yScale.getPixelForValue(yScale.max);
+			} else if (yScale.min > 0 && yScale.max > 0) {
+				scaleBase = yScale.getPixelForValue(yScale.min);
+			} else {
+				scaleBase = yScale.getPixelForValue(0);
+			}
+
+			// Utility
+			point._chart = this.chart.chart;
+			point._xScale = xScale;
+			point._yScale = yScale;
+			point._datasetIndex = this.index;
+			point._index = index;
+
+			// Desired view properties
+			point._model = {
+				x: xScale.getPixelForValue(this.getDataset().data[index], index, this.index, this.chart.isCombo),
+				y: reset ? scaleBase : this.calculatePointY(this.getDataset().data[index], index, this.index, this.chart.isCombo),
+				// Appearance
+				tension: point.custom && point.custom.tension ? point.custom.tension : helpers.getValueOrDefault(this.getDataset().tension, this.chart.options.elements.line.tension),
+				radius: point.custom && point.custom.radius ? point.custom.radius : helpers.getValueAtIndexOrDefault(this.getDataset().radius, index, this.chart.options.elements.point.radius),
+				pointStyle: point.custom && point.custom.pointStyle ? point.custom.pointStyle : helpers.getValueAtIndexOrDefault(this.getDataset().pointStyle, index, this.chart.options.elements.point.pointStyle),
+				backgroundColor: this.getPointBackgroundColor(point, index),
+				borderColor: this.getPointBorderColor(point, index),
+				borderWidth: this.getPointBorderWidth(point, index),
+				// Tooltip
+				hitRadius: point.custom && point.custom.hitRadius ? point.custom.hitRadius : helpers.getValueAtIndexOrDefault(this.getDataset().hitRadius, index, this.chart.options.elements.point.hitRadius)
+			};
+
+			point._model.skip = point.custom && point.custom.skip ? point.custom.skip : (isNaN(point._model.x) || isNaN(point._model.y));
+		},
+
+		calculatePointY: function(value, index, datasetIndex, isCombo) {
+
+			var xScale = this.getScaleForId(this.getDataset().xAxisID);
+			var yScale = this.getScaleForId(this.getDataset().yAxisID);
+
+			if (yScale.options.stacked) {
+
+				var sumPos = 0,
+					sumNeg = 0;
+
+				for (var i = 0; i < datasetIndex; i++) {
+					var ds = this.chart.data.datasets[i];
+					if (ds.type === 'line' && helpers.isDatasetVisible(ds)) {
+						if (ds.data[index] < 0) {
+							sumNeg += ds.data[index] || 0;
+						} else {
+							sumPos += ds.data[index] || 0;
+						}
+					}
+				}
+
+				if (value < 0) {
+					return yScale.getPixelForValue(sumNeg + value);
+				} else {
+					return yScale.getPixelForValue(sumPos + value);
+				}
+			}
+
+			return yScale.getPixelForValue(value);
+		},
+
+		updateBezierControlPoints: function() {
+			// Update bezier control points
+			helpers.each(this.getDataset().metaData, function(point, index) {
+				var controlPoints = helpers.splineCurve(
+					helpers.previousItem(this.getDataset().metaData, index)._model,
+					point._model,
+					helpers.nextItem(this.getDataset().metaData, index)._model,
+					point._model.tension
+				);
+
+				// Prevent the bezier going outside of the bounds of the graph
+				point._model.controlPointPreviousX = Math.max(Math.min(controlPoints.previous.x, this.chart.chartArea.right), this.chart.chartArea.left);
+				point._model.controlPointPreviousY = Math.max(Math.min(controlPoints.previous.y, this.chart.chartArea.bottom), this.chart.chartArea.top);
+
+				point._model.controlPointNextX = Math.max(Math.min(controlPoints.next.x, this.chart.chartArea.right), this.chart.chartArea.left);
+				point._model.controlPointNextY = Math.max(Math.min(controlPoints.next.y, this.chart.chartArea.bottom), this.chart.chartArea.top);
+
+				// Now pivot the point for animation
+				point.pivot();
+			}, this);
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+
+			// Transition Point Locations
+			helpers.each(this.getDataset().metaData, function(point) {
+				point.transition(easingDecimal);
+			});
+
+			// Transition and Draw the line
+			if (this.chart.options.showLines)
+				this.getDataset().metaDataset.transition(easingDecimal).draw();
+
+			// Draw the points
+			helpers.each(this.getDataset().metaData, function(point) {
+				point.draw();
+			});
+		},
+
+		setHoverStyle: function(point) {
+			// Point
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.hoverRadius ? point.custom.hoverRadius : helpers.getValueAtIndexOrDefault(dataset.pointHoverRadius, index, this.chart.options.elements.point.hoverRadius);
+			point._model.backgroundColor = point.custom && point.custom.hoverBackgroundColor ? point.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.pointHoverBackgroundColor, index, helpers.color(point._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderColor = point.custom && point.custom.hoverBorderColor ? point.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.pointHoverBorderColor, index, helpers.color(point._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderWidth = point.custom && point.custom.hoverBorderWidth ? point.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.pointHoverBorderWidth, index, point._model.borderWidth);
+		},
+
+		removeHoverStyle: function(point) {
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.radius ? point.custom.radius : helpers.getValueAtIndexOrDefault(this.getDataset().radius, index, this.chart.options.elements.point.radius);
+			point._model.backgroundColor = this.getPointBackgroundColor(point, index);
+			point._model.borderColor = this.getPointBorderColor(point, index);
+			point._model.borderWidth = this.getPointBorderWidth(point, index);
+		}
+	});
+};
+
+},{}],157:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.polarArea = {
+
+		scale: {
+			type: "radialLinear",
+			lineArc: true // so that lines are circular
+		},
+
+		//Boolean - Whether to animate the rotation of the chart
+		animateRotate: true,
+		animateScale: true,
+
+		aspectRatio: 1,
+		legendCallback: function(chart) {
+			var text = [];
+			text.push('<ul class="' + chart.id + '-legend">');
+
+			if (chart.data.datasets.length) {
+				for (var i = 0; i < chart.data.datasets[0].data.length; ++i) {
+					text.push('<li><span style="background-color:' + chart.data.datasets[0].backgroundColor[i] + '">');
+					if (chart.data.labels[i]) {
+						text.push(chart.data.labels[i]);
+					}
+					text.push('</span></li>');
+				}
+			}
+
+			text.push('</ul>');
+			return text.join("");
+		},
+		legend: {
+			labels: {
+				generateLabels: function(data) {
+					if (data.labels.length && data.datasets.length) {
+						return data.labels.map(function(label, i) {
+							return {
+								text: label,
+								fillStyle: data.datasets[0].backgroundColor[i],
+								hidden: isNaN(data.datasets[0].data[i]),
+
+								// Extra data used for toggling the correct item
+								index: i
+							};
+						});
+					} else {
+						return [];
+					}
+				}
+			},
+			onClick: function(e, legendItem) {
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					dataset.metaHiddenData = dataset.metaHiddenData || [];
+					var idx = legendItem.index;
+
+					if (!isNaN(dataset.data[idx])) {
+						dataset.metaHiddenData[idx] = dataset.data[idx];
+						dataset.data[idx] = NaN;
+					} else if (!isNaN(dataset.metaHiddenData[idx])) {
+						dataset.data[idx] = dataset.metaHiddenData[idx];
+					}
+				});
+
+				this.chart.update();
+			}
+		},
+
+		// Need to override these to give a nice default
+		tooltips: {
+			callbacks: {
+				title: function() {
+					return '';
+				},
+				label: function(tooltipItem, data) {
+					return data.labels[tooltipItem.index] + ': ' + tooltipItem.yLabel;
+				}
+			}
+		}
+	};
+
+	Chart.controllers.polarArea = Chart.DatasetController.extend({
+		linkScales: function() {
+			// no scales for doughnut
+		},
+		addElements: function() {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Arc({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index
+				});
+			}, this);
+		},
+		addElementAndReset: function(index) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var arc = new Chart.elements.Arc({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			// Reset the point
+			this.updateElement(arc, index, true);
+
+			// Add to the points array
+			this.getDataset().metaData.splice(index, 0, arc);
+		},
+		getVisibleDatasetCount: function getVisibleDatasetCount() {
+			return helpers.where(this.chart.data.datasets, function(ds) {
+				return helpers.isDatasetVisible(ds);
+			}).length;
+		},
+
+		update: function update(reset) {
+			var minSize = Math.min(this.chart.chartArea.right - this.chart.chartArea.left, this.chart.chartArea.bottom - this.chart.chartArea.top);
+			this.chart.outerRadius = Math.max((minSize - this.chart.options.elements.arc.borderWidth / 2) / 2, 0);
+			this.chart.innerRadius = Math.max(this.chart.options.cutoutPercentage ? (this.chart.outerRadius / 100) * (this.chart.options.cutoutPercentage) : 1, 0);
+			this.chart.radiusLength = (this.chart.outerRadius - this.chart.innerRadius) / this.getVisibleDatasetCount();
+
+			this.getDataset().total = 0;
+			helpers.each(this.getDataset().data, function(value) {
+				this.getDataset().total += Math.abs(value);
+			}, this);
+
+			this.outerRadius = this.chart.outerRadius - (this.chart.radiusLength * this.index);
+			this.innerRadius = this.outerRadius - this.chart.radiusLength;
+
+			helpers.each(this.getDataset().metaData, function(arc, index) {
+				this.updateElement(arc, index, reset);
+			}, this);
+		},
+
+		updateElement: function(arc, index, reset) {
+			var circumference = this.calculateCircumference(this.getDataset().data[index]);
+			var centerX = (this.chart.chartArea.left + this.chart.chartArea.right) / 2;
+			var centerY = (this.chart.chartArea.top + this.chart.chartArea.bottom) / 2;
+
+			// If there is NaN data before us, we need to calculate the starting angle correctly.
+			// We could be way more efficient here, but its unlikely that the polar area chart will have a lot of data
+			var notNullIndex = 0;
+			for (var i = 0; i < index; ++i) {
+				if (!isNaN(this.getDataset().data[i])) {
+					++notNullIndex;
+				}
+			}
+
+			var startAngle = (-0.5 * Math.PI) + (circumference * notNullIndex);
+			var endAngle = startAngle + circumference;
+
+			var resetModel = {
+				x: centerX,
+				y: centerY,
+				innerRadius: 0,
+				outerRadius: this.chart.options.animateScale ? 0 : this.chart.scale.getDistanceFromCenterForValue(this.getDataset().data[index]),
+				startAngle: this.chart.options.animateRotate ? Math.PI * -0.5 : startAngle,
+				endAngle: this.chart.options.animateRotate ? Math.PI * -0.5 : endAngle,
+
+				backgroundColor: arc.custom && arc.custom.backgroundColor ? arc.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.arc.backgroundColor),
+				borderWidth: arc.custom && arc.custom.borderWidth ? arc.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.arc.borderWidth),
+				borderColor: arc.custom && arc.custom.borderColor ? arc.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.arc.borderColor),
+
+				label: helpers.getValueAtIndexOrDefault(this.chart.data.labels, index, this.chart.data.labels[index])
+			};
+
+			helpers.extend(arc, {
+				// Utility
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index,
+				_scale: this.chart.scale,
+
+				// Desired view properties
+				_model: reset ? resetModel : {
+					x: centerX,
+					y: centerY,
+					innerRadius: 0,
+					outerRadius: this.chart.scale.getDistanceFromCenterForValue(this.getDataset().data[index]),
+					startAngle: startAngle,
+					endAngle: endAngle,
+
+					backgroundColor: arc.custom && arc.custom.backgroundColor ? arc.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.arc.backgroundColor),
+					borderWidth: arc.custom && arc.custom.borderWidth ? arc.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.arc.borderWidth),
+					borderColor: arc.custom && arc.custom.borderColor ? arc.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.arc.borderColor),
+
+					label: helpers.getValueAtIndexOrDefault(this.chart.data.labels, index, this.chart.data.labels[index])
+				}
+			});
+
+			arc.pivot();
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+			helpers.each(this.getDataset().metaData, function(arc, index) {
+				arc.transition(easingDecimal).draw();
+			});
+		},
+
+		setHoverStyle: function(arc) {
+			var dataset = this.chart.data.datasets[arc._datasetIndex];
+			var index = arc._index;
+
+			arc._model.backgroundColor = arc.custom && arc.custom.hoverBackgroundColor ? arc.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.hoverBackgroundColor, index, helpers.color(arc._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			arc._model.borderColor = arc.custom && arc.custom.hoverBorderColor ? arc.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.hoverBorderColor, index, helpers.color(arc._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			arc._model.borderWidth = arc.custom && arc.custom.hoverBorderWidth ? arc.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.hoverBorderWidth, index, arc._model.borderWidth);
+		},
+
+		removeHoverStyle: function(arc) {
+			var dataset = this.chart.data.datasets[arc._datasetIndex];
+			var index = arc._index;
+
+			arc._model.backgroundColor = arc.custom && arc.custom.backgroundColor ? arc.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().backgroundColor, index, this.chart.options.elements.arc.backgroundColor);
+			arc._model.borderColor = arc.custom && arc.custom.borderColor ? arc.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().borderColor, index, this.chart.options.elements.arc.borderColor);
+			arc._model.borderWidth = arc.custom && arc.custom.borderWidth ? arc.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().borderWidth, index, this.chart.options.elements.arc.borderWidth);
+		},
+
+		calculateCircumference: function(value) {
+			if (isNaN(value)) {
+				return 0;
+			} else {
+				// Count the number of NaN values
+				var numNaN = helpers.where(this.getDataset().data, function(data) {
+					return isNaN(data);
+				}).length;
+
+				return (2 * Math.PI) / (this.getDataset().data.length - numNaN);
+			}
+		}
+	});
+
+};
+},{}],158:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+
+	Chart.defaults.radar = {
+		scale: {
+			type: "radialLinear"
+		},
+		elements: {
+			line: {
+				tension: 0 // no bezier in radar
+			}
+		}
+	};
+
+	Chart.controllers.radar = Chart.DatasetController.extend({
+		linkScales: function() {
+			// No need. Single scale only
+		},
+
+		addElements: function() {
+
+			this.getDataset().metaData = this.getDataset().metaData || [];
+
+			this.getDataset().metaDataset = this.getDataset().metaDataset || new Chart.elements.Line({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_points: this.getDataset().metaData,
+				_loop: true
+			});
+
+			helpers.each(this.getDataset().data, function(value, index) {
+				this.getDataset().metaData[index] = this.getDataset().metaData[index] || new Chart.elements.Point({
+					_chart: this.chart.chart,
+					_datasetIndex: this.index,
+					_index: index,
+					_model: {
+						x: 0, //xScale.getPixelForValue(null, index, true),
+						y: 0 //this.chartArea.bottom,
+					}
+				});
+			}, this);
+		},
+		addElementAndReset: function(index) {
+			this.getDataset().metaData = this.getDataset().metaData || [];
+			var point = new Chart.elements.Point({
+				_chart: this.chart.chart,
+				_datasetIndex: this.index,
+				_index: index
+			});
+
+			// Reset the point
+			this.updateElement(point, index, true);
+
+			// Add to the points array
+			this.getDataset().metaData.splice(index, 0, point);
+
+			// Make sure bezier control points are updated
+			this.updateBezierControlPoints();
+		},
+
+		update: function update(reset) {
+
+			var line = this.getDataset().metaDataset;
+			var points = this.getDataset().metaData;
+
+			var scale = this.chart.scale;
+			var scaleBase;
+
+			if (scale.min < 0 && scale.max < 0) {
+				scaleBase = scale.getPointPositionForValue(0, scale.max);
+			} else if (scale.min > 0 && scale.max > 0) {
+				scaleBase = scale.getPointPositionForValue(0, scale.min);
+			} else {
+				scaleBase = scale.getPointPositionForValue(0, 0);
+			}
+
+			helpers.extend(this.getDataset().metaDataset, {
+				// Utility
+				_datasetIndex: this.index,
+				// Data
+				_children: this.getDataset().metaData,
+				// Model
+				_model: {
+					// Appearance
+					tension: line.custom && line.custom.tension ? line.custom.tension : helpers.getValueOrDefault(this.getDataset().tension, this.chart.options.elements.line.tension),
+					backgroundColor: line.custom && line.custom.backgroundColor ? line.custom.backgroundColor : (this.getDataset().backgroundColor || this.chart.options.elements.line.backgroundColor),
+					borderWidth: line.custom && line.custom.borderWidth ? line.custom.borderWidth : (this.getDataset().borderWidth || this.chart.options.elements.line.borderWidth),
+					borderColor: line.custom && line.custom.borderColor ? line.custom.borderColor : (this.getDataset().borderColor || this.chart.options.elements.line.borderColor),
+					fill: line.custom && line.custom.fill ? line.custom.fill : (this.getDataset().fill !== undefined ? this.getDataset().fill : this.chart.options.elements.line.fill),
+					borderCapStyle: line.custom && line.custom.borderCapStyle ? line.custom.borderCapStyle : (this.getDataset().borderCapStyle || this.chart.options.elements.line.borderCapStyle),
+					borderDash: line.custom && line.custom.borderDash ? line.custom.borderDash : (this.getDataset().borderDash || this.chart.options.elements.line.borderDash),
+					borderDashOffset: line.custom && line.custom.borderDashOffset ? line.custom.borderDashOffset : (this.getDataset().borderDashOffset || this.chart.options.elements.line.borderDashOffset),
+					borderJoinStyle: line.custom && line.custom.borderJoinStyle ? line.custom.borderJoinStyle : (this.getDataset().borderJoinStyle || this.chart.options.elements.line.borderJoinStyle),
+
+					// Scale
+					scaleTop: scale.top,
+					scaleBottom: scale.bottom,
+					scaleZero: scaleBase
+				}
+			});
+
+			this.getDataset().metaDataset.pivot();
+
+			// Update Points
+			helpers.each(points, function(point, index) {
+				this.updateElement(point, index, reset);
+			}, this);
+
+
+			// Update bezier control points
+			this.updateBezierControlPoints();
+		},
+		updateElement: function(point, index, reset) {
+			var pointPosition = this.chart.scale.getPointPositionForValue(index, this.getDataset().data[index]);
+
+			helpers.extend(point, {
+				// Utility
+				_datasetIndex: this.index,
+				_index: index,
+				_scale: this.chart.scale,
+
+				// Desired view properties
+				_model: {
+					x: reset ? this.chart.scale.xCenter : pointPosition.x, // value not used in dataset scale, but we want a consistent API between scales
+					y: reset ? this.chart.scale.yCenter : pointPosition.y,
+
+					// Appearance
+					tension: point.custom && point.custom.tension ? point.custom.tension : helpers.getValueOrDefault(this.getDataset().tension, this.chart.options.elements.line.tension),
+					radius: point.custom && point.custom.radius ? point.custom.radius : helpers.getValueAtIndexOrDefault(this.getDataset().pointRadius, index, this.chart.options.elements.point.radius),
+					backgroundColor: point.custom && point.custom.backgroundColor ? point.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().pointBackgroundColor, index, this.chart.options.elements.point.backgroundColor),
+					borderColor: point.custom && point.custom.borderColor ? point.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().pointBorderColor, index, this.chart.options.elements.point.borderColor),
+					borderWidth: point.custom && point.custom.borderWidth ? point.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().pointBorderWidth, index, this.chart.options.elements.point.borderWidth),
+					pointStyle: point.custom && point.custom.pointStyle ? point.custom.pointStyle : helpers.getValueAtIndexOrDefault(this.getDataset().pointStyle, index, this.chart.options.elements.point.pointStyle),
+
+					// Tooltip
+					hitRadius: point.custom && point.custom.hitRadius ? point.custom.hitRadius : helpers.getValueAtIndexOrDefault(this.getDataset().hitRadius, index, this.chart.options.elements.point.hitRadius)
+				}
+			});
+
+			point._model.skip = point.custom && point.custom.skip ? point.custom.skip : (isNaN(point._model.x) || isNaN(point._model.y));
+		},
+		updateBezierControlPoints: function() {
+			helpers.each(this.getDataset().metaData, function(point, index) {
+				var controlPoints = helpers.splineCurve(
+					helpers.previousItem(this.getDataset().metaData, index, true)._model,
+					point._model,
+					helpers.nextItem(this.getDataset().metaData, index, true)._model,
+					point._model.tension
+				);
+
+				// Prevent the bezier going outside of the bounds of the graph
+				point._model.controlPointPreviousX = Math.max(Math.min(controlPoints.previous.x, this.chart.chartArea.right), this.chart.chartArea.left);
+				point._model.controlPointPreviousY = Math.max(Math.min(controlPoints.previous.y, this.chart.chartArea.bottom), this.chart.chartArea.top);
+
+				point._model.controlPointNextX = Math.max(Math.min(controlPoints.next.x, this.chart.chartArea.right), this.chart.chartArea.left);
+				point._model.controlPointNextY = Math.max(Math.min(controlPoints.next.y, this.chart.chartArea.bottom), this.chart.chartArea.top);
+
+				// Now pivot the point for animation
+				point.pivot();
+			}, this);
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+
+			// Transition Point Locations
+			helpers.each(this.getDataset().metaData, function(point, index) {
+				point.transition(easingDecimal);
+			});
+
+			// Transition and Draw the line
+			this.getDataset().metaDataset.transition(easingDecimal).draw();
+
+			// Draw the points
+			helpers.each(this.getDataset().metaData, function(point) {
+				point.draw();
+			});
+		},
+
+		setHoverStyle: function(point) {
+			// Point
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.hoverRadius ? point.custom.hoverRadius : helpers.getValueAtIndexOrDefault(dataset.pointHoverRadius, index, this.chart.options.elements.point.hoverRadius);
+			point._model.backgroundColor = point.custom && point.custom.hoverBackgroundColor ? point.custom.hoverBackgroundColor : helpers.getValueAtIndexOrDefault(dataset.pointHoverBackgroundColor, index, helpers.color(point._model.backgroundColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderColor = point.custom && point.custom.hoverBorderColor ? point.custom.hoverBorderColor : helpers.getValueAtIndexOrDefault(dataset.pointHoverBorderColor, index, helpers.color(point._model.borderColor).saturate(0.5).darken(0.1).rgbString());
+			point._model.borderWidth = point.custom && point.custom.hoverBorderWidth ? point.custom.hoverBorderWidth : helpers.getValueAtIndexOrDefault(dataset.pointHoverBorderWidth, index, point._model.borderWidth);
+		},
+
+		removeHoverStyle: function(point) {
+			var dataset = this.chart.data.datasets[point._datasetIndex];
+			var index = point._index;
+
+			point._model.radius = point.custom && point.custom.radius ? point.custom.radius : helpers.getValueAtIndexOrDefault(this.getDataset().radius, index, this.chart.options.elements.point.radius);
+			point._model.backgroundColor = point.custom && point.custom.backgroundColor ? point.custom.backgroundColor : helpers.getValueAtIndexOrDefault(this.getDataset().pointBackgroundColor, index, this.chart.options.elements.point.backgroundColor);
+			point._model.borderColor = point.custom && point.custom.borderColor ? point.custom.borderColor : helpers.getValueAtIndexOrDefault(this.getDataset().pointBorderColor, index, this.chart.options.elements.point.borderColor);
+			point._model.borderWidth = point.custom && point.custom.borderWidth ? point.custom.borderWidth : helpers.getValueAtIndexOrDefault(this.getDataset().pointBorderWidth, index, this.chart.options.elements.point.borderWidth);
+		}
+	});
+};
+},{}],159:[function(require,module,exports){
+/*global window: false */
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.animation = {
+		duration: 1000,
+		easing: "easeOutQuart",
+		onProgress: helpers.noop,
+		onComplete: helpers.noop
+	};
+
+	Chart.Animation = Chart.Element.extend({
+		currentStep: null, // the current animation step
+		numSteps: 60, // default number of steps
+		easing: "", // the easing to use for this animation
+		render: null, // render function used by the animation service
+
+		onAnimationProgress: null, // user specified callback to fire on each step of the animation
+		onAnimationComplete: null // user specified callback to fire when the animation finishes
+	});
+
+	Chart.animationService = {
+		frameDuration: 17,
+		animations: [],
+		dropFrames: 0,
+		addAnimation: function(chartInstance, animationObject, duration, lazy) {
+
+			if (!lazy) {
+				chartInstance.animating = true;
+			}
+
+			for (var index = 0; index < this.animations.length; ++index) {
+				if (this.animations[index].chartInstance === chartInstance) {
+					// replacing an in progress animation
+					this.animations[index].animationObject = animationObject;
+					return;
+				}
+			}
+
+			this.animations.push({
+				chartInstance: chartInstance,
+				animationObject: animationObject
+			});
+
+			// If there are no animations queued, manually kickstart a digest, for lack of a better word
+			if (this.animations.length === 1) {
+				helpers.requestAnimFrame.call(window, this.digestWrapper);
+			}
+		},
+		// Cancel the animation for a given chart instance
+		cancelAnimation: function(chartInstance) {
+			var index = helpers.findIndex(this.animations, function(animationWrapper) {
+				return animationWrapper.chartInstance === chartInstance;
+			});
+
+			if (index !== -1) {
+				this.animations.splice(index, 1);
+				chartInstance.animating = false;
+			}
+		},
+		// calls startDigest with the proper context
+		digestWrapper: function() {
+			Chart.animationService.startDigest.call(Chart.animationService);
+		},
+		startDigest: function() {
+
+			var startTime = Date.now();
+			var framesToDrop = 0;
+
+			if (this.dropFrames > 1) {
+				framesToDrop = Math.floor(this.dropFrames);
+				this.dropFrames = this.dropFrames % 1;
+			}
+
+			var i = 0;
+			while (i < this.animations.length) {
+				if (this.animations[i].animationObject.currentStep === null) {
+					this.animations[i].animationObject.currentStep = 0;
+				}
+
+				this.animations[i].animationObject.currentStep += 1 + framesToDrop;
+
+				if (this.animations[i].animationObject.currentStep > this.animations[i].animationObject.numSteps) {
+					this.animations[i].animationObject.currentStep = this.animations[i].animationObject.numSteps;
+				}
+
+				this.animations[i].animationObject.render(this.animations[i].chartInstance, this.animations[i].animationObject);
+				if (this.animations[i].animationObject.onAnimationProgress && this.animations[i].animationObject.onAnimationProgress.call) {
+					this.animations[i].animationObject.onAnimationProgress.call(this.animations[i].chartInstance, this.animations[i]);
+				}
+
+				if (this.animations[i].animationObject.currentStep === this.animations[i].animationObject.numSteps) {
+					if (this.animations[i].animationObject.onAnimationComplete && this.animations[i].animationObject.onAnimationComplete.call) {
+						this.animations[i].animationObject.onAnimationComplete.call(this.animations[i].chartInstance, this.animations[i]);
+					}
+
+					// executed the last frame. Remove the animation.
+					this.animations[i].chartInstance.animating = false;
+
+					this.animations.splice(i, 1);
+				} else {
+					++i;
+				}
+			}
+
+			var endTime = Date.now();
+			var dropFrames = (endTime - startTime) / this.frameDuration;
+
+			this.dropFrames += dropFrames;
+
+			// Do we have more stuff to animate?
+			if (this.animations.length > 0) {
+				helpers.requestAnimFrame.call(window, this.digestWrapper);
+			}
+		}
+	};
+};
+},{}],160:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+	//Create a dictionary of chart types, to allow for extension of existing types
+	Chart.types = {};
+
+	//Store a reference to each instance - allowing us to globally resize chart instances on window resize.
+	//Destroy method on the chart will remove the instance of the chart from this reference.
+	Chart.instances = {};
+
+	// Controllers available for dataset visualization eg. bar, line, slice, etc.
+	Chart.controllers = {};
+
+	// The main controller of a chart
+	Chart.Controller = function(instance) {
+
+		this.chart = instance;
+		this.config = instance.config;
+		this.options = this.config.options = helpers.configMerge(Chart.defaults.global, Chart.defaults[this.config.type], this.config.options || {});
+		this.id = helpers.uid();
+
+		Object.defineProperty(this, 'data', {
+			get: function() {
+				return this.config.data;
+			}
+		});
+
+		//Add the chart instance to the global namespace
+		Chart.instances[this.id] = this;
+
+		if (this.options.responsive) {
+			// Silent resize before chart draws
+			this.resize(true);
+		}
+
+		this.initialize();
+
+		return this;
+	};
+
+	helpers.extend(Chart.Controller.prototype, {
+
+		initialize: function initialize() {
+
+			// TODO
+			// If BeforeInit(this) doesn't return false, proceed
+
+			this.bindEvents();
+
+			// Make sure controllers are built first so that each dataset is bound to an axis before the scales
+			// are built
+			this.ensureScalesHaveIDs();
+			this.buildOrUpdateControllers();
+			this.buildScales();
+			this.buildSurroundingItems();
+			this.updateLayout();
+			this.resetElements();
+			this.initToolTip();
+			this.update();
+
+			// TODO
+			// If AfterInit(this) doesn't return false, proceed
+
+			return this;
+		},
+
+		clear: function clear() {
+			helpers.clear(this.chart);
+			return this;
+		},
+
+		stop: function stop() {
+			// Stops any current animation loop occuring
+			Chart.animationService.cancelAnimation(this);
+			return this;
+		},
+
+		resize: function resize(silent) {
+			var canvas = this.chart.canvas;
+			var newWidth = helpers.getMaximumWidth(this.chart.canvas);
+			var newHeight = (this.options.maintainAspectRatio && isNaN(this.chart.aspectRatio) === false && isFinite(this.chart.aspectRatio) && this.chart.aspectRatio !== 0) ? newWidth / this.chart.aspectRatio : helpers.getMaximumHeight(this.chart.canvas);
+
+			var sizeChanged = this.chart.width !== newWidth || this.chart.height !== newHeight;
+
+			if (!sizeChanged)
+				return this;
+
+			canvas.width = this.chart.width = newWidth;
+			canvas.height = this.chart.height = newHeight;
+
+			helpers.retinaScale(this.chart);
+
+			if (!silent) {
+				this.stop();
+				this.update(this.options.responsiveAnimationDuration);
+			}
+
+			return this;
+		},
+		ensureScalesHaveIDs: function ensureScalesHaveIDs() {
+			var defaultXAxisID = 'x-axis-';
+			var defaultYAxisID = 'y-axis-';
+
+			if (this.options.scales) {
+				if (this.options.scales.xAxes && this.options.scales.xAxes.length) {
+					helpers.each(this.options.scales.xAxes, function(xAxisOptions, index) {
+						xAxisOptions.id = xAxisOptions.id || (defaultXAxisID + index);
+					});
+				}
+
+				if (this.options.scales.yAxes && this.options.scales.yAxes.length) {
+					// Build the y axes
+					helpers.each(this.options.scales.yAxes, function(yAxisOptions, index) {
+						yAxisOptions.id = yAxisOptions.id || (defaultYAxisID + index);
+					});
+				}
+			}
+		},
+		buildScales: function buildScales() {
+			// Map of scale ID to scale object so we can lookup later
+			this.scales = {};
+
+			// Build the x axes
+			if (this.options.scales) {
+				if (this.options.scales.xAxes && this.options.scales.xAxes.length) {
+					helpers.each(this.options.scales.xAxes, function(xAxisOptions, index) {
+						var xType = helpers.getValueOrDefault(xAxisOptions.type, 'category');
+						var ScaleClass = Chart.scaleService.getScaleConstructor(xType);
+						if (ScaleClass) {
+							var scale = new ScaleClass({
+								ctx: this.chart.ctx,
+								options: xAxisOptions,
+								chart: this,
+								id: xAxisOptions.id
+							});
+
+							this.scales[scale.id] = scale;
+						}
+					}, this);
+				}
+
+				if (this.options.scales.yAxes && this.options.scales.yAxes.length) {
+					// Build the y axes
+					helpers.each(this.options.scales.yAxes, function(yAxisOptions, index) {
+						var yType = helpers.getValueOrDefault(yAxisOptions.type, 'linear');
+						var ScaleClass = Chart.scaleService.getScaleConstructor(yType);
+						if (ScaleClass) {
+							var scale = new ScaleClass({
+								ctx: this.chart.ctx,
+								options: yAxisOptions,
+								chart: this,
+								id: yAxisOptions.id
+							});
+
+							this.scales[scale.id] = scale;
+						}
+					}, this);
+				}
+			}
+			if (this.options.scale) {
+				// Build radial axes
+				var ScaleClass = Chart.scaleService.getScaleConstructor(this.options.scale.type);
+				if (ScaleClass) {
+					var scale = new ScaleClass({
+						ctx: this.chart.ctx,
+						options: this.options.scale,
+						chart: this
+					});
+
+					this.scale = scale;
+
+					this.scales.radialScale = scale;
+				}
+			}
+
+			Chart.scaleService.addScalesToLayout(this);
+		},
+
+		buildSurroundingItems: function() {
+			if (this.options.title) {
+				this.titleBlock = new Chart.Title({
+					ctx: this.chart.ctx,
+					options: this.options.title,
+					chart: this
+				});
+
+				Chart.layoutService.addBox(this, this.titleBlock);
+			}
+
+			if (this.options.legend) {
+				this.legend = new Chart.Legend({
+					ctx: this.chart.ctx,
+					options: this.options.legend,
+					chart: this
+				});
+
+				Chart.layoutService.addBox(this, this.legend);
+			}
+		},
+
+		updateLayout: function() {
+			Chart.layoutService.update(this, this.chart.width, this.chart.height);
+		},
+
+		buildOrUpdateControllers: function buildOrUpdateControllers() {
+			var types = [];
+			var newControllers = [];
+
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				if (!dataset.type) {
+					dataset.type = this.config.type;
+				}
+
+				var type = dataset.type;
+				types.push(type);
+
+				if (dataset.controller) {
+					dataset.controller.updateIndex(datasetIndex);
+				} else {
+					dataset.controller = new Chart.controllers[type](this, datasetIndex);
+					newControllers.push(dataset.controller);
+				}
+			}, this);
+
+			if (types.length > 1) {
+				for (var i = 1; i < types.length; i++) {
+					if (types[i] !== types[i - 1]) {
+						this.isCombo = true;
+						break;
+					}
+				}
+			}
+
+			return newControllers;
+		},
+
+		resetElements: function resetElements() {
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				dataset.controller.reset();
+			});
+		},
+
+		update: function update(animationDuration, lazy) {
+			// In case the entire data object changed
+			this.tooltip._data = this.data;
+
+			// Make sure dataset controllers are updated and new controllers are reset
+			var newControllers = this.buildOrUpdateControllers();
+
+			Chart.layoutService.update(this, this.chart.width, this.chart.height);
+
+			// Can only reset the new controllers after the scales have been updated
+			helpers.each(newControllers, function(controller) {
+				controller.reset();
+			});
+
+			// Make sure all dataset controllers have correct meta data counts
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				dataset.controller.buildOrUpdateElements();
+			});
+
+			// This will loop through any data and do the appropriate element update for the type
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				dataset.controller.update();
+			});
+			this.render(animationDuration, lazy);
+		},
+
+		render: function render(duration, lazy) {
+
+			if (this.options.animation && ((typeof duration !== 'undefined' && duration !== 0) || (typeof duration === 'undefined' && this.options.animation.duration !== 0))) {
+				var animation = new Chart.Animation();
+				animation.numSteps = (duration || this.options.animation.duration) / 16.66; //60 fps
+				animation.easing = this.options.animation.easing;
+
+				// render function
+				animation.render = function(chartInstance, animationObject) {
+					var easingFunction = helpers.easingEffects[animationObject.easing];
+					var stepDecimal = animationObject.currentStep / animationObject.numSteps;
+					var easeDecimal = easingFunction(stepDecimal);
+
+					chartInstance.draw(easeDecimal, stepDecimal, animationObject.currentStep);
+				};
+
+				// user events
+				animation.onAnimationProgress = this.options.animation.onProgress;
+				animation.onAnimationComplete = this.options.animation.onComplete;
+
+				Chart.animationService.addAnimation(this, animation, duration, lazy);
+			} else {
+				this.draw();
+				if (this.options.animation && this.options.animation.onComplete && this.options.animation.onComplete.call) {
+					this.options.animation.onComplete.call(this);
+				}
+			}
+			return this;
+		},
+
+		draw: function(ease) {
+			var easingDecimal = ease || 1;
+			this.clear();
+
+			// Draw all the scales
+			helpers.each(this.boxes, function(box) {
+				box.draw(this.chartArea);
+			}, this);
+			if (this.scale) {
+				this.scale.draw();
+			}
+
+			// Clip out the chart area so that anything outside does not draw. This is necessary for zoom and pan to function
+			this.chart.ctx.save();
+			this.chart.ctx.beginPath();
+			this.chart.ctx.rect(this.chartArea.left, this.chartArea.top, this.chartArea.right - this.chartArea.left, this.chartArea.bottom - this.chartArea.top);
+			this.chart.ctx.clip();
+
+			// Draw each dataset via its respective controller (reversed to support proper line stacking)
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				if (helpers.isDatasetVisible(dataset)) {
+					dataset.controller.draw(ease);
+				}
+			}, null, true);
+
+			// Restore from the clipping operation
+			this.chart.ctx.restore();
+
+			// Finally draw the tooltip
+			this.tooltip.transition(easingDecimal).draw();
+		},
+
+		// Get the single element that was clicked on
+		// @return : An object containing the dataset index and element index of the matching element. Also contains the rectangle that was draw
+		getElementAtEvent: function(e) {
+
+			var eventPosition = helpers.getRelativePosition(e, this.chart);
+			var elementsArray = [];
+
+			helpers.each(this.data.datasets, function(dataset, datasetIndex) {
+				if (helpers.isDatasetVisible(dataset)) {
+					helpers.each(dataset.metaData, function(element, index) {
+						if (element.inRange(eventPosition.x, eventPosition.y)) {
+							elementsArray.push(element);
+							return elementsArray;
+						}
+					});
+				}
+			});
+
+			return elementsArray;
+		},
+
+		getElementsAtEvent: function(e) {
+			var eventPosition = helpers.getRelativePosition(e, this.chart);
+			var elementsArray = [];
+
+			var found = (function() {
+				if (this.data.datasets) {
+					for (var i = 0; i < this.data.datasets.length; i++) {
+						if (helpers.isDatasetVisible(this.data.datasets[i])) {
+							for (var j = 0; j < this.data.datasets[i].metaData.length; j++) {
+								if (this.data.datasets[i].metaData[j].inRange(eventPosition.x, eventPosition.y)) {
+									return this.data.datasets[i].metaData[j];
+								}
+							}
+						}
+					}
+				}
+			}).call(this);
+
+			if (!found) {
+				return elementsArray;
+			}
+
+			helpers.each(this.data.datasets, function(dataset, dsIndex) {
+				if (helpers.isDatasetVisible(dataset)) {
+					elementsArray.push(dataset.metaData[found._index]);
+				}
+			});
+
+			return elementsArray;
+		},
+
+		getDatasetAtEvent: function(e) {
+			var elementsArray = this.getElementAtEvent(e);
+
+			if (elementsArray.length > 0) {
+				elementsArray = this.data.datasets[elementsArray[0]._datasetIndex].metaData;
+			}
+
+			return elementsArray;
+		},
+
+		generateLegend: function generateLegend() {
+			return this.options.legendCallback(this);
+		},
+
+		destroy: function destroy() {
+			this.clear();
+			helpers.unbindEvents(this, this.events);
+			helpers.removeResizeListener(this.chart.canvas.parentNode);
+
+			// Reset canvas height/width attributes
+			var canvas = this.chart.canvas;
+			canvas.width = this.chart.width;
+			canvas.height = this.chart.height;
+
+			// if we scaled the canvas in response to a devicePixelRatio !== 1, we need to undo that transform here
+			if (this.chart.originalDevicePixelRatio !== undefined) {
+				this.chart.ctx.scale(1 / this.chart.originalDevicePixelRatio, 1 / this.chart.originalDevicePixelRatio);
+			}
+
+			// Reset to the old style since it may have been changed by the device pixel ratio changes
+			canvas.style.width = this.chart.originalCanvasStyleWidth;
+			canvas.style.height = this.chart.originalCanvasStyleHeight;
+
+			delete Chart.instances[this.id];
+		},
+
+		toBase64Image: function toBase64Image() {
+			return this.chart.canvas.toDataURL.apply(this.chart.canvas, arguments);
+		},
+
+		initToolTip: function initToolTip() {
+			this.tooltip = new Chart.Tooltip({
+				_chart: this.chart,
+				_chartInstance: this,
+				_data: this.data,
+				_options: this.options
+			}, this);
+		},
+
+		bindEvents: function bindEvents() {
+			helpers.bindEvents(this, this.options.events, function(evt) {
+				this.eventHandler(evt);
+			});
+		},
+		eventHandler: function eventHandler(e) {
+			this.lastActive = this.lastActive || [];
+			this.lastTooltipActive = this.lastTooltipActive || [];
+
+			// Find Active Elements for hover and tooltips
+			if (e.type === 'mouseout') {
+				this.active = [];
+				this.tooltipActive = [];
+			} else {
+
+				var _this = this;
+				var getItemsForMode = function(mode) {
+					switch (mode) {
+						case 'single':
+							return _this.getElementAtEvent(e);
+						case 'label':
+							return _this.getElementsAtEvent(e);
+						case 'dataset':
+							return _this.getDatasetAtEvent(e);
+						default:
+							return e;
+					}
+				};
+
+				this.active = getItemsForMode(this.options.hover.mode);
+				this.tooltipActive = getItemsForMode(this.options.tooltips.mode);
+			}
+
+			// On Hover hook
+			if (this.options.hover.onHover) {
+				this.options.hover.onHover.call(this, this.active);
+			}
+
+			if (e.type === 'mouseup' || e.type === 'click') {
+				if (this.options.onClick) {
+					this.options.onClick.call(this, e, this.active);
+				}
+
+				if (this.legend && this.legend.handleEvent) {
+					this.legend.handleEvent(e);
+				}
+			}
+
+			var dataset;
+			var index;
+
+			// Remove styling for last active (even if it may still be active)
+			if (this.lastActive.length) {
+				switch (this.options.hover.mode) {
+					case 'single':
+						this.data.datasets[this.lastActive[0]._datasetIndex].controller.removeHoverStyle(this.lastActive[0], this.lastActive[0]._datasetIndex, this.lastActive[0]._index);
+						break;
+					case 'label':
+					case 'dataset':
+						for (var i = 0; i < this.lastActive.length; i++) {
+							if (this.lastActive[i])
+								this.data.datasets[this.lastActive[i]._datasetIndex].controller.removeHoverStyle(this.lastActive[i], this.lastActive[i]._datasetIndex, this.lastActive[i]._index);
+						}
+						break;
+					default:
+						// Don't change anything
+				}
+			}
+
+			// Built in hover styling
+			if (this.active.length && this.options.hover.mode) {
+				switch (this.options.hover.mode) {
+					case 'single':
+						this.data.datasets[this.active[0]._datasetIndex].controller.setHoverStyle(this.active[0]);
+						break;
+					case 'label':
+					case 'dataset':
+						for (var j = 0; j < this.active.length; j++) {
+							if (this.active[j])
+								this.data.datasets[this.active[j]._datasetIndex].controller.setHoverStyle(this.active[j]);
+						}
+						break;
+					default:
+						// Don't change anything
+				}
+			}
+
+
+			// Built in Tooltips
+			if (this.options.tooltips.enabled || this.options.tooltips.custom) {
+
+				// The usual updates
+				this.tooltip.initialize();
+				this.tooltip._active = this.tooltipActive;
+				this.tooltip.update();
+			}
+
+			// Hover animations
+			this.tooltip.pivot();
+
+			if (!this.animating) {
+				var changed;
+
+				helpers.each(this.active, function(element, index) {
+					if (element !== this.lastActive[index]) {
+						changed = true;
+					}
+				}, this);
+
+				helpers.each(this.tooltipActive, function(element, index) {
+					if (element !== this.lastTooltipActive[index]) {
+						changed = true;
+					}
+				}, this);
+
+				// If entering, leaving, or changing elements, animate the change via pivot
+				if ((this.lastActive.length !== this.active.length) ||
+					(this.lastTooltipActive.length !== this.tooltipActive.length) ||
+					changed) {
+
+					this.stop();
+
+					if (this.options.tooltips.enabled || this.options.tooltips.custom) {
+						this.tooltip.update(true);
+					}
+
+					// We only need to render at this point. Updating will cause scales to be recomputed generating flicker & using more
+					// memory than necessary.
+					this.render(this.options.hover.animationDuration, true);
+				}
+			}
+
+			// Remember Last Actives
+			this.lastActive = this.active;
+			this.lastTooltipActive = this.tooltipActive;
+			return this;
+		}
+	});
+};
+
+},{}],161:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	// Base class for all dataset controllers (line, bar, etc)
+	Chart.DatasetController = function(chart, datasetIndex) {
+		this.initialize.call(this, chart, datasetIndex);
+	};
+
+	helpers.extend(Chart.DatasetController.prototype, {
+		initialize: function(chart, datasetIndex) {
+			this.chart = chart;
+			this.index = datasetIndex;
+			this.linkScales();
+			this.addElements();
+		},
+		updateIndex: function(datasetIndex) {
+			this.index = datasetIndex;
+		},
+
+		linkScales: function() {
+			if (!this.getDataset().xAxisID) {
+				this.getDataset().xAxisID = this.chart.options.scales.xAxes[0].id;
+			}
+
+			if (!this.getDataset().yAxisID) {
+				this.getDataset().yAxisID = this.chart.options.scales.yAxes[0].id;
+			}
+		},
+
+		getDataset: function() {
+			return this.chart.data.datasets[this.index];
+		},
+
+		getScaleForId: function(scaleID) {
+			return this.chart.scales[scaleID];
+		},
+
+		reset: function() {
+			this.update(true);
+		},
+
+		buildOrUpdateElements: function buildOrUpdateElements() {
+			// Handle the number of data points changing
+			var numData = this.getDataset().data.length;
+			var numMetaData = this.getDataset().metaData.length;
+
+			// Make sure that we handle number of datapoints changing
+			if (numData < numMetaData) {
+				// Remove excess bars for data points that have been removed
+				this.getDataset().metaData.splice(numData, numMetaData - numData);
+			} else if (numData > numMetaData) {
+				// Add new elements
+				for (var index = numMetaData; index < numData; ++index) {
+					this.addElementAndReset(index);
+				}
+			}
+		},
+
+		// Controllers should implement the following
+		addElements: helpers.noop,
+		addElementAndReset: helpers.noop,
+		draw: helpers.noop,
+		removeHoverStyle: helpers.noop,
+		setHoverStyle: helpers.noop,
+		update: helpers.noop
+	});
+
+	Chart.DatasetController.extend = helpers.inherits;
+
+};
+},{}],162:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+  var helpers = Chart.helpers;
+
+  Chart.elements = {};
+
+  Chart.Element = function(configuration) {
+    helpers.extend(this, configuration);
+    this.initialize.apply(this, arguments);
+  };
+  helpers.extend(Chart.Element.prototype, {
+    initialize: function() {},
+    pivot: function() {
+      if (!this._view) {
+        this._view = helpers.clone(this._model);
+      }
+      this._start = helpers.clone(this._view);
+      return this;
+    },
+    transition: function(ease) {
+      if (!this._view) {
+        this._view = helpers.clone(this._model);
+      }
+
+      // No animation -> No Transition
+      if (ease === 1) {
+        this._view = this._model;
+        this._start = null;
+        return this;
+      }
+
+      if (!this._start) {
+        this.pivot();
+      }
+
+      helpers.each(this._model, function(value, key) {
+
+        if (key[0] === '_' || !this._model.hasOwnProperty(key)) {
+          // Only non-underscored properties
+        }
+
+        // Init if doesn't exist
+        else if (!this._view.hasOwnProperty(key)) {
+          if (typeof value === 'number' && !isNaN(this._view[key])) {
+            this._view[key] = value * ease;
+          } else {
+            this._view[key] = value;
+          }
+        }
+
+        // No unnecessary computations
+        else if (value === this._view[key]) {
+          // It's the same! Woohoo!
+        }
+
+        // Color transitions if possible
+        else if (typeof value === 'string') {
+          try {
+            var color = helpers.color(this._start[key]).mix(helpers.color(this._model[key]), ease);
+            this._view[key] = color.rgbString();
+          } catch (err) {
+            this._view[key] = value;
+          }
+        }
+        // Number transitions
+        else if (typeof value === 'number') {
+          var startVal = this._start[key] !== undefined && isNaN(this._start[key]) === false ? this._start[key] : 0;
+          this._view[key] = ((this._model[key] - startVal) * ease) + startVal;
+        }
+        // Everything else
+        else {
+          this._view[key] = value;
+        }
+      }, this);
+
+      return this;
+    },
+    tooltipPosition: function() {
+      return {
+        x: this._model.x,
+        y: this._model.y
+      };
+    },
+    hasValue: function() {
+      return helpers.isNumber(this._model.x) && helpers.isNumber(this._model.y);
+    }
+  });
+
+  Chart.Element.extend = helpers.inherits;
+
+};
+
+},{}],163:[function(require,module,exports){
+/*global window: false */
+/*global document: false */
+"use strict";
+
+var color = require('chartjs-color');
+
+module.exports = function(Chart) {
+
+	//Global Chart helpers object for utility methods and classes
+	var helpers = Chart.helpers = {};
+
+	//-- Basic js utility methods
+	helpers.each = function(loopable, callback, self, reverse) {
+		// Check to see if null or undefined firstly.
+		var i, len;
+		if (helpers.isArray(loopable)) {
+			len = loopable.length;
+			if (reverse) {
+				for (i = len - 1; i >= 0; i--) {
+					callback.call(self, loopable[i], i);
+				}
+			} else {
+				for (i = 0; i < len; i++) {
+					callback.call(self, loopable[i], i);
+				}
+			}
+		} else if (typeof loopable === 'object') {
+			var keys = Object.keys(loopable);
+			len = keys.length;
+			for (i = 0; i < len; i++) {
+				callback.call(self, loopable[keys[i]], keys[i]);
+			}
+		}
+	};
+	helpers.clone = function(obj) {
+		var objClone = {};
+		helpers.each(obj, function(value, key) {
+			if (obj.hasOwnProperty(key)) {
+				if (helpers.isArray(value)) {
+					objClone[key] = value.slice(0);
+				} else if (typeof value === 'object' && value !== null) {
+					objClone[key] = helpers.clone(value);
+				} else {
+					objClone[key] = value;
+				}
+			}
+		});
+		return objClone;
+	};
+	helpers.extend = function(base) {
+		var len = arguments.length;
+		var additionalArgs = [];
+		for (var i = 1; i < len; i++) {
+			additionalArgs.push(arguments[i]);
+		}
+		helpers.each(additionalArgs, function(extensionObject) {
+			helpers.each(extensionObject, function(value, key) {
+				if (extensionObject.hasOwnProperty(key)) {
+					base[key] = value;
+				}
+			});
+		});
+		return base;
+	};
+	// Need a special merge function to chart configs since they are now grouped
+	helpers.configMerge = function(_base) {
+		var base = helpers.clone(_base);
+		helpers.each(Array.prototype.slice.call(arguments, 1), function(extension) {
+			helpers.each(extension, function(value, key) {
+				if (extension.hasOwnProperty(key)) {
+					if (key === 'scales') {
+						// Scale config merging is complex. Add out own function here for that
+						base[key] = helpers.scaleMerge(base.hasOwnProperty(key) ? base[key] : {}, value);
+
+					} else if (key === 'scale') {
+						// Used in polar area & radar charts since there is only one scale
+						base[key] = helpers.configMerge(base.hasOwnProperty(key) ? base[key] : {}, Chart.scaleService.getScaleDefaults(value.type), value);
+					} else if (base.hasOwnProperty(key) && helpers.isArray(base[key]) && helpers.isArray(value)) {
+						// In this case we have an array of objects replacing another array. Rather than doing a strict replace,
+						// merge. This allows easy scale option merging
+						var baseArray = base[key];
+
+						helpers.each(value, function(valueObj, index) {
+
+							if (index < baseArray.length) {
+								if (typeof baseArray[index] === 'object' && baseArray[index] !== null && typeof valueObj === 'object' && valueObj !== null) {
+									// Two objects are coming together. Do a merge of them.
+									baseArray[index] = helpers.configMerge(baseArray[index], valueObj);
+								} else {
+									// Just overwrite in this case since there is nothing to merge
+									baseArray[index] = valueObj;
+								}
+							} else {
+								baseArray.push(valueObj); // nothing to merge
+							}
+						});
+
+					} else if (base.hasOwnProperty(key) && typeof base[key] === "object" && base[key] !== null && typeof value === "object") {
+						// If we are overwriting an object with an object, do a merge of the properties.
+						base[key] = helpers.configMerge(base[key], value);
+
+					} else {
+						// can just overwrite the value in this case
+						base[key] = value;
+					}
+				}
+			});
+		});
+
+		return base;
+	};
+	helpers.extendDeep = function(_base) {
+		return _extendDeep.apply(this, arguments);
+
+		function _extendDeep(dst) {
+			helpers.each(arguments, function(obj) {
+				if (obj !== dst) {
+					helpers.each(obj, function(value, key) {
+						if (dst[key] && dst[key].constructor && dst[key].constructor === Object) {
+							_extendDeep(dst[key], value);
+						} else {
+							dst[key] = value;
+						}
+					});
+				}
+			});
+			return dst;
+		}
+	};
+	helpers.scaleMerge = function(_base, extension) {
+		var base = helpers.clone(_base);
+
+		helpers.each(extension, function(value, key) {
+			if (extension.hasOwnProperty(key)) {
+				if (key === 'xAxes' || key === 'yAxes') {
+					// These properties are arrays of items
+					if (base.hasOwnProperty(key)) {
+						helpers.each(value, function(valueObj, index) {
+							var axisType = helpers.getValueOrDefault(valueObj.type, key === 'xAxes' ? 'category' : 'linear');
+							var axisDefaults = Chart.scaleService.getScaleDefaults(axisType);
+							if (index >= base[key].length || !base[key][index].type) {
+								base[key].push(helpers.configMerge(axisDefaults, valueObj));
+							} else if (valueObj.type && valueObj.type !== base[key][index].type) {
+								// Type changed. Bring in the new defaults before we bring in valueObj so that valueObj can override the correct scale defaults
+								base[key][index] = helpers.configMerge(base[key][index], axisDefaults, valueObj);
+							} else {
+								// Type is the same
+								base[key][index] = helpers.configMerge(base[key][index], valueObj);
+							}
+						});
+					} else {
+						base[key] = [];
+						helpers.each(value, function(valueObj) {
+							var axisType = helpers.getValueOrDefault(valueObj.type, key === 'xAxes' ? 'category' : 'linear');
+							base[key].push(helpers.configMerge(Chart.scaleService.getScaleDefaults(axisType), valueObj));
+						});
+					}
+				} else if (base.hasOwnProperty(key) && typeof base[key] === "object" && base[key] !== null && typeof value === "object") {
+					// If we are overwriting an object with an object, do a merge of the properties.
+					base[key] = helpers.configMerge(base[key], value);
+
+				} else {
+					// can just overwrite the value in this case
+					base[key] = value;
+				}
+			}
+		});
+
+		return base;
+	};
+	helpers.getValueAtIndexOrDefault = function(value, index, defaultValue) {
+		if (value === undefined || value === null) {
+			return defaultValue;
+		}
+
+		if (helpers.isArray(value)) {
+			return index < value.length ? value[index] : defaultValue;
+		}
+
+		return value;
+	};
+	helpers.getValueOrDefault = function(value, defaultValue) {
+		return value === undefined ? defaultValue : value;
+	};
+	helpers.indexOf = function(arrayToSearch, item) {
+		if (Array.prototype.indexOf) {
+			return arrayToSearch.indexOf(item);
+		} else {
+			for (var i = 0; i < arrayToSearch.length; i++) {
+				if (arrayToSearch[i] === item)
+					return i;
+			}
+			return -1;
+		}
+	};
+	helpers.where = function(collection, filterCallback) {
+		var filtered = [];
+
+		helpers.each(collection, function(item) {
+			if (filterCallback(item)) {
+				filtered.push(item);
+			}
+		});
+
+		return filtered;
+	};
+	helpers.findIndex = function(arrayToSearch, callback, thisArg) {
+		var index = -1;
+		if (Array.prototype.findIndex) {
+			index = arrayToSearch.findIndex(callback, thisArg);
+		} else {
+			for (var i = 0; i < arrayToSearch.length; ++i) {
+				thisArg = thisArg !== undefined ? thisArg : arrayToSearch;
+
+				if (callback.call(thisArg, arrayToSearch[i], i, arrayToSearch)) {
+					index = i;
+					break;
+				}
+			}
+		}
+
+		return index;
+	};
+	helpers.findNextWhere = function(arrayToSearch, filterCallback, startIndex) {
+		// Default to start of the array
+		if (startIndex === undefined || startIndex === null) {
+			startIndex = -1;
+		}
+		for (var i = startIndex + 1; i < arrayToSearch.length; i++) {
+			var currentItem = arrayToSearch[i];
+			if (filterCallback(currentItem)) {
+				return currentItem;
+			}
+		}
+	};
+	helpers.findPreviousWhere = function(arrayToSearch, filterCallback, startIndex) {
+		// Default to end of the array
+		if (startIndex === undefined || startIndex === null) {
+			startIndex = arrayToSearch.length;
+		}
+		for (var i = startIndex - 1; i >= 0; i--) {
+			var currentItem = arrayToSearch[i];
+			if (filterCallback(currentItem)) {
+				return currentItem;
+			}
+		}
+	};
+	helpers.inherits = function(extensions) {
+		//Basic javascript inheritance based on the model created in Backbone.js
+		var parent = this;
+		var ChartElement = (extensions && extensions.hasOwnProperty("constructor")) ? extensions.constructor : function() {
+			return parent.apply(this, arguments);
+		};
+
+		var Surrogate = function() {
+			this.constructor = ChartElement;
+		};
+		Surrogate.prototype = parent.prototype;
+		ChartElement.prototype = new Surrogate();
+
+		ChartElement.extend = helpers.inherits;
+
+		if (extensions) {
+			helpers.extend(ChartElement.prototype, extensions);
+		}
+
+		ChartElement.__super__ = parent.prototype;
+
+		return ChartElement;
+	};
+	helpers.noop = function() {};
+	helpers.uid = (function() {
+		var id = 0;
+		return function() {
+			return "chart-" + id++;
+		};
+	})();
+	helpers.warn = function(str) {
+		//Method for warning of errors
+		if (console && typeof console.warn === "function") {
+			console.warn(str);
+		}
+	};
+	//-- Math methods
+	helpers.isNumber = function(n) {
+		return !isNaN(parseFloat(n)) && isFinite(n);
+	};
+	helpers.almostEquals = function(x, y, epsilon) {
+		return Math.abs(x - y) < epsilon;
+	};
+	helpers.max = function(array) {
+		return array.reduce(function(max, value) {
+			if (!isNaN(value)) {
+				return Math.max(max, value);
+			} else {
+				return max;
+			}
+		}, Number.NEGATIVE_INFINITY);
+	};
+	helpers.min = function(array) {
+		return array.reduce(function(min, value) {
+			if (!isNaN(value)) {
+				return Math.min(min, value);
+			} else {
+				return min;
+			}
+		}, Number.POSITIVE_INFINITY);
+	};
+	helpers.sign = function(x) {
+		if (Math.sign) {
+			return Math.sign(x);
+		} else {
+			x = +x; // convert to a number
+			if (x === 0 || isNaN(x)) {
+				return x;
+			}
+			return x > 0 ? 1 : -1;
+		}
+	};
+	helpers.log10 = function(x) {
+		if (Math.log10) {
+			return Math.log10(x);
+		} else {
+			return Math.log(x) / Math.LN10;
+		}
+	};
+	helpers.toRadians = function(degrees) {
+		return degrees * (Math.PI / 180);
+	};
+	helpers.toDegrees = function(radians) {
+		return radians * (180 / Math.PI);
+	};
+	// Gets the angle from vertical upright to the point about a centre.
+	helpers.getAngleFromPoint = function(centrePoint, anglePoint) {
+		var distanceFromXCenter = anglePoint.x - centrePoint.x,
+			distanceFromYCenter = anglePoint.y - centrePoint.y,
+			radialDistanceFromCenter = Math.sqrt(distanceFromXCenter * distanceFromXCenter + distanceFromYCenter * distanceFromYCenter);
+
+		var angle = Math.atan2(distanceFromYCenter, distanceFromXCenter);
+
+		if (angle < (-0.5 * Math.PI)) {
+			angle += 2.0 * Math.PI; // make sure the returned angle is in the range of (-PI/2, 3PI/2]
+		}
+
+		return {
+			angle: angle,
+			distance: radialDistanceFromCenter
+		};
+	};
+	helpers.aliasPixel = function(pixelWidth) {
+		return (pixelWidth % 2 === 0) ? 0 : 0.5;
+	};
+	helpers.splineCurve = function(firstPoint, middlePoint, afterPoint, t) {
+		//Props to Rob Spencer at scaled innovation for his post on splining between points
+		//http://scaledinnovation.com/analytics/splines/aboutSplines.html
+
+		// This function must also respect "skipped" points
+
+		var previous = firstPoint.skip ? middlePoint : firstPoint,
+			current = middlePoint,
+			next = afterPoint.skip ? middlePoint : afterPoint;
+
+		var d01 = Math.sqrt(Math.pow(current.x - previous.x, 2) + Math.pow(current.y - previous.y, 2));
+		var d12 = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
+
+		var s01 = d01 / (d01 + d12);
+		var s12 = d12 / (d01 + d12);
+
+		// If all points are the same, s01 & s02 will be inf
+		s01 = isNaN(s01) ? 0 : s01;
+		s12 = isNaN(s12) ? 0 : s12;
+
+		var fa = t * s01; // scaling factor for triangle Ta
+		var fb = t * s12;
+
+		return {
+			previous: {
+				x: current.x - fa * (next.x - previous.x),
+				y: current.y - fa * (next.y - previous.y)
+			},
+			next: {
+				x: current.x + fb * (next.x - previous.x),
+				y: current.y + fb * (next.y - previous.y)
+			}
+		};
+	};
+	helpers.nextItem = function(collection, index, loop) {
+		if (loop) {
+			return index >= collection.length - 1 ? collection[0] : collection[index + 1];
+		}
+
+		return index >= collection.length - 1 ? collection[collection.length - 1] : collection[index + 1];
+	};
+	helpers.previousItem = function(collection, index, loop) {
+		if (loop) {
+			return index <= 0 ? collection[collection.length - 1] : collection[index - 1];
+		}
+		return index <= 0 ? collection[0] : collection[index - 1];
+	};
+	// Implementation of the nice number algorithm used in determining where axis labels will go
+	helpers.niceNum = function(range, round) {
+		var exponent = Math.floor(helpers.log10(range));
+		var fraction = range / Math.pow(10, exponent);
+		var niceFraction;
+
+		if (round) {
+			if (fraction < 1.5) {
+				niceFraction = 1;
+			} else if (fraction < 3) {
+				niceFraction = 2;
+			} else if (fraction < 7) {
+				niceFraction = 5;
+			} else {
+				niceFraction = 10;
+			}
+		} else {
+			if (fraction <= 1.0) {
+				niceFraction = 1;
+			} else if (fraction <= 2) {
+				niceFraction = 2;
+			} else if (fraction <= 5) {
+				niceFraction = 5;
+			} else {
+				niceFraction = 10;
+			}
+		}
+
+		return niceFraction * Math.pow(10, exponent);
+	};
+	//Easing functions adapted from Robert Penner's easing equations
+	//http://www.robertpenner.com/easing/
+	var easingEffects = helpers.easingEffects = {
+		linear: function(t) {
+			return t;
+		},
+		easeInQuad: function(t) {
+			return t * t;
+		},
+		easeOutQuad: function(t) {
+			return -1 * t * (t - 2);
+		},
+		easeInOutQuad: function(t) {
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * t * t;
+			}
+			return -1 / 2 * ((--t) * (t - 2) - 1);
+		},
+		easeInCubic: function(t) {
+			return t * t * t;
+		},
+		easeOutCubic: function(t) {
+			return 1 * ((t = t / 1 - 1) * t * t + 1);
+		},
+		easeInOutCubic: function(t) {
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * t * t * t;
+			}
+			return 1 / 2 * ((t -= 2) * t * t + 2);
+		},
+		easeInQuart: function(t) {
+			return t * t * t * t;
+		},
+		easeOutQuart: function(t) {
+			return -1 * ((t = t / 1 - 1) * t * t * t - 1);
+		},
+		easeInOutQuart: function(t) {
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * t * t * t * t;
+			}
+			return -1 / 2 * ((t -= 2) * t * t * t - 2);
+		},
+		easeInQuint: function(t) {
+			return 1 * (t /= 1) * t * t * t * t;
+		},
+		easeOutQuint: function(t) {
+			return 1 * ((t = t / 1 - 1) * t * t * t * t + 1);
+		},
+		easeInOutQuint: function(t) {
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * t * t * t * t * t;
+			}
+			return 1 / 2 * ((t -= 2) * t * t * t * t + 2);
+		},
+		easeInSine: function(t) {
+			return -1 * Math.cos(t / 1 * (Math.PI / 2)) + 1;
+		},
+		easeOutSine: function(t) {
+			return 1 * Math.sin(t / 1 * (Math.PI / 2));
+		},
+		easeInOutSine: function(t) {
+			return -1 / 2 * (Math.cos(Math.PI * t / 1) - 1);
+		},
+		easeInExpo: function(t) {
+			return (t === 0) ? 1 : 1 * Math.pow(2, 10 * (t / 1 - 1));
+		},
+		easeOutExpo: function(t) {
+			return (t === 1) ? 1 : 1 * (-Math.pow(2, -10 * t / 1) + 1);
+		},
+		easeInOutExpo: function(t) {
+			if (t === 0) {
+				return 0;
+			}
+			if (t === 1) {
+				return 1;
+			}
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * Math.pow(2, 10 * (t - 1));
+			}
+			return 1 / 2 * (-Math.pow(2, -10 * --t) + 2);
+		},
+		easeInCirc: function(t) {
+			if (t >= 1) {
+				return t;
+			}
+			return -1 * (Math.sqrt(1 - (t /= 1) * t) - 1);
+		},
+		easeOutCirc: function(t) {
+			return 1 * Math.sqrt(1 - (t = t / 1 - 1) * t);
+		},
+		easeInOutCirc: function(t) {
+			if ((t /= 1 / 2) < 1) {
+				return -1 / 2 * (Math.sqrt(1 - t * t) - 1);
+			}
+			return 1 / 2 * (Math.sqrt(1 - (t -= 2) * t) + 1);
+		},
+		easeInElastic: function(t) {
+			var s = 1.70158;
+			var p = 0;
+			var a = 1;
+			if (t === 0) {
+				return 0;
+			}
+			if ((t /= 1) === 1) {
+				return 1;
+			}
+			if (!p) {
+				p = 1 * 0.3;
+			}
+			if (a < Math.abs(1)) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p / (2 * Math.PI) * Math.asin(1 / a);
+			}
+			return -(a * Math.pow(2, 10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p));
+		},
+		easeOutElastic: function(t) {
+			var s = 1.70158;
+			var p = 0;
+			var a = 1;
+			if (t === 0) {
+				return 0;
+			}
+			if ((t /= 1) === 1) {
+				return 1;
+			}
+			if (!p) {
+				p = 1 * 0.3;
+			}
+			if (a < Math.abs(1)) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p / (2 * Math.PI) * Math.asin(1 / a);
+			}
+			return a * Math.pow(2, -10 * t) * Math.sin((t * 1 - s) * (2 * Math.PI) / p) + 1;
+		},
+		easeInOutElastic: function(t) {
+			var s = 1.70158;
+			var p = 0;
+			var a = 1;
+			if (t === 0) {
+				return 0;
+			}
+			if ((t /= 1 / 2) === 2) {
+				return 1;
+			}
+			if (!p) {
+				p = 1 * (0.3 * 1.5);
+			}
+			if (a < Math.abs(1)) {
+				a = 1;
+				s = p / 4;
+			} else {
+				s = p / (2 * Math.PI) * Math.asin(1 / a);
+			}
+			if (t < 1) {
+				return -0.5 * (a * Math.pow(2, 10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p));
+			}
+			return a * Math.pow(2, -10 * (t -= 1)) * Math.sin((t * 1 - s) * (2 * Math.PI) / p) * 0.5 + 1;
+		},
+		easeInBack: function(t) {
+			var s = 1.70158;
+			return 1 * (t /= 1) * t * ((s + 1) * t - s);
+		},
+		easeOutBack: function(t) {
+			var s = 1.70158;
+			return 1 * ((t = t / 1 - 1) * t * ((s + 1) * t + s) + 1);
+		},
+		easeInOutBack: function(t) {
+			var s = 1.70158;
+			if ((t /= 1 / 2) < 1) {
+				return 1 / 2 * (t * t * (((s *= (1.525)) + 1) * t - s));
+			}
+			return 1 / 2 * ((t -= 2) * t * (((s *= (1.525)) + 1) * t + s) + 2);
+		},
+		easeInBounce: function(t) {
+			return 1 - easingEffects.easeOutBounce(1 - t);
+		},
+		easeOutBounce: function(t) {
+			if ((t /= 1) < (1 / 2.75)) {
+				return 1 * (7.5625 * t * t);
+			} else if (t < (2 / 2.75)) {
+				return 1 * (7.5625 * (t -= (1.5 / 2.75)) * t + 0.75);
+			} else if (t < (2.5 / 2.75)) {
+				return 1 * (7.5625 * (t -= (2.25 / 2.75)) * t + 0.9375);
+			} else {
+				return 1 * (7.5625 * (t -= (2.625 / 2.75)) * t + 0.984375);
+			}
+		},
+		easeInOutBounce: function(t) {
+			if (t < 1 / 2) {
+				return easingEffects.easeInBounce(t * 2) * 0.5;
+			}
+			return easingEffects.easeOutBounce(t * 2 - 1) * 0.5 + 1 * 0.5;
+		}
+	};
+	//Request animation polyfill - http://www.paulirish.com/2011/requestanimationframe-for-smart-animating/
+	helpers.requestAnimFrame = (function() {
+		return window.requestAnimationFrame ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame ||
+			window.oRequestAnimationFrame ||
+			window.msRequestAnimationFrame ||
+			function(callback) {
+				return window.setTimeout(callback, 1000 / 60);
+			};
+	})();
+	helpers.cancelAnimFrame = (function() {
+		return window.cancelAnimationFrame ||
+			window.webkitCancelAnimationFrame ||
+			window.mozCancelAnimationFrame ||
+			window.oCancelAnimationFrame ||
+			window.msCancelAnimationFrame ||
+			function(callback) {
+				return window.clearTimeout(callback, 1000 / 60);
+			};
+	})();
+	//-- DOM methods
+	helpers.getRelativePosition = function(evt, chart) {
+		var mouseX, mouseY;
+		var e = evt.originalEvent || evt,
+			canvas = evt.currentTarget || evt.srcElement,
+			boundingRect = canvas.getBoundingClientRect();
+
+		if (e.touches && e.touches.length > 0) {
+			mouseX = e.touches[0].clientX;
+			mouseY = e.touches[0].clientY;
+
+		} else {
+			mouseX = e.clientX;
+			mouseY = e.clientY;
+		}
+
+		// Scale mouse coordinates into canvas coordinates
+		// by following the pattern laid out by 'jerryj' in the comments of
+		// http://www.html5canvastutorials.com/advanced/html5-canvas-mouse-coordinates/
+		var paddingLeft = parseFloat(helpers.getStyle(canvas, 'padding-left'));
+		var paddingTop = parseFloat(helpers.getStyle(canvas, 'padding-top'));
+		var paddingRight = parseFloat(helpers.getStyle(canvas, 'padding-right'));
+		var paddingBottom = parseFloat(helpers.getStyle(canvas, 'padding-bottom'));
+		var width = boundingRect.right - boundingRect.left - paddingLeft - paddingRight;
+		var height = boundingRect.bottom - boundingRect.top - paddingTop - paddingBottom;
+
+		// We divide by the current device pixel ratio, because the canvas is scaled up by that amount in each direction. However
+		// the backend model is in unscaled coordinates. Since we are going to deal with our model coordinates, we go back here
+		mouseX = Math.round((mouseX - boundingRect.left - paddingLeft) / (width) * canvas.width / chart.currentDevicePixelRatio);
+		mouseY = Math.round((mouseY - boundingRect.top - paddingTop) / (height) * canvas.height / chart.currentDevicePixelRatio);
+
+		return {
+			x: mouseX,
+			y: mouseY
+		};
+
+	};
+	helpers.addEvent = function(node, eventType, method) {
+		if (node.addEventListener) {
+			node.addEventListener(eventType, method);
+		} else if (node.attachEvent) {
+			node.attachEvent("on" + eventType, method);
+		} else {
+			node["on" + eventType] = method;
+		}
+	};
+	helpers.removeEvent = function(node, eventType, handler) {
+		if (node.removeEventListener) {
+			node.removeEventListener(eventType, handler, false);
+		} else if (node.detachEvent) {
+			node.detachEvent("on" + eventType, handler);
+		} else {
+			node["on" + eventType] = helpers.noop;
+		}
+	};
+	helpers.bindEvents = function(chartInstance, arrayOfEvents, handler) {
+		// Create the events object if it's not already present
+		if (!chartInstance.events)
+			chartInstance.events = {};
+
+		helpers.each(arrayOfEvents, function(eventName) {
+			chartInstance.events[eventName] = function() {
+				handler.apply(chartInstance, arguments);
+			};
+			helpers.addEvent(chartInstance.chart.canvas, eventName, chartInstance.events[eventName]);
+		});
+	};
+	helpers.unbindEvents = function(chartInstance, arrayOfEvents) {
+		helpers.each(arrayOfEvents, function(handler, eventName) {
+			helpers.removeEvent(chartInstance.chart.canvas, eventName, handler);
+		});
+	};
+
+	// Private helper function to convert max-width/max-height values that may be percentages into a number
+	function parseMaxStyle(styleValue, node, parentProperty) {
+		var valueInPixels;
+		if (typeof(styleValue) === 'string') {
+			valueInPixels = parseInt(styleValue, 10);
+
+			if (styleValue.indexOf('%') != -1) {
+				// percentage * size in dimension
+				valueInPixels = valueInPixels / 100 * node.parentNode[parentProperty];
+			}
+		} else {
+			valueInPixels = styleValue;
+		}
+
+		return valueInPixels;
+	}
+
+	// Private helper to get a constraint dimension
+	// @param domNode : the node to check the constraint on
+	// @param maxStyle : the style that defines the maximum for the direction we are using (max-width / max-height)
+	// @param percentageProperty : property of parent to use when calculating width as a percentage
+	function getConstraintDimension(domNode, maxStyle, percentageProperty) {
+		var constrainedDimension;
+		var constrainedNode = document.defaultView.getComputedStyle(domNode)[maxStyle];
+		var constrainedContainer = document.defaultView.getComputedStyle(domNode.parentNode)[maxStyle];
+		var hasCNode = constrainedNode !== null && constrainedNode !== "none";
+		var hasCContainer = constrainedContainer !== null && constrainedContainer !== "none";
+
+		if (hasCNode || hasCContainer) {
+			constrainedDimension = Math.min((hasCNode ? parseMaxStyle(constrainedNode, domNode, percentageProperty) : Number.POSITIVE_INFINITY), (hasCContainer ? parseMaxStyle(constrainedContainer, domNode.parentNode, percentageProperty) : Number.POSITIVE_INFINITY));
+		}
+		return constrainedDimension;
+	}
+	// returns Number or undefined if no constraint
+	helpers.getConstraintWidth = function(domNode) {
+		return getConstraintDimension(domNode, 'max-width', 'clientWidth');
+	};
+	// returns Number or undefined if no constraint
+	helpers.getConstraintHeight = function(domNode) {
+		return getConstraintDimension(domNode, 'max-height', 'clientHeight');
+	};
+	helpers.getMaximumWidth = function(domNode) {
+		var container = domNode.parentNode;
+		var padding = parseInt(helpers.getStyle(container, 'padding-left')) + parseInt(helpers.getStyle(container, 'padding-right'));
+
+		var w = container.clientWidth - padding;
+		var cw = helpers.getConstraintWidth(domNode);
+		if (cw !== undefined) {
+			w = Math.min(w, cw);
+		}
+
+		return w;
+	};
+	helpers.getMaximumHeight = function(domNode) {
+		var container = domNode.parentNode;
+		var padding = parseInt(helpers.getStyle(container, 'padding-top')) + parseInt(helpers.getStyle(container, 'padding-bottom'));
+
+		var h = container.clientHeight - padding;
+		var ch = helpers.getConstraintHeight(domNode);
+		if (ch !== undefined) {
+			h = Math.min(h, ch);
+		}
+
+		return h;
+	};
+	helpers.getStyle = function(el, property) {
+		return el.currentStyle ?
+			el.currentStyle[property] :
+			document.defaultView.getComputedStyle(el, null).getPropertyValue(property);
+	};
+	helpers.retinaScale = function(chart) {
+		var ctx = chart.ctx;
+		var width = chart.canvas.width;
+		var height = chart.canvas.height;
+		var pixelRatio = chart.currentDevicePixelRatio = window.devicePixelRatio || 1;
+
+		if (pixelRatio !== 1) {
+			ctx.canvas.height = height * pixelRatio;
+			ctx.canvas.width = width * pixelRatio;
+			ctx.scale(pixelRatio, pixelRatio);
+
+			// Store the device pixel ratio so that we can go backwards in `destroy`.
+			// The devicePixelRatio changes with zoom, so there are no guarantees that it is the same
+			// when destroy is called
+			chart.originalDevicePixelRatio = chart.originalDevicePixelRatio || pixelRatio;
+		}
+
+		ctx.canvas.style.width = width + 'px';
+		ctx.canvas.style.height = height + 'px';
+	};
+	//-- Canvas methods
+	helpers.clear = function(chart) {
+		chart.ctx.clearRect(0, 0, chart.width, chart.height);
+	};
+	helpers.fontString = function(pixelSize, fontStyle, fontFamily) {
+		return fontStyle + " " + pixelSize + "px " + fontFamily;
+	};
+	helpers.longestText = function(ctx, font, arrayOfStrings, cache) {
+		cache = cache || {};
+		cache.data = cache.data || {};
+		cache.garbageCollect = cache.garbageCollect || [];
+
+		if (cache.font !== font) {
+			cache.data = {};
+			cache.garbageCollect = [];
+			cache.font = font;
+		}
+
+		ctx.font = font;
+		var longest = 0;
+		helpers.each(arrayOfStrings, function(string) {
+			// Undefined strings should not be measured
+			if (string !== undefined && string !== null) {
+				var textWidth = cache.data[string];
+				if (!textWidth) {
+					textWidth = cache.data[string] = ctx.measureText(string).width;
+					cache.garbageCollect.push(string);
+				}
+
+				if (textWidth > longest) {
+					longest = textWidth;
+				}
+			}
+		});
+
+		var gcLen = cache.garbageCollect.length / 2;
+		if (gcLen > arrayOfStrings.length) {
+			for (var i = 0; i < gcLen; i++) {
+				delete cache.data[cache.garbageCollect[i]];
+			}
+			cache.garbageCollect.splice(0, gcLen);
+		}
+
+		return longest;
+	};
+	helpers.drawRoundedRectangle = function(ctx, x, y, width, height, radius) {
+		ctx.beginPath();
+		ctx.moveTo(x + radius, y);
+		ctx.lineTo(x + width - radius, y);
+		ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+		ctx.lineTo(x + width, y + height - radius);
+		ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+		ctx.lineTo(x + radius, y + height);
+		ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+		ctx.lineTo(x, y + radius);
+		ctx.quadraticCurveTo(x, y, x + radius, y);
+		ctx.closePath();
+	};
+	helpers.color = function(c) {
+		if (!color) {
+			console.log('Color.js not found!');
+			return c;
+		}
+		return color(c);
+	};
+	helpers.addResizeListener = function(node, callback) {
+		// Hide an iframe before the node
+		var hiddenIframe = document.createElement('iframe');
+		var hiddenIframeClass = 'chartjs-hidden-iframe';
+
+		if (hiddenIframe.classlist) {
+			// can use classlist
+			hiddenIframe.classlist.add(hiddenIframeClass);
+		} else {
+			hiddenIframe.setAttribute('class', hiddenIframeClass);
+		}
+
+		// Set the style
+		hiddenIframe.style.width = '100%';
+		hiddenIframe.style.display = 'block';
+		hiddenIframe.style.border = 0;
+		hiddenIframe.style.height = 0;
+		hiddenIframe.style.margin = 0;
+		hiddenIframe.style.position = 'absolute';
+		hiddenIframe.style.left = 0;
+		hiddenIframe.style.right = 0;
+		hiddenIframe.style.top = 0;
+		hiddenIframe.style.bottom = 0;
+
+		// Insert the iframe so that contentWindow is available
+		node.insertBefore(hiddenIframe, node.firstChild);
+
+		(hiddenIframe.contentWindow || hiddenIframe).onresize = function() {
+			if (callback) {
+				callback();
+			}
+		};
+	};
+	helpers.removeResizeListener = function(node) {
+		var hiddenIframe = node.querySelector('.chartjs-hidden-iframe');
+
+		// Remove the resize detect iframe
+		if (hiddenIframe) {
+			hiddenIframe.parentNode.removeChild(hiddenIframe);
+		}
+	};
+	helpers.isArray = function(obj) {
+		if (!Array.isArray) {
+			return Object.prototype.toString.call(obj) === '[object Array]';
+		}
+		return Array.isArray(obj);
+	};
+	helpers.pushAllIfDefined = function(element, array) {
+		if (typeof element === "undefined") {
+			return;
+		}
+
+		if (helpers.isArray(element)) {
+			array.push.apply(array, element);
+		} else {
+			array.push(element);
+		}
+	};
+	helpers.isDatasetVisible = function(dataset) {
+		return !dataset.hidden;
+	};
+	helpers.callCallback = function(fn, args, _tArg) {
+		if (fn && typeof fn.call === 'function') {
+			fn.apply(_tArg, args);
+		}
+	};
+
+};
+},{"chartjs-color":180}],164:[function(require,module,exports){
+"use strict";
+
+module.exports = function() {
+
+	//Occupy the global variable of Chart, and create a simple base class
+	var Chart = function(context, config) {
+		this.config = config;
+
+		// Support a jQuery'd canvas element
+		if (context.length && context[0].getContext) {
+			context = context[0];
+		}
+
+		// Support a canvas domnode
+		if (context.getContext) {
+			context = context.getContext("2d");
+		}
+
+		this.ctx = context;
+		this.canvas = context.canvas;
+
+		// Figure out what the size of the chart will be.
+		// If the canvas has a specified width and height, we use those else
+		// we look to see if the canvas node has a CSS width and height.
+		// If there is still no height, fill the parent container
+		this.width = context.canvas.width || parseInt(Chart.helpers.getStyle(context.canvas, 'width')) || Chart.helpers.getMaximumWidth(context.canvas);
+		this.height = context.canvas.height || parseInt(Chart.helpers.getStyle(context.canvas, 'height')) || Chart.helpers.getMaximumHeight(context.canvas);
+
+		this.aspectRatio = this.width / this.height;
+
+		if (isNaN(this.aspectRatio) || isFinite(this.aspectRatio) === false) {
+			// If the canvas has no size, try and figure out what the aspect ratio will be.
+			// Some charts prefer square canvases (pie, radar, etc). If that is specified, use that
+			// else use the canvas default ratio of 2
+			this.aspectRatio = config.aspectRatio !== undefined ? config.aspectRatio : 2;
+		}
+
+		// Store the original style of the element so we can set it back
+		this.originalCanvasStyleWidth = context.canvas.style.width;
+		this.originalCanvasStyleHeight = context.canvas.style.height;
+
+		// High pixel density displays - multiply the size of the canvas height/width by the device pixel ratio, then scale.
+		Chart.helpers.retinaScale(this);
+
+		if (config) {
+			this.controller = new Chart.Controller(this);
+		}
+
+		// Always bind this so that if the responsive state changes we still work
+		var _this = this;
+		Chart.helpers.addResizeListener(context.canvas.parentNode, function() {
+			if (_this.controller && _this.controller.config.options.responsive) {
+				_this.controller.resize();
+			}
+		});
+
+		return this.controller ? this.controller : this;
+
+	};
+
+	//Globally expose the defaults to allow for user updating/changing
+	Chart.defaults = {
+		global: {
+			responsive: true,
+			responsiveAnimationDuration: 0,
+			maintainAspectRatio: true,
+			events: ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
+			hover: {
+				onHover: null,
+				mode: 'single',
+				animationDuration: 400
+			},
+			onClick: null,
+			defaultColor: 'rgba(0,0,0,0.1)',
+			defaultFontColor: '#666',
+			defaultFontFamily: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif",
+			defaultFontSize: 12,
+			defaultFontStyle: 'normal',
+			showLines: true,
+
+			// Element defaults defined in element extensions
+			elements: {},
+
+			// Legend callback string
+			legendCallback: function(chart) {
+				var text = [];
+				text.push('<ul class="' + chart.id + '-legend">');
+				for (var i = 0; i < chart.data.datasets.length; i++) {
+					text.push('<li><span style="background-color:' + chart.data.datasets[i].backgroundColor + '">');
+					if (chart.data.datasets[i].label) {
+						text.push(chart.data.datasets[i].label);
+					}
+					text.push('</span></li>');
+				}
+				text.push('</ul>');
+
+				return text.join("");
+			}
+		}
+	};
+
+	return Chart;
+
+};
+},{}],165:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	// The layout service is very self explanatory.  It's responsible for the layout within a chart.
+	// Scales, Legends and Plugins all rely on the layout service and can easily register to be placed anywhere they need
+	// It is this service's responsibility of carrying out that layout.
+	Chart.layoutService = {
+		defaults: {},
+
+		// Register a box to a chartInstance. A box is simply a reference to an object that requires layout. eg. Scales, Legend, Plugins.
+		addBox: function(chartInstance, box) {
+			if (!chartInstance.boxes) {
+				chartInstance.boxes = [];
+			}
+			chartInstance.boxes.push(box);
+		},
+
+		removeBox: function(chartInstance, box) {
+			if (!chartInstance.boxes) {
+				return;
+			}
+			chartInstance.boxes.splice(chartInstance.boxes.indexOf(box), 1);
+		},
+
+		// The most important function
+		update: function(chartInstance, width, height) {
+
+			if (!chartInstance) {
+				return;
+			}
+
+			var xPadding = 0;
+			var yPadding = 0;
+
+			var leftBoxes = helpers.where(chartInstance.boxes, function(box) {
+				return box.options.position === "left";
+			});
+			var rightBoxes = helpers.where(chartInstance.boxes, function(box) {
+				return box.options.position === "right";
+			});
+			var topBoxes = helpers.where(chartInstance.boxes, function(box) {
+				return box.options.position === "top";
+			});
+			var bottomBoxes = helpers.where(chartInstance.boxes, function(box) {
+				return box.options.position === "bottom";
+			});
+
+			// Boxes that overlay the chartarea such as the radialLinear scale
+			var chartAreaBoxes = helpers.where(chartInstance.boxes, function(box) {
+				return box.options.position === "chartArea";
+			});
+
+			function fullWidthSorter(a, b) {
+
+			}
+
+			// Ensure that full width boxes are at the very top / bottom
+			topBoxes.sort(function(a, b) {
+				return (b.options.fullWidth ? 1 : 0) - (a.options.fullWidth ? 1 : 0);
+			});
+			bottomBoxes.sort(function(a, b) {
+				return (a.options.fullWidth ? 1 : 0) - (b.options.fullWidth ? 1 : 0);
+			});
+
+			// Essentially we now have any number of boxes on each of the 4 sides.
+			// Our canvas looks like the following.
+			// The areas L1 and L2 are the left axes. R1 is the right axis, T1 is the top axis and
+			// B1 is the bottom axis
+			// There are also 4 quadrant-like locations (left to right instead of clockwise) reserved for chart overlays
+			// These locations are single-box locations only, when trying to register a chartArea location that is already taken,
+			// an error will be thrown.
+			//
+			// |----------------------------------------------------|
+			// |                  T1 (Full Width)                   |
+			// |----------------------------------------------------|
+			// |    |    |                 T2                  |    |
+			// |    |----|-------------------------------------|----|
+			// |    |    | C1 |                           | C2 |    |
+			// |    |    |----|                           |----|    |
+			// |    |    |                                     |    |
+			// | L1 | L2 |           ChartArea (C0)            | R1 |
+			// |    |    |                                     |    |
+			// |    |    |----|                           |----|    |
+			// |    |    | C3 |                           | C4 |    |
+			// |    |----|-------------------------------------|----|
+			// |    |    |                 B1                  |    |
+			// |----------------------------------------------------|
+			// |                  B2 (Full Width)                   |
+			// |----------------------------------------------------|
+			//
+			// What we do to find the best sizing, we do the following
+			// 1. Determine the minimum size of the chart area.
+			// 2. Split the remaining width equally between each vertical axis
+			// 3. Split the remaining height equally between each horizontal axis
+			// 4. Give each layout the maximum size it can be. The layout will return it's minimum size
+			// 5. Adjust the sizes of each axis based on it's minimum reported size.
+			// 6. Refit each axis
+			// 7. Position each axis in the final location
+			// 8. Tell the chart the final location of the chart area
+			// 9. Tell any axes that overlay the chart area the positions of the chart area
+
+			// Step 1
+			var chartWidth = width - (2 * xPadding);
+			var chartHeight = height - (2 * yPadding);
+			var chartAreaWidth = chartWidth / 2; // min 50%
+			var chartAreaHeight = chartHeight / 2; // min 50%
+
+			// Step 2
+			var verticalBoxWidth = (width - chartAreaWidth) / (leftBoxes.length + rightBoxes.length);
+
+			// Step 3
+			var horizontalBoxHeight = (height - chartAreaHeight) / (topBoxes.length + bottomBoxes.length);
+
+			// Step 4
+			var maxChartAreaWidth = chartWidth;
+			var maxChartAreaHeight = chartHeight;
+			var minBoxSizes = [];
+
+			helpers.each(leftBoxes.concat(rightBoxes, topBoxes, bottomBoxes), getMinimumBoxSize);
+
+			function getMinimumBoxSize(box) {
+				var minSize;
+				var isHorizontal = box.isHorizontal();
+
+				if (isHorizontal) {
+					minSize = box.update(box.options.fullWidth ? chartWidth : maxChartAreaWidth, horizontalBoxHeight);
+					maxChartAreaHeight -= minSize.height;
+				} else {
+					minSize = box.update(verticalBoxWidth, chartAreaHeight);
+					maxChartAreaWidth -= minSize.width;
+				}
+
+				minBoxSizes.push({
+					horizontal: isHorizontal,
+					minSize: minSize,
+					box: box
+				});
+			}
+
+			// At this point, maxChartAreaHeight and maxChartAreaWidth are the size the chart area could
+			// be if the axes are drawn at their minimum sizes.
+
+			// Steps 5 & 6
+			var totalLeftBoxesWidth = xPadding;
+			var totalRightBoxesWidth = xPadding;
+			var totalTopBoxesHeight = yPadding;
+			var totalBottomBoxesHeight = yPadding;
+
+			// Update, and calculate the left and right margins for the horizontal boxes
+			helpers.each(leftBoxes.concat(rightBoxes), fitBox);
+
+			helpers.each(leftBoxes, function(box) {
+				totalLeftBoxesWidth += box.width;
+			});
+
+			helpers.each(rightBoxes, function(box) {
+				totalRightBoxesWidth += box.width;
+			});
+
+			// Set the Left and Right margins for the horizontal boxes
+			helpers.each(topBoxes.concat(bottomBoxes), fitBox);
+
+			// Function to fit a box
+			function fitBox(box) {
+				var minBoxSize = helpers.findNextWhere(minBoxSizes, function(minBoxSize) {
+					return minBoxSize.box === box;
+				});
+
+				if (minBoxSize) {
+					if (box.isHorizontal()) {
+						var scaleMargin = {
+							left: totalLeftBoxesWidth,
+							right: totalRightBoxesWidth,
+							top: 0,
+							bottom: 0
+						};
+
+						// Don't use min size here because of label rotation. When the labels are rotated, their rotation highly depends
+						// on the margin. Sometimes they need to increase in size slightly
+						box.update(box.options.fullWidth ? chartWidth : maxChartAreaWidth, chartHeight / 2, scaleMargin);
+					} else {
+						box.update(minBoxSize.minSize.width, maxChartAreaHeight);
+					}
+				}
+			}
+
+			// Figure out how much margin is on the top and bottom of the vertical boxes
+			helpers.each(topBoxes, function(box) {
+				totalTopBoxesHeight += box.height;
+			});
+
+			helpers.each(bottomBoxes, function(box) {
+				totalBottomBoxesHeight += box.height;
+			});
+
+			// Let the left layout know the final margin
+			helpers.each(leftBoxes.concat(rightBoxes), finalFitVerticalBox);
+
+			function finalFitVerticalBox(box) {
+				var minBoxSize = helpers.findNextWhere(minBoxSizes, function(minBoxSize) {
+					return minBoxSize.box === box;
+				});
+
+				var scaleMargin = {
+					left: 0,
+					right: 0,
+					top: totalTopBoxesHeight,
+					bottom: totalBottomBoxesHeight
+				};
+
+				if (minBoxSize) {
+					box.update(minBoxSize.minSize.width, maxChartAreaHeight, scaleMargin);
+				}
+			}
+
+			// Recalculate because the size of each layout might have changed slightly due to the margins (label rotation for instance)
+			totalLeftBoxesWidth = xPadding;
+			totalRightBoxesWidth = xPadding;
+			totalTopBoxesHeight = yPadding;
+			totalBottomBoxesHeight = yPadding;
+
+			helpers.each(leftBoxes, function(box) {
+				totalLeftBoxesWidth += box.width;
+			});
+
+			helpers.each(rightBoxes, function(box) {
+				totalRightBoxesWidth += box.width;
+			});
+
+			helpers.each(topBoxes, function(box) {
+				totalTopBoxesHeight += box.height;
+			});
+			helpers.each(bottomBoxes, function(box) {
+				totalBottomBoxesHeight += box.height;
+			});
+
+			// Figure out if our chart area changed. This would occur if the dataset layout label rotation
+			// changed due to the application of the margins in step 6. Since we can only get bigger, this is safe to do
+			// without calling `fit` again
+			var newMaxChartAreaHeight = height - totalTopBoxesHeight - totalBottomBoxesHeight;
+			var newMaxChartAreaWidth = width - totalLeftBoxesWidth - totalRightBoxesWidth;
+
+			if (newMaxChartAreaWidth !== maxChartAreaWidth || newMaxChartAreaHeight !== maxChartAreaHeight) {
+				helpers.each(leftBoxes, function(box) {
+					box.height = newMaxChartAreaHeight;
+				});
+
+				helpers.each(rightBoxes, function(box) {
+					box.height = newMaxChartAreaHeight;
+				});
+
+				helpers.each(topBoxes, function(box) {
+					box.width = newMaxChartAreaWidth;
+				});
+
+				helpers.each(bottomBoxes, function(box) {
+					box.width = newMaxChartAreaWidth;
+				});
+
+				maxChartAreaHeight = newMaxChartAreaHeight;
+				maxChartAreaWidth = newMaxChartAreaWidth;
+			}
+
+			// Step 7 - Position the boxes
+			var left = xPadding;
+			var top = yPadding;
+			var right = 0;
+			var bottom = 0;
+
+			helpers.each(leftBoxes.concat(topBoxes), placeBox);
+
+			// Account for chart width and height
+			left += maxChartAreaWidth;
+			top += maxChartAreaHeight;
+
+			helpers.each(rightBoxes, placeBox);
+			helpers.each(bottomBoxes, placeBox);
+
+			function placeBox(box) {
+				if (box.isHorizontal()) {
+					box.left = box.options.fullWidth ? xPadding : totalLeftBoxesWidth;
+					box.right = box.options.fullWidth ? width - xPadding : totalLeftBoxesWidth + maxChartAreaWidth;
+					box.top = top;
+					box.bottom = top + box.height;
+
+					// Move to next point
+					top = box.bottom;
+
+				} else {
+
+					box.left = left;
+					box.right = left + box.width;
+					box.top = totalTopBoxesHeight;
+					box.bottom = totalTopBoxesHeight + maxChartAreaHeight;
+
+					// Move to next point
+					left = box.right;
+				}
+			}
+
+			// Step 8
+			chartInstance.chartArea = {
+				left: totalLeftBoxesWidth,
+				top: totalTopBoxesHeight,
+				right: totalLeftBoxesWidth + maxChartAreaWidth,
+				bottom: totalTopBoxesHeight + maxChartAreaHeight
+			};
+
+			// Step 9
+			helpers.each(chartAreaBoxes, function(box) {
+				box.left = chartInstance.chartArea.left;
+				box.top = chartInstance.chartArea.top;
+				box.right = chartInstance.chartArea.right;
+				box.bottom = chartInstance.chartArea.bottom;
+
+				box.update(maxChartAreaWidth, maxChartAreaHeight);
+			});
+		}
+	};
+};
+
+},{}],166:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.legend = {
+
+		display: true,
+		position: 'top',
+		fullWidth: true, // marks that this box should take the full width of the canvas (pushing down other boxes)
+		reverse: false,
+
+		// a callback that will handle
+		onClick: function(e, legendItem) {
+			var dataset = this.chart.data.datasets[legendItem.datasetIndex];
+			dataset.hidden = !dataset.hidden;
+
+			// We hid a dataset ... rerender the chart
+			this.chart.update();
+		},
+
+		labels: {
+			boxWidth: 40,
+			padding: 10,
+			// Generates labels shown in the legend
+			// Valid properties to return:
+			// text : text to display
+			// fillStyle : fill of coloured box
+			// strokeStyle: stroke of coloured box
+			// hidden : if this legend item refers to a hidden item
+			// lineCap : cap style for line
+			// lineDash
+			// lineDashOffset :
+			// lineJoin :
+			// lineWidth :
+			generateLabels: function(data) {
+				return helpers.isArray(data.datasets) ? data.datasets.map(function(dataset, i) {
+					return {
+						text: dataset.label,
+						fillStyle: dataset.backgroundColor,
+						hidden: dataset.hidden,
+						lineCap: dataset.borderCapStyle,
+						lineDash: dataset.borderDash,
+						lineDashOffset: dataset.borderDashOffset,
+						lineJoin: dataset.borderJoinStyle,
+						lineWidth: dataset.borderWidth,
+						strokeStyle: dataset.borderColor,
+
+						// Below is extra data used for toggling the datasets
+						datasetIndex: i
+					};
+				}, this) : [];
+			}
+		}
+	};
+
+	Chart.Legend = Chart.Element.extend({
+
+		initialize: function(config) {
+			helpers.extend(this, config);
+
+			// Contains hit boxes for each dataset (in dataset order)
+			this.legendHitBoxes = [];
+
+			// Are we in doughnut mode which has a different data type
+			this.doughnutMode = false;
+		},
+
+		// These methods are ordered by lifecyle. Utilities then follow.
+		// Any function defined here is inherited by all legend types.
+		// Any function can be extended by the legend type
+
+		beforeUpdate: helpers.noop,
+		update: function(maxWidth, maxHeight, margins) {
+
+			// Update Lifecycle - Probably don't want to ever extend or overwrite this function ;)
+			this.beforeUpdate();
+
+			// Absorb the master measurements
+			this.maxWidth = maxWidth;
+			this.maxHeight = maxHeight;
+			this.margins = margins;
+
+			// Dimensions
+			this.beforeSetDimensions();
+			this.setDimensions();
+			this.afterSetDimensions();
+			// Labels
+			this.beforeBuildLabels();
+			this.buildLabels();
+			this.afterBuildLabels();
+
+			// Fit
+			this.beforeFit();
+			this.fit();
+			this.afterFit();
+			//
+			this.afterUpdate();
+
+			return this.minSize;
+
+		},
+		afterUpdate: helpers.noop,
+
+		//
+
+		beforeSetDimensions: helpers.noop,
+		setDimensions: function() {
+			// Set the unconstrained dimension before label rotation
+			if (this.isHorizontal()) {
+				// Reset position before calculating rotation
+				this.width = this.maxWidth;
+				this.left = 0;
+				this.right = this.width;
+			} else {
+				this.height = this.maxHeight;
+
+				// Reset position before calculating rotation
+				this.top = 0;
+				this.bottom = this.height;
+			}
+
+			// Reset padding
+			this.paddingLeft = 0;
+			this.paddingTop = 0;
+			this.paddingRight = 0;
+			this.paddingBottom = 0;
+
+			// Reset minSize
+			this.minSize = {
+				width: 0,
+				height: 0
+			};
+		},
+		afterSetDimensions: helpers.noop,
+
+		//
+
+		beforeBuildLabels: helpers.noop,
+		buildLabels: function() {
+			this.legendItems = this.options.labels.generateLabels.call(this, this.chart.data);
+			if(this.options.reverse){
+				this.legendItems.reverse();
+			}
+		},
+		afterBuildLabels: helpers.noop,
+
+		//
+
+		beforeFit: helpers.noop,
+		fit: function() {
+
+			var ctx = this.ctx;
+			var fontSize = helpers.getValueOrDefault(this.options.labels.fontSize, Chart.defaults.global.defaultFontSize);
+			var fontStyle = helpers.getValueOrDefault(this.options.labels.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var fontFamily = helpers.getValueOrDefault(this.options.labels.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var labelFont = helpers.fontString(fontSize, fontStyle, fontFamily);
+
+			// Reset hit boxes
+			this.legendHitBoxes = [];
+
+			// Width
+			if (this.isHorizontal()) {
+				this.minSize.width = this.maxWidth; // fill all the width
+			} else {
+				this.minSize.width = this.options.display ? 10 : 0;
+			}
+
+			// height
+			if (this.isHorizontal()) {
+				this.minSize.height = this.options.display ? 10 : 0;
+			} else {
+				this.minSize.height = this.maxHeight; // fill all the height
+			}
+
+			// Increase sizes here
+			if (this.options.display) {
+				if (this.isHorizontal()) {
+					// Labels
+
+					// Width of each line of legend boxes. Labels wrap onto multiple lines when there are too many to fit on one
+					this.lineWidths = [0];
+					var totalHeight = this.legendItems.length ? fontSize + (this.options.labels.padding) : 0;
+
+					ctx.textAlign = "left";
+					ctx.textBaseline = 'top';
+					ctx.font = labelFont;
+
+					helpers.each(this.legendItems, function(legendItem, i) {
+						var width = this.options.labels.boxWidth + (fontSize / 2) + ctx.measureText(legendItem.text).width;
+						if (this.lineWidths[this.lineWidths.length - 1] + width + this.options.labels.padding >= this.width) {
+							totalHeight += fontSize + (this.options.labels.padding);
+							this.lineWidths[this.lineWidths.length] = this.left;
+						}
+
+						// Store the hitbox width and height here. Final position will be updated in `draw`
+						this.legendHitBoxes[i] = {
+							left: 0,
+							top: 0,
+							width: width,
+							height: fontSize
+						};
+
+						this.lineWidths[this.lineWidths.length - 1] += width + this.options.labels.padding;
+					}, this);
+
+					this.minSize.height += totalHeight;
+
+				} else {
+					// TODO vertical
+				}
+			}
+
+			this.width = this.minSize.width;
+			this.height = this.minSize.height;
+
+		},
+		afterFit: helpers.noop,
+
+		// Shared Methods
+		isHorizontal: function() {
+			return this.options.position === "top" || this.options.position === "bottom";
+		},
+
+		// Actualy draw the legend on the canvas
+		draw: function() {
+			if (this.options.display) {
+				var ctx = this.ctx;
+				var cursor = {
+					x: this.left + ((this.width - this.lineWidths[0]) / 2),
+					y: this.top + this.options.labels.padding,
+					line: 0
+				};
+
+				var fontColor = helpers.getValueOrDefault(this.options.labels.fontColor, Chart.defaults.global.defaultFontColor);
+				var fontSize = helpers.getValueOrDefault(this.options.labels.fontSize, Chart.defaults.global.defaultFontSize);
+				var fontStyle = helpers.getValueOrDefault(this.options.labels.fontStyle, Chart.defaults.global.defaultFontStyle);
+				var fontFamily = helpers.getValueOrDefault(this.options.labels.fontFamily, Chart.defaults.global.defaultFontFamily);
+				var labelFont = helpers.fontString(fontSize, fontStyle, fontFamily);
+
+				// Horizontal
+				if (this.isHorizontal()) {
+					// Labels
+					ctx.textAlign = "left";
+					ctx.textBaseline = 'top';
+					ctx.lineWidth = 0.5;
+					ctx.strokeStyle = fontColor; // for strikethrough effect
+					ctx.fillStyle = fontColor; // render in correct colour
+					ctx.font = labelFont;
+
+					helpers.each(this.legendItems, function(legendItem, i) {
+						var textWidth = ctx.measureText(legendItem.text).width;
+						var width = this.options.labels.boxWidth + (fontSize / 2) + textWidth;
+
+						if (cursor.x + width >= this.width) {
+							cursor.y += fontSize + (this.options.labels.padding);
+							cursor.line++;
+							cursor.x = this.left + ((this.width - this.lineWidths[cursor.line]) / 2);
+						}
+
+						// Set the ctx for the box
+						ctx.save();
+
+						var itemOrDefault = function(item, defaulVal) {
+							return item !== undefined ? item : defaulVal;
+						};
+
+						ctx.fillStyle = itemOrDefault(legendItem.fillStyle, Chart.defaults.global.defaultColor);
+						ctx.lineCap = itemOrDefault(legendItem.lineCap, Chart.defaults.global.elements.line.borderCapStyle);
+						ctx.lineDashOffset = itemOrDefault(legendItem.lineDashOffset, Chart.defaults.global.elements.line.borderDashOffset);
+						ctx.lineJoin = itemOrDefault(legendItem.lineJoin, Chart.defaults.global.elements.line.borderJoinStyle);
+						ctx.lineWidth = itemOrDefault(legendItem.lineWidth, Chart.defaults.global.elements.line.borderWidth);
+						ctx.strokeStyle = itemOrDefault(legendItem.strokeStyle, Chart.defaults.global.defaultColor);
+
+						if (ctx.setLineDash) {
+							// IE 9 and 10 do not support line dash
+							ctx.setLineDash(itemOrDefault(legendItem.lineDash, Chart.defaults.global.elements.line.borderDash));
+						}
+
+						// Draw the box
+						ctx.strokeRect(cursor.x, cursor.y, this.options.labels.boxWidth, fontSize);
+						ctx.fillRect(cursor.x, cursor.y, this.options.labels.boxWidth, fontSize);
+
+						ctx.restore();
+
+						this.legendHitBoxes[i].left = cursor.x;
+						this.legendHitBoxes[i].top = cursor.y;
+
+						// Fill the actual label
+						ctx.fillText(legendItem.text, this.options.labels.boxWidth + (fontSize / 2) + cursor.x, cursor.y);
+
+						if (legendItem.hidden) {
+							// Strikethrough the text if hidden
+							ctx.beginPath();
+							ctx.lineWidth = 2;
+							ctx.moveTo(this.options.labels.boxWidth + (fontSize / 2) + cursor.x, cursor.y + (fontSize / 2));
+							ctx.lineTo(this.options.labels.boxWidth + (fontSize / 2) + cursor.x + textWidth, cursor.y + (fontSize / 2));
+							ctx.stroke();
+						}
+
+						cursor.x += width + (this.options.labels.padding);
+					}, this);
+				} else {
+
+				}
+			}
+		},
+
+		// Handle an event
+		handleEvent: function(e) {
+			var position = helpers.getRelativePosition(e, this.chart.chart);
+
+			if (position.x >= this.left && position.x <= this.right && position.y >= this.top && position.y <= this.bottom) {
+				// See if we are touching one of the dataset boxes
+				for (var i = 0; i < this.legendHitBoxes.length; ++i) {
+					var hitBox = this.legendHitBoxes[i];
+
+					if (position.x >= hitBox.left && position.x <= hitBox.left + hitBox.width && position.y >= hitBox.top && position.y <= hitBox.top + hitBox.height) {
+						// Touching an element
+						if (this.options.onClick) {
+							this.options.onClick.call(this, e, this.legendItems[i]);
+						}
+						break;
+					}
+				}
+			}
+		}
+	});
+
+};
+
+},{}],167:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.scale = {
+		display: true,
+
+		// grid line settings
+		gridLines: {
+			display: true,
+			color: "rgba(0, 0, 0, 0.1)",
+			lineWidth: 1,
+			drawOnChartArea: true,
+			drawTicks: true,
+			zeroLineWidth: 1,
+			zeroLineColor: "rgba(0,0,0,0.25)",
+			offsetGridLines: false
+		},
+
+		// scale label
+		scaleLabel: {
+			// actual label
+			labelString: '',
+
+			// display property
+			display: false
+		},
+
+		// label settings
+		ticks: {
+			beginAtZero: false,
+			maxRotation: 90,
+			mirror: false,
+			padding: 10,
+			reverse: false,
+			display: true,
+			autoSkip: true,
+			autoSkipPadding: 20,
+			callback: function(value) {
+				return '' + value;
+			}
+		}
+	};
+
+	Chart.Scale = Chart.Element.extend({
+
+		// These methods are ordered by lifecyle. Utilities then follow.
+		// Any function defined here is inherited by all scale types.
+		// Any function can be extended by the scale type
+
+		beforeUpdate: function() {
+			helpers.callCallback(this.options.beforeUpdate, [this]);
+		},
+		update: function(maxWidth, maxHeight, margins) {
+
+			// Update Lifecycle - Probably don't want to ever extend or overwrite this function ;)
+			this.beforeUpdate();
+
+			// Absorb the master measurements
+			this.maxWidth = maxWidth;
+			this.maxHeight = maxHeight;
+			this.margins = helpers.extend({
+				left: 0,
+				right: 0,
+				top: 0,
+				bottom: 0
+			}, margins);
+
+			// Dimensions
+			this.beforeSetDimensions();
+			this.setDimensions();
+			this.afterSetDimensions();
+
+			// Data min/max
+			this.beforeDataLimits();
+			this.determineDataLimits();
+			this.afterDataLimits();
+
+			// Ticks
+			this.beforeBuildTicks();
+			this.buildTicks();
+			this.afterBuildTicks();
+
+			this.beforeTickToLabelConversion();
+			this.convertTicksToLabels();
+			this.afterTickToLabelConversion();
+
+			// Tick Rotation
+			this.beforeCalculateTickRotation();
+			this.calculateTickRotation();
+			this.afterCalculateTickRotation();
+			// Fit
+			this.beforeFit();
+			this.fit();
+			this.afterFit();
+			//
+			this.afterUpdate();
+
+			return this.minSize;
+
+		},
+		afterUpdate: function() {
+			helpers.callCallback(this.options.afterUpdate, [this]);
+		},
+
+		//
+
+		beforeSetDimensions: function() {
+			helpers.callCallback(this.options.beforeSetDimensions, [this]);
+		},
+		setDimensions: function() {
+			// Set the unconstrained dimension before label rotation
+			if (this.isHorizontal()) {
+				// Reset position before calculating rotation
+				this.width = this.maxWidth;
+				this.left = 0;
+				this.right = this.width;
+			} else {
+				this.height = this.maxHeight;
+
+				// Reset position before calculating rotation
+				this.top = 0;
+				this.bottom = this.height;
+			}
+
+			// Reset padding
+			this.paddingLeft = 0;
+			this.paddingTop = 0;
+			this.paddingRight = 0;
+			this.paddingBottom = 0;
+		},
+		afterSetDimensions: function() {
+			helpers.callCallback(this.options.afterSetDimensions, [this]);
+		},
+
+		// Data limits
+		beforeDataLimits: function() {
+			helpers.callCallback(this.options.beforeDataLimits, [this]);
+		},
+		determineDataLimits: helpers.noop,
+		afterDataLimits: function() {
+			helpers.callCallback(this.options.afterDataLimits, [this]);
+		},
+
+		//
+		beforeBuildTicks: function() {
+			helpers.callCallback(this.options.beforeBuildTicks, [this]);
+		},
+		buildTicks: helpers.noop,
+		afterBuildTicks: function() {
+			helpers.callCallback(this.options.afterBuildTicks, [this]);
+		},
+
+		beforeTickToLabelConversion: function() {
+			helpers.callCallback(this.options.beforeTickToLabelConversion, [this]);
+		},
+		convertTicksToLabels: function() {
+			// Convert ticks to strings
+			this.ticks = this.ticks.map(function(numericalTick, index, ticks) {
+					if (this.options.ticks.userCallback) {
+						return this.options.ticks.userCallback(numericalTick, index, ticks);
+					}
+					return this.options.ticks.callback(numericalTick, index, ticks);
+				},
+				this);
+		},
+		afterTickToLabelConversion: function() {
+			helpers.callCallback(this.options.afterTickToLabelConversion, [this]);
+		},
+
+		//
+
+		beforeCalculateTickRotation: function() {
+			helpers.callCallback(this.options.beforeCalculateTickRotation, [this]);
+		},
+		calculateTickRotation: function() {
+			//Get the width of each grid by calculating the difference
+			//between x offsets between 0 and 1.
+			var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+			var tickFontStyle = helpers.getValueOrDefault(this.options.ticks.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var tickFontFamily = helpers.getValueOrDefault(this.options.ticks.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var tickLabelFont = helpers.fontString(tickFontSize, tickFontStyle, tickFontFamily);
+			this.ctx.font = tickLabelFont;
+
+			var firstWidth = this.ctx.measureText(this.ticks[0]).width;
+			var lastWidth = this.ctx.measureText(this.ticks[this.ticks.length - 1]).width;
+			var firstRotated;
+
+			this.labelRotation = 0;
+			this.paddingRight = 0;
+			this.paddingLeft = 0;
+
+			if (this.options.display) {
+				if (this.isHorizontal()) {
+					this.paddingRight = lastWidth / 2 + 3;
+					this.paddingLeft = firstWidth / 2 + 3;
+
+					if (!this.longestTextCache) {
+						this.longestTextCache = {};
+					}
+					var originalLabelWidth = helpers.longestText(this.ctx, tickLabelFont, this.ticks, this.longestTextCache);
+					var labelWidth = originalLabelWidth;
+					var cosRotation;
+					var sinRotation;
+
+					// Allow 3 pixels x2 padding either side for label readability
+					// only the index matters for a dataset scale, but we want a consistent interface between scales
+					var tickWidth = this.getPixelForTick(1) - this.getPixelForTick(0) - 6;
+
+					//Max label rotation can be set or default to 90 - also act as a loop counter
+					while (labelWidth > tickWidth && this.labelRotation < this.options.ticks.maxRotation) {
+						cosRotation = Math.cos(helpers.toRadians(this.labelRotation));
+						sinRotation = Math.sin(helpers.toRadians(this.labelRotation));
+
+						firstRotated = cosRotation * firstWidth;
+
+						// We're right aligning the text now.
+						if (firstRotated + tickFontSize / 2 > this.yLabelWidth) {
+							this.paddingLeft = firstRotated + tickFontSize / 2;
+						}
+
+						this.paddingRight = tickFontSize / 2;
+
+						if (sinRotation * originalLabelWidth > this.maxHeight) {
+							// go back one step
+							this.labelRotation--;
+							break;
+						}
+
+						this.labelRotation++;
+						labelWidth = cosRotation * originalLabelWidth;
+					}
+				}
+			}
+
+			if (this.margins) {
+				this.paddingLeft = Math.max(this.paddingLeft - this.margins.left, 0);
+				this.paddingRight = Math.max(this.paddingRight - this.margins.right, 0);
+			}
+		},
+		afterCalculateTickRotation: function() {
+			helpers.callCallback(this.options.afterCalculateTickRotation, [this]);
+		},
+
+		//
+
+		beforeFit: function() {
+			helpers.callCallback(this.options.beforeFit, [this]);
+		},
+		fit: function() {
+
+			this.minSize = {
+				width: 0,
+				height: 0
+			};
+
+			var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+			var tickFontStyle = helpers.getValueOrDefault(this.options.ticks.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var tickFontFamily = helpers.getValueOrDefault(this.options.ticks.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var tickLabelFont = helpers.fontString(tickFontSize, tickFontStyle, tickFontFamily);
+
+			var scaleLabelFontSize = helpers.getValueOrDefault(this.options.scaleLabel.fontSize, Chart.defaults.global.defaultFontSize);
+			var scaleLabelFontStyle = helpers.getValueOrDefault(this.options.scaleLabel.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var scaleLabelFontFamily = helpers.getValueOrDefault(this.options.scaleLabel.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var scaleLabelFont = helpers.fontString(scaleLabelFontSize, scaleLabelFontStyle, scaleLabelFontFamily);
+
+			// Width
+			if (this.isHorizontal()) {
+				// subtract the margins to line up with the chartArea if we are a full width scale
+				this.minSize.width = this.isFullWidth() ? this.maxWidth - this.margins.left - this.margins.right : this.maxWidth;
+			} else {
+				this.minSize.width = this.options.gridLines.display && this.options.display ? 10 : 0;
+			}
+
+			// height
+			if (this.isHorizontal()) {
+				this.minSize.height = this.options.gridLines.display && this.options.display ? 10 : 0;
+			} else {
+				this.minSize.height = this.maxHeight; // fill all the height
+			}
+
+			// Are we showing a title for the scale?
+			if (this.options.scaleLabel.display) {
+				if (this.isHorizontal()) {
+					this.minSize.height += (scaleLabelFontSize * 1.5);
+				} else {
+					this.minSize.width += (scaleLabelFontSize * 1.5);
+				}
+			}
+
+			if (this.options.ticks.display && this.options.display) {
+				// Don't bother fitting the ticks if we are not showing them
+				if (!this.longestTextCache) {
+					this.longestTextCache = {};
+				}
+
+				var largestTextWidth = helpers.longestText(this.ctx, tickLabelFont, this.ticks, this.longestTextCache);
+
+				if (this.isHorizontal()) {
+					// A horizontal axis is more constrained by the height.
+					this.longestLabelWidth = largestTextWidth;
+
+					// TODO - improve this calculation
+					var labelHeight = (Math.sin(helpers.toRadians(this.labelRotation)) * this.longestLabelWidth) + 1.5 * tickFontSize;
+
+					this.minSize.height = Math.min(this.maxHeight, this.minSize.height + labelHeight);
+					this.ctx.font = tickLabelFont;
+
+					var firstLabelWidth = this.ctx.measureText(this.ticks[0]).width;
+					var lastLabelWidth = this.ctx.measureText(this.ticks[this.ticks.length - 1]).width;
+
+					// Ensure that our ticks are always inside the canvas. When rotated, ticks are right aligned which means that the right padding is dominated
+					// by the font height
+					var cosRotation = Math.cos(helpers.toRadians(this.labelRotation));
+					var sinRotation = Math.sin(helpers.toRadians(this.labelRotation));
+					this.paddingLeft = this.labelRotation !== 0 ? (cosRotation * firstLabelWidth) + 3 : firstLabelWidth / 2 + 3; // add 3 px to move away from canvas edges
+					this.paddingRight = this.labelRotation !== 0 ? (sinRotation * (tickFontSize / 2)) + 3 : lastLabelWidth / 2 + 3; // when rotated
+				} else {
+					// A vertical axis is more constrained by the width. Labels are the dominant factor here, so get that length first
+					var maxLabelWidth = this.maxWidth - this.minSize.width;
+
+					// Account for padding
+					if (!this.options.ticks.mirror) {
+						largestTextWidth += this.options.ticks.padding;
+					}
+
+					if (largestTextWidth < maxLabelWidth) {
+						// We don't need all the room
+						this.minSize.width += largestTextWidth;
+					} else {
+						// Expand to max size
+						this.minSize.width = this.maxWidth;
+					}
+
+					this.paddingTop = tickFontSize / 2;
+					this.paddingBottom = tickFontSize / 2;
+				}
+			}
+
+			if (this.margins) {
+				this.paddingLeft = Math.max(this.paddingLeft - this.margins.left, 0);
+				this.paddingTop = Math.max(this.paddingTop - this.margins.top, 0);
+				this.paddingRight = Math.max(this.paddingRight - this.margins.right, 0);
+				this.paddingBottom = Math.max(this.paddingBottom - this.margins.bottom, 0);
+			}
+
+			this.width = this.minSize.width;
+			this.height = this.minSize.height;
+
+		},
+		afterFit: function() {
+			helpers.callCallback(this.options.afterFit, [this]);
+		},
+
+		// Shared Methods
+		isHorizontal: function() {
+			return this.options.position === "top" || this.options.position === "bottom";
+		},
+		isFullWidth: function() {
+			return (this.options.fullWidth);
+		},
+
+		// Get the correct value. NaN bad inputs, If the value type is object get the x or y based on whether we are horizontal or not
+		getRightValue: function getRightValue(rawValue) {
+			// Null and undefined values first
+			if (rawValue === null || typeof(rawValue) === 'undefined') {
+				return NaN;
+			}
+			// isNaN(object) returns true, so make sure NaN is checking for a number
+			if (typeof(rawValue) === 'number' && isNaN(rawValue)) {
+				return NaN;
+			}
+			// If it is in fact an object, dive in one more level
+			if (typeof(rawValue) === "object") {
+				if (rawValue instanceof Date) {
+					return rawValue;
+				} else {
+					return getRightValue(this.isHorizontal() ? rawValue.x : rawValue.y);
+				}
+			}
+
+			// Value is good, return it
+			return rawValue;
+		},
+
+		// Used to get the value to display in the tooltip for the data at the given index
+		// function getLabelForIndex(index, datasetIndex)
+		getLabelForIndex: helpers.noop,
+
+		// Used to get data value locations.  Value can either be an index or a numerical value
+		getPixelForValue: helpers.noop,
+
+		// Used for tick location, should
+		getPixelForTick: function(index, includeOffset) {
+			if (this.isHorizontal()) {
+				var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+				var tickWidth = innerWidth / Math.max((this.ticks.length - ((this.options.gridLines.offsetGridLines) ? 0 : 1)), 1);
+				var pixel = (tickWidth * index) + this.paddingLeft;
+
+				if (includeOffset) {
+					pixel += tickWidth / 2;
+				}
+
+				var finalVal = this.left + Math.round(pixel);
+				finalVal += this.isFullWidth() ? this.margins.left : 0;
+				return finalVal;
+			} else {
+				var innerHeight = this.height - (this.paddingTop + this.paddingBottom);
+				return this.top + (index * (innerHeight / (this.ticks.length - 1)));
+			}
+		},
+
+		// Utility for getting the pixel location of a percentage of scale
+		getPixelForDecimal: function(decimal /*, includeOffset*/ ) {
+			if (this.isHorizontal()) {
+				var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+				var valueOffset = (innerWidth * decimal) + this.paddingLeft;
+
+				var finalVal = this.left + Math.round(valueOffset);
+				finalVal += this.isFullWidth() ? this.margins.left : 0;
+				return finalVal;
+			} else {
+				return this.top + (decimal * this.height);
+			}
+		},
+
+		// Actualy draw the scale on the canvas
+		// @param {rectangle} chartArea : the area of the chart to draw full grid lines on
+		draw: function(chartArea) {
+			if (this.options.display) {
+
+				var setContextLineSettings;
+				var isRotated = this.labelRotation !== 0;
+				var skipRatio;
+				var scaleLabelX;
+				var scaleLabelY;
+				var useAutoskipper = this.options.ticks.autoSkip;
+
+
+				// figure out the maximum number of gridlines to show
+				var maxTicks;
+
+				if (this.options.ticks.maxTicksLimit) {
+					maxTicks = this.options.ticks.maxTicksLimit;
+				}
+
+				var tickFontColor = helpers.getValueOrDefault(this.options.ticks.fontColor, Chart.defaults.global.defaultFontColor);
+				var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+				var tickFontStyle = helpers.getValueOrDefault(this.options.ticks.fontStyle, Chart.defaults.global.defaultFontStyle);
+				var tickFontFamily = helpers.getValueOrDefault(this.options.ticks.fontFamily, Chart.defaults.global.defaultFontFamily);
+				var tickLabelFont = helpers.fontString(tickFontSize, tickFontStyle, tickFontFamily);
+
+				var scaleLabelFontColor = helpers.getValueOrDefault(this.options.scaleLabel.fontColor, Chart.defaults.global.defaultFontColor);
+				var scaleLabelFontSize = helpers.getValueOrDefault(this.options.scaleLabel.fontSize, Chart.defaults.global.defaultFontSize);
+				var scaleLabelFontStyle = helpers.getValueOrDefault(this.options.scaleLabel.fontStyle, Chart.defaults.global.defaultFontStyle);
+				var scaleLabelFontFamily = helpers.getValueOrDefault(this.options.scaleLabel.fontFamily, Chart.defaults.global.defaultFontFamily);
+				var scaleLabelFont = helpers.fontString(scaleLabelFontSize, scaleLabelFontStyle, scaleLabelFontFamily);
+
+				var cosRotation = Math.cos(helpers.toRadians(this.labelRotation));
+				var sinRotation = Math.sin(helpers.toRadians(this.labelRotation));
+				var longestRotatedLabel = this.longestLabelWidth * cosRotation;
+				var rotatedLabelHeight = tickFontSize * sinRotation;
+
+				// Make sure we draw text in the correct color and font
+				this.ctx.fillStyle = tickFontColor;
+
+				if (this.isHorizontal()) {
+					setContextLineSettings = true;
+					var yTickStart = this.options.position === "bottom" ? this.top : this.bottom - 10;
+					var yTickEnd = this.options.position === "bottom" ? this.top + 10 : this.bottom;
+					skipRatio = false;
+
+					if (((longestRotatedLabel / 2) + this.options.ticks.autoSkipPadding) * this.ticks.length > (this.width - (this.paddingLeft + this.paddingRight))) {
+						skipRatio = 1 + Math.floor((((longestRotatedLabel / 2) + this.options.ticks.autoSkipPadding) * this.ticks.length) / (this.width - (this.paddingLeft + this.paddingRight)));
+					}
+
+					// if they defined a max number of ticks,
+					// increase skipRatio until that number is met
+					if (maxTicks && this.ticks.length > maxTicks) {
+						while (!skipRatio || this.ticks.length / (skipRatio || 1) > maxTicks) {
+							if (!skipRatio) {
+								skipRatio = 1;
+							}
+							skipRatio += 1;
+						}
+					}
+
+					if (!useAutoskipper) {
+						skipRatio = false;
+					}
+
+					helpers.each(this.ticks, function(label, index) {
+						// Blank ticks
+						var isLastTick = this.ticks.length === index + 1;
+
+						// Since we always show the last tick,we need may need to hide the last shown one before
+						var shouldSkip = (skipRatio > 1 && index % skipRatio > 0) || (index % skipRatio === 0 && index + skipRatio > this.ticks.length);
+						if (shouldSkip && !isLastTick || (label === undefined || label === null)) {
+							return;
+						}
+						var xLineValue = this.getPixelForTick(index); // xvalues for grid lines
+						var xLabelValue = this.getPixelForTick(index, this.options.gridLines.offsetGridLines); // x values for ticks (need to consider offsetLabel option)
+
+						if (this.options.gridLines.display) {
+							if (index === (typeof this.zeroLineIndex !== 'undefined' ? this.zeroLineIndex : 0)) {
+								// Draw the first index specially
+								this.ctx.lineWidth = this.options.gridLines.zeroLineWidth;
+								this.ctx.strokeStyle = this.options.gridLines.zeroLineColor;
+								setContextLineSettings = true; // reset next time
+							} else if (setContextLineSettings) {
+								this.ctx.lineWidth = this.options.gridLines.lineWidth;
+								this.ctx.strokeStyle = this.options.gridLines.color;
+								setContextLineSettings = false;
+							}
+
+							xLineValue += helpers.aliasPixel(this.ctx.lineWidth);
+
+							// Draw the label area
+							this.ctx.beginPath();
+
+							if (this.options.gridLines.drawTicks) {
+								this.ctx.moveTo(xLineValue, yTickStart);
+								this.ctx.lineTo(xLineValue, yTickEnd);
+							}
+
+							// Draw the chart area
+							if (this.options.gridLines.drawOnChartArea) {
+								this.ctx.moveTo(xLineValue, chartArea.top);
+								this.ctx.lineTo(xLineValue, chartArea.bottom);
+							}
+
+							// Need to stroke in the loop because we are potentially changing line widths & colours
+							this.ctx.stroke();
+						}
+
+						if (this.options.ticks.display) {
+							this.ctx.save();
+							this.ctx.translate(xLabelValue, (isRotated) ? this.top + 12 : this.options.position === "top" ? this.bottom - 10 : this.top + 10);
+							this.ctx.rotate(helpers.toRadians(this.labelRotation) * -1);
+							this.ctx.font = tickLabelFont;
+							this.ctx.textAlign = (isRotated) ? "right" : "center";
+							this.ctx.textBaseline = (isRotated) ? "middle" : this.options.position === "top" ? "bottom" : "top";
+							this.ctx.fillText(label, 0, 0);
+							this.ctx.restore();
+						}
+					}, this);
+
+					if (this.options.scaleLabel.display) {
+						// Draw the scale label
+						this.ctx.textAlign = "center";
+						this.ctx.textBaseline = 'middle';
+						this.ctx.fillStyle = scaleLabelFontColor; // render in correct colour
+						this.ctx.font = scaleLabelFont;
+
+						scaleLabelX = this.left + ((this.right - this.left) / 2); // midpoint of the width
+						scaleLabelY = this.options.position === 'bottom' ? this.bottom - (scaleLabelFontSize / 2) : this.top + (scaleLabelFontSize / 2);
+
+						this.ctx.fillText(this.options.scaleLabel.labelString, scaleLabelX, scaleLabelY);
+					}
+
+				} else {
+					setContextLineSettings = true;
+					var xTickStart = this.options.position === "right" ? this.left : this.right - 5;
+					var xTickEnd = this.options.position === "right" ? this.left + 5 : this.right;
+
+					helpers.each(this.ticks, function(label, index) {
+						// If the callback returned a null or undefined value, do not draw this line
+						if (label === undefined || label === null) {
+							return;
+						}
+
+						var yLineValue = this.getPixelForTick(index); // xvalues for grid lines
+
+						if (this.options.gridLines.display) {
+							if (index === (typeof this.zeroLineIndex !== 'undefined' ? this.zeroLineIndex : 0)) {
+								// Draw the first index specially
+								this.ctx.lineWidth = this.options.gridLines.zeroLineWidth;
+								this.ctx.strokeStyle = this.options.gridLines.zeroLineColor;
+								setContextLineSettings = true; // reset next time
+							} else if (setContextLineSettings) {
+								this.ctx.lineWidth = this.options.gridLines.lineWidth;
+								this.ctx.strokeStyle = this.options.gridLines.color;
+								setContextLineSettings = false;
+							}
+
+							yLineValue += helpers.aliasPixel(this.ctx.lineWidth);
+
+							// Draw the label area
+							this.ctx.beginPath();
+
+							if (this.options.gridLines.drawTicks) {
+								this.ctx.moveTo(xTickStart, yLineValue);
+								this.ctx.lineTo(xTickEnd, yLineValue);
+							}
+
+							// Draw the chart area
+							if (this.options.gridLines.drawOnChartArea) {
+								this.ctx.moveTo(chartArea.left, yLineValue);
+								this.ctx.lineTo(chartArea.right, yLineValue);
+							}
+
+							// Need to stroke in the loop because we are potentially changing line widths & colours
+							this.ctx.stroke();
+						}
+
+						if (this.options.ticks.display) {
+							var xLabelValue;
+							var yLabelValue = this.getPixelForTick(index, this.options.gridLines.offsetGridLines); // x values for ticks (need to consider offsetLabel option)
+
+							this.ctx.save();
+
+							if (this.options.position === "left") {
+								if (this.options.ticks.mirror) {
+									xLabelValue = this.right + this.options.ticks.padding;
+									this.ctx.textAlign = "left";
+								} else {
+									xLabelValue = this.right - this.options.ticks.padding;
+									this.ctx.textAlign = "right";
+								}
+							} else {
+								// right side
+								if (this.options.ticks.mirror) {
+									xLabelValue = this.left - this.options.ticks.padding;
+									this.ctx.textAlign = "right";
+								} else {
+									xLabelValue = this.left + this.options.ticks.padding;
+									this.ctx.textAlign = "left";
+								}
+							}
+
+							this.ctx.translate(xLabelValue, yLabelValue);
+							this.ctx.rotate(helpers.toRadians(this.labelRotation) * -1);
+							this.ctx.font = tickLabelFont;
+							this.ctx.textBaseline = "middle";
+							this.ctx.fillText(label, 0, 0);
+							this.ctx.restore();
+						}
+					}, this);
+
+					if (this.options.scaleLabel.display) {
+						// Draw the scale label
+						scaleLabelX = this.options.position === 'left' ? this.left + (scaleLabelFontSize / 2) : this.right - (scaleLabelFontSize / 2);
+						scaleLabelY = this.top + ((this.bottom - this.top) / 2);
+						var rotation = this.options.position === 'left' ? -0.5 * Math.PI : 0.5 * Math.PI;
+
+						this.ctx.save();
+						this.ctx.translate(scaleLabelX, scaleLabelY);
+						this.ctx.rotate(rotation);
+						this.ctx.textAlign = "center";
+						this.ctx.fillStyle =scaleLabelFontColor; // render in correct colour
+						this.ctx.font = scaleLabelFont;
+						this.ctx.textBaseline = 'middle';
+						this.ctx.fillText(this.options.scaleLabel.labelString, 0, 0);
+						this.ctx.restore();
+					}
+				}
+
+				// Draw the line at the edge of the axis
+				this.ctx.lineWidth = this.options.gridLines.lineWidth;
+				this.ctx.strokeStyle = this.options.gridLines.color;
+				var x1 = this.left,
+					x2 = this.right,
+					y1 = this.top,
+					y2 = this.bottom;
+
+				if (this.isHorizontal()) {
+					y1 = y2 = this.options.position === 'top' ? this.bottom : this.top;
+					y1 += helpers.aliasPixel(this.ctx.lineWidth);
+					y2 += helpers.aliasPixel(this.ctx.lineWidth);
+				} else {
+					x1 = x2 = this.options.position === 'left' ? this.right : this.left;
+					x1 += helpers.aliasPixel(this.ctx.lineWidth);
+					x2 += helpers.aliasPixel(this.ctx.lineWidth);
+				}
+
+				this.ctx.beginPath();
+				this.ctx.moveTo(x1, y1);
+				this.ctx.lineTo(x2, y2);
+				this.ctx.stroke();
+			}
+		}
+	});
+};
+},{}],168:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.scaleService = {
+		// Scale registration object. Extensions can register new scale types (such as log or DB scales) and then
+		// use the new chart options to grab the correct scale
+		constructors: {},
+		// Use a registration function so that we can move to an ES6 map when we no longer need to support
+		// old browsers
+
+		// Scale config defaults
+		defaults: {},
+		registerScaleType: function(type, scaleConstructor, defaults) {
+			this.constructors[type] = scaleConstructor;
+			this.defaults[type] = helpers.clone(defaults);
+		},
+		getScaleConstructor: function(type) {
+			return this.constructors.hasOwnProperty(type) ? this.constructors[type] : undefined;
+		},
+		getScaleDefaults: function(type) {
+			// Return the scale defaults merged with the global settings so that we always use the latest ones
+			return this.defaults.hasOwnProperty(type) ? helpers.scaleMerge(Chart.defaults.scale, this.defaults[type]) : {};
+		},
+		addScalesToLayout: function(chartInstance) {
+			// Adds each scale to the chart.boxes array to be sized accordingly
+			helpers.each(chartInstance.scales, function(scale) {
+				Chart.layoutService.addBox(chartInstance, scale);
+			});
+		}
+	};
+};
+},{}],169:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.title = {
+		display: false,
+		position: 'top',
+		fullWidth: true, // marks that this box should take the full width of the canvas (pushing down other boxes)
+
+		fontStyle: 'bold',
+		padding: 10,
+
+		// actual title
+		text: ''
+	};
+
+	Chart.Title = Chart.Element.extend({
+
+		initialize: function(config) {
+			helpers.extend(this, config);
+			this.options = helpers.configMerge(Chart.defaults.global.title, config.options);
+
+			// Contains hit boxes for each dataset (in dataset order)
+			this.legendHitBoxes = [];
+		},
+
+		// These methods are ordered by lifecyle. Utilities then follow.
+
+		beforeUpdate: helpers.noop,
+		update: function(maxWidth, maxHeight, margins) {
+
+			// Update Lifecycle - Probably don't want to ever extend or overwrite this function ;)
+			this.beforeUpdate();
+
+			// Absorb the master measurements
+			this.maxWidth = maxWidth;
+			this.maxHeight = maxHeight;
+			this.margins = margins;
+
+			// Dimensions
+			this.beforeSetDimensions();
+			this.setDimensions();
+			this.afterSetDimensions();
+			// Labels
+			this.beforeBuildLabels();
+			this.buildLabels();
+			this.afterBuildLabels();
+
+			// Fit
+			this.beforeFit();
+			this.fit();
+			this.afterFit();
+			//
+			this.afterUpdate();
+
+			return this.minSize;
+
+		},
+		afterUpdate: helpers.noop,
+
+		//
+
+		beforeSetDimensions: helpers.noop,
+		setDimensions: function() {
+			// Set the unconstrained dimension before label rotation
+			if (this.isHorizontal()) {
+				// Reset position before calculating rotation
+				this.width = this.maxWidth;
+				this.left = 0;
+				this.right = this.width;
+			} else {
+				this.height = this.maxHeight;
+
+				// Reset position before calculating rotation
+				this.top = 0;
+				this.bottom = this.height;
+			}
+
+			// Reset padding
+			this.paddingLeft = 0;
+			this.paddingTop = 0;
+			this.paddingRight = 0;
+			this.paddingBottom = 0;
+
+			// Reset minSize
+			this.minSize = {
+				width: 0,
+				height: 0
+			};
+		},
+		afterSetDimensions: helpers.noop,
+
+		//
+
+		beforeBuildLabels: helpers.noop,
+		buildLabels: helpers.noop,
+		afterBuildLabels: helpers.noop,
+
+		//
+
+		beforeFit: helpers.noop,
+		fit: function() {
+
+			var ctx = this.ctx;
+			var fontSize = helpers.getValueOrDefault(this.options.fontSize, Chart.defaults.global.defaultFontSize);
+			var fontStyle = helpers.getValueOrDefault(this.options.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var fontFamily = helpers.getValueOrDefault(this.options.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var titleFont = helpers.fontString(fontSize, fontStyle, fontFamily);
+
+			// Width
+			if (this.isHorizontal()) {
+				this.minSize.width = this.maxWidth; // fill all the width
+			} else {
+				this.minSize.width = 0;
+			}
+
+			// height
+			if (this.isHorizontal()) {
+				this.minSize.height = 0;
+			} else {
+				this.minSize.height = this.maxHeight; // fill all the height
+			}
+
+			// Increase sizes here
+			if (this.isHorizontal()) {
+
+				// Title
+				if (this.options.display) {
+					this.minSize.height += fontSize + (this.options.padding * 2);
+				}
+			} else {
+				if (this.options.display) {
+					this.minSize.width += fontSize + (this.options.padding * 2);
+				}
+			}
+
+			this.width = this.minSize.width;
+			this.height = this.minSize.height;
+
+		},
+		afterFit: helpers.noop,
+
+		// Shared Methods
+		isHorizontal: function() {
+			return this.options.position === "top" || this.options.position === "bottom";
+		},
+
+		// Actualy draw the title block on the canvas
+		draw: function() {
+			if (this.options.display) {
+				var ctx = this.ctx;
+				var titleX, titleY;
+
+				var fontColor = helpers.getValueOrDefault(this.options.fontColor, Chart.defaults.global.defaultFontColor);
+				var fontSize = helpers.getValueOrDefault(this.options.fontSize, Chart.defaults.global.defaultFontSize);
+				var fontStyle = helpers.getValueOrDefault(this.options.fontStyle, Chart.defaults.global.defaultFontStyle);
+				var fontFamily = helpers.getValueOrDefault(this.options.fontFamily, Chart.defaults.global.defaultFontFamily);
+				var titleFont = helpers.fontString(fontSize, fontStyle, fontFamily);
+
+				ctx.fillStyle = fontColor; // render in correct colour
+				ctx.font = titleFont;
+
+				// Horizontal
+				if (this.isHorizontal()) {
+					// Title
+					ctx.textAlign = "center";
+					ctx.textBaseline = 'middle';
+
+					titleX = this.left + ((this.right - this.left) / 2); // midpoint of the width
+					titleY = this.top + ((this.bottom - this.top) / 2); // midpoint of the height
+
+					ctx.fillText(this.options.text, titleX, titleY);
+				} else {
+
+					// Title
+					titleX = this.options.position === 'left' ? this.left + (fontSize / 2) : this.right - (fontSize / 2);
+					titleY = this.top + ((this.bottom - this.top) / 2);
+					var rotation = this.options.position === 'left' ? -0.5 * Math.PI : 0.5 * Math.PI;
+
+					ctx.save();
+					ctx.translate(titleX, titleY);
+					ctx.rotate(rotation);
+					ctx.textAlign = "center";
+					ctx.textBaseline = 'middle';
+					ctx.fillText(this.options.text, 0, 0);
+					ctx.restore();
+				}
+			}
+		}
+	});
+};
+},{}],170:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.tooltips = {
+		enabled: true,
+		custom: null,
+		mode: 'single',
+		backgroundColor: "rgba(0,0,0,0.8)",
+		titleFontStyle: "bold",
+		titleSpacing: 2,
+		titleMarginBottom: 6,
+		titleColor: "#fff",
+		titleAlign: "left",
+		bodySpacing: 2,
+		bodyColor: "#fff",
+		bodyAlign: "left",
+		footerFontStyle: "bold",
+		footerSpacing: 2,
+		footerMarginTop: 6,
+		footerColor: "#fff",
+		footerAlign: "left",
+		yPadding: 6,
+		xPadding: 6,
+		yAlign : 'center',
+		xAlign : 'center',
+		caretSize: 5,
+		cornerRadius: 6,
+		multiKeyBackground: '#fff',
+		callbacks: {
+			// Args are: (tooltipItems, data)
+			beforeTitle: helpers.noop,
+			title: function(tooltipItems, data) {
+				// Pick first xLabel for now
+				var title = '';
+
+				if (tooltipItems.length > 0) {
+					if (tooltipItems[0].xLabel) {
+						title = tooltipItems[0].xLabel;
+					} else if (data.labels.length > 0 && tooltipItems[0].index < data.labels.length) {
+						title = data.labels[tooltipItems[0].index];
+					}
+				}
+
+				return title;
+			},
+			afterTitle: helpers.noop,
+
+			// Args are: (tooltipItems, data)
+			beforeBody: helpers.noop,
+
+			// Args are: (tooltipItem, data)
+			beforeLabel: helpers.noop,
+			label: function(tooltipItem, data) {
+				var datasetLabel = data.datasets[tooltipItem.datasetIndex].label || '';
+				return datasetLabel + ': ' + tooltipItem.yLabel;
+			},
+			afterLabel: helpers.noop,
+
+			// Args are: (tooltipItems, data)
+			afterBody: helpers.noop,
+
+			// Args are: (tooltipItems, data)
+			beforeFooter: helpers.noop,
+			footer: helpers.noop,
+			afterFooter: helpers.noop
+		}
+	};
+
+	// Helper to push or concat based on if the 2nd parameter is an array or not
+	function pushOrConcat(base, toPush) {
+		if (toPush) {
+			if (helpers.isArray(toPush)) {
+				base = base.concat(toPush);
+			} else {
+				base.push(toPush);
+			}
+		}
+
+		return base;
+	}
+
+	Chart.Tooltip = Chart.Element.extend({
+		initialize: function() {
+			var options = this._options;
+			helpers.extend(this, {
+				_model: {
+					// Positioning
+					xPadding: options.tooltips.xPadding,
+					yPadding: options.tooltips.yPadding,
+					xAlign : options.tooltips.yAlign,
+					yAlign : options.tooltips.xAlign,
+
+					// Body
+					bodyColor: options.tooltips.bodyColor,
+					_bodyFontFamily: helpers.getValueOrDefault(options.tooltips.bodyFontFamily, Chart.defaults.global.defaultFontFamily),
+					_bodyFontStyle: helpers.getValueOrDefault(options.tooltips.bodyFontStyle, Chart.defaults.global.defaultFontStyle),
+					_bodyAlign: options.tooltips.bodyAlign,
+					bodyFontSize: helpers.getValueOrDefault(options.tooltips.bodyFontSize, Chart.defaults.global.defaultFontSize),
+					bodySpacing: options.tooltips.bodySpacing,
+
+					// Title
+					titleColor: options.tooltips.titleColor,
+					_titleFontFamily: helpers.getValueOrDefault(options.tooltips.titleFontFamily, Chart.defaults.global.defaultFontFamily),
+					_titleFontStyle: helpers.getValueOrDefault(options.tooltips.titleFontStyle, Chart.defaults.global.defaultFontStyle),
+					titleFontSize: helpers.getValueOrDefault(options.tooltips.titleFontSize, Chart.defaults.global.defaultFontSize),
+					_titleAlign: options.tooltips.titleAlign,
+					titleSpacing: options.tooltips.titleSpacing,
+					titleMarginBottom: options.tooltips.titleMarginBottom,
+
+					// Footer
+					footerColor: options.tooltips.footerColor,
+					_footerFontFamily: helpers.getValueOrDefault(options.tooltips.footerFontFamily, Chart.defaults.global.defaultFontFamily),
+					_footerFontStyle: helpers.getValueOrDefault(options.tooltips.footerFontStyle, Chart.defaults.global.defaultFontStyle),
+					footerFontSize: helpers.getValueOrDefault(options.tooltips.footerFontSize, Chart.defaults.global.defaultFontSize),
+					_footerAlign: options.tooltips.footerAlign,
+					footerSpacing: options.tooltips.footerSpacing,
+					footerMarginTop: options.tooltips.footerMarginTop,
+
+					// Appearance
+					caretSize: options.tooltips.caretSize,
+					cornerRadius: options.tooltips.cornerRadius,
+					backgroundColor: options.tooltips.backgroundColor,
+					opacity: 0,
+					legendColorBackground: options.tooltips.multiKeyBackground
+				}
+			});
+		},
+
+		// Get the title
+		// Args are: (tooltipItem, data)
+		getTitle: function() {
+			var beforeTitle = this._options.tooltips.callbacks.beforeTitle.apply(this, arguments),
+				title = this._options.tooltips.callbacks.title.apply(this, arguments),
+				afterTitle = this._options.tooltips.callbacks.afterTitle.apply(this, arguments);
+
+			var lines = [];
+			lines = pushOrConcat(lines, beforeTitle);
+			lines = pushOrConcat(lines, title);
+			lines = pushOrConcat(lines, afterTitle);
+
+			return lines;
+		},
+
+		// Args are: (tooltipItem, data)
+		getBeforeBody: function() {
+			var lines = this._options.tooltips.callbacks.beforeBody.apply(this, arguments);
+			return helpers.isArray(lines) ? lines : lines !== undefined ? [lines] : [];
+		},
+
+		// Args are: (tooltipItem, data)
+		getBody: function(tooltipItems, data) {
+			var lines = [];
+
+			helpers.each(tooltipItems, function(bodyItem) {
+				helpers.pushAllIfDefined(this._options.tooltips.callbacks.beforeLabel.call(this, bodyItem, data), lines);
+				helpers.pushAllIfDefined(this._options.tooltips.callbacks.label.call(this, bodyItem, data), lines);
+				helpers.pushAllIfDefined(this._options.tooltips.callbacks.afterLabel.call(this, bodyItem, data), lines);
+			}, this);
+
+			return lines;
+		},
+
+		// Args are: (tooltipItem, data)
+		getAfterBody: function() {
+			var lines = this._options.tooltips.callbacks.afterBody.apply(this, arguments);
+			return helpers.isArray(lines) ? lines : lines !== undefined ? [lines] : [];
+		},
+
+		// Get the footer and beforeFooter and afterFooter lines
+		// Args are: (tooltipItem, data)
+		getFooter: function() {
+			var beforeFooter = this._options.tooltips.callbacks.beforeFooter.apply(this, arguments);
+			var footer = this._options.tooltips.callbacks.footer.apply(this, arguments);
+			var afterFooter = this._options.tooltips.callbacks.afterFooter.apply(this, arguments);
+
+			var lines = [];
+			lines = pushOrConcat(lines, beforeFooter);
+			lines = pushOrConcat(lines, footer);
+			lines = pushOrConcat(lines, afterFooter);
+
+			return lines;
+		},
+
+		getAveragePosition: function(elements) {
+
+			if (!elements.length) {
+				return false;
+			}
+
+			var xPositions = [];
+			var yPositions = [];
+
+			helpers.each(elements, function(el) {
+				if (el) {
+					var pos = el.tooltipPosition();
+					xPositions.push(pos.x);
+					yPositions.push(pos.y);
+				}
+			});
+
+			var x = 0,
+				y = 0;
+			for (var i = 0; i < xPositions.length; i++) {
+				x += xPositions[i];
+				y += yPositions[i];
+			}
+
+			return {
+				x: Math.round(x / xPositions.length),
+				y: Math.round(y / xPositions.length)
+			};
+
+		},
+
+		update: function(changed) {
+			if (this._active.length) {
+				this._model.opacity = 1;
+
+				var element = this._active[0],
+					labelColors = [],
+					tooltipPosition;
+
+				var tooltipItems = [];
+
+				if (this._options.tooltips.mode === 'single') {
+					var yScale = element._yScale || element._scale; // handle radar || polarArea charts
+					tooltipItems.push({
+						xLabel: element._xScale ? element._xScale.getLabelForIndex(element._index, element._datasetIndex) : '',
+						yLabel: yScale ? yScale.getLabelForIndex(element._index, element._datasetIndex) : '',
+						index: element._index,
+						datasetIndex: element._datasetIndex
+					});
+					tooltipPosition = this.getAveragePosition(this._active);
+				} else {
+					helpers.each(this._data.datasets, function(dataset, datasetIndex) {
+						if (!helpers.isDatasetVisible(dataset)) {
+							return;
+						}
+						var currentElement = dataset.metaData[element._index];
+						if (currentElement) {
+							var yScale = element._yScale || element._scale; // handle radar || polarArea charts
+
+							tooltipItems.push({
+								xLabel: currentElement._xScale ? currentElement._xScale.getLabelForIndex(currentElement._index, currentElement._datasetIndex) : '',
+								yLabel: yScale ? yScale.getLabelForIndex(currentElement._index, currentElement._datasetIndex) : '',
+								index: element._index,
+								datasetIndex: datasetIndex
+							});
+						}
+					}, null, element._yScale.options.stacked);
+
+					helpers.each(this._active, function(active) {
+						if (active) {
+							labelColors.push({
+								borderColor: active._view.borderColor,
+								backgroundColor: active._view.backgroundColor
+							});
+						}
+					}, null, element._yScale.options.stacked);
+
+					tooltipPosition = this.getAveragePosition(this._active);
+					tooltipPosition.y = this._active[0]._yScale.getPixelForDecimal(0.5);
+				}
+
+				// Build the Text Lines
+				helpers.extend(this._model, {
+					title: this.getTitle(tooltipItems, this._data),
+					beforeBody: this.getBeforeBody(tooltipItems, this._data),
+					body: this.getBody(tooltipItems, this._data),
+					afterBody: this.getAfterBody(tooltipItems, this._data),
+					footer: this.getFooter(tooltipItems, this._data)
+				});
+
+				helpers.extend(this._model, {
+					x: Math.round(tooltipPosition.x),
+					y: Math.round(tooltipPosition.y),
+					caretPadding: helpers.getValueOrDefault(tooltipPosition.padding, 2),
+					labelColors: labelColors
+				});
+
+				// We need to determine alignment of
+				var tooltipSize = this.getTooltipSize(this._model);
+				this.determineAlignment(tooltipSize); // Smart Tooltip placement to stay on the canvas
+
+				helpers.extend(this._model, this.getBackgroundPoint(this._model, tooltipSize));
+			} else {
+				this._model.opacity = 0;
+			}
+
+			if (changed && this._options.tooltips.custom) {
+				this._options.tooltips.custom.call(this, this._model);
+			}
+
+			return this;
+		},
+		getTooltipSize: function getTooltipSize(vm) {
+			var ctx = this._chart.ctx;
+
+			var size = {
+				height: vm.yPadding * 2, // Tooltip Padding
+				width: 0
+			};
+			var combinedBodyLength = vm.body.length + vm.beforeBody.length + vm.afterBody.length;
+
+			size.height += vm.title.length * vm.titleFontSize; // Title Lines
+			size.height += (vm.title.length - 1) * vm.titleSpacing; // Title Line Spacing
+			size.height += vm.title.length ? vm.titleMarginBottom : 0; // Title's bottom Margin
+			size.height += combinedBodyLength * vm.bodyFontSize; // Body Lines
+			size.height += combinedBodyLength ? (combinedBodyLength - 1) * vm.bodySpacing : 0; // Body Line Spacing
+			size.height += vm.footer.length ? vm.footerMarginTop : 0; // Footer Margin
+			size.height += vm.footer.length * (vm.footerFontSize); // Footer Lines
+			size.height += vm.footer.length ? (vm.footer.length - 1) * vm.footerSpacing : 0; // Footer Line Spacing
+
+			// Width
+			ctx.font = helpers.fontString(vm.titleFontSize, vm._titleFontStyle, vm._titleFontFamily);
+			helpers.each(vm.title, function(line) {
+				size.width = Math.max(size.width, ctx.measureText(line).width);
+			});
+
+			ctx.font = helpers.fontString(vm.bodyFontSize, vm._bodyFontStyle, vm._bodyFontFamily);
+			helpers.each(vm.beforeBody.concat(vm.afterBody), function(line) {
+				size.width = Math.max(size.width, ctx.measureText(line).width);
+			});
+			helpers.each(vm.body, function(line) {
+				size.width = Math.max(size.width, ctx.measureText(line).width + (this._options.tooltips.mode !== 'single' ? (vm.bodyFontSize + 2) : 0));
+			}, this);
+
+			ctx.font = helpers.fontString(vm.footerFontSize, vm._footerFontStyle, vm._footerFontFamily);
+			helpers.each(vm.footer, function(line) {
+				size.width = Math.max(size.width, ctx.measureText(line).width);
+			});
+			size.width += 2 * vm.xPadding;
+
+			return size;
+		},
+		determineAlignment: function determineAlignment(size) {
+			if (this._model.y < size.height) {
+				this._model.yAlign = 'top';
+			} else if (this._model.y > (this._chart.height - size.height)) {
+				this._model.yAlign = 'bottom';
+			}
+
+			var lf, rf; // functions to determine left, right alignment
+			var olf, orf; // functions to determine if left/right alignment causes tooltip to go outside chart
+			var yf; // function to get the y alignment if the tooltip goes outside of the left or right edges
+			var _this = this;
+			var midX = (this._chartInstance.chartArea.left + this._chartInstance.chartArea.right) / 2;
+			var midY = (this._chartInstance.chartArea.top + this._chartInstance.chartArea.bottom) / 2;
+
+			if (this._model.yAlign === 'center') {
+				lf = function(x) {
+					return x <= midX;
+				};
+				rf = function(x) {
+					return x > midX;
+				};
+			} else {
+				lf = function(x) {
+					return x <= (size.width / 2);
+				};
+				rf = function(x) {
+					return x >= (_this._chart.width - (size.width / 2));
+				};
+			}
+
+			olf = function(x) {
+				return x + size.width > _this._chart.width;
+			};
+			orf = function(x) {
+				return x - size.width < 0;
+			};
+			yf = function(y) {
+				return y <= midY ? 'top' : 'bottom';
+			};
+
+			if (lf(this._model.x)) {
+				this._model.xAlign = 'left';
+
+				// Is tooltip too wide and goes over the right side of the chart.?
+				if (olf(this._model.x)) {
+					this._model.xAlign = 'center';
+					this._model.yAlign = yf(this._model.y);
+				}
+			} else if (rf(this._model.x)) {
+				this._model.xAlign = 'right';
+
+				// Is tooltip too wide and goes outside left edge of canvas?
+				if (orf(this._model.x)) {
+					this._model.xAlign = 'center';
+					this._model.yAlign = yf(this._model.y);
+				}
+			}
+		},
+		getBackgroundPoint: function getBackgroundPoint(vm, size) {
+			// Background Position
+			var pt = {
+				x: vm.x,
+				y: vm.y
+			};
+
+			if (vm.xAlign === 'right') {
+				pt.x -= size.width;
+			} else if (vm.xAlign === 'center') {
+				pt.x -= (size.width / 2);
+			}
+
+			if (vm.yAlign === 'top') {
+				pt.y += vm.caretPadding + vm.caretSize;
+			} else if (vm.yAlign === 'bottom') {
+				pt.y -= size.height + vm.caretPadding + vm.caretSize;
+			} else {
+				pt.y -= (size.height / 2);
+			}
+
+			if (vm.yAlign === 'center') {
+				if (vm.xAlign === 'left') {
+					pt.x += vm.caretPadding + vm.caretSize;
+				} else if (vm.xAlign === 'right') {
+					pt.x -= vm.caretPadding + vm.caretSize;
+				}
+			} else {
+				if (vm.xAlign === 'left') {
+					pt.x -= vm.cornerRadius + vm.caretPadding;
+				} else if (vm.xAlign === 'right') {
+					pt.x += vm.cornerRadius + vm.caretPadding;
+				}
+			}
+
+			return pt;
+		},
+		drawCaret: function drawCaret(tooltipPoint, size, opacity, caretPadding) {
+			var vm = this._view;
+			var ctx = this._chart.ctx;
+			var x1, x2, x3;
+			var y1, y2, y3;
+
+			if (vm.yAlign === 'center') {
+				// Left or right side
+				if (vm.xAlign === 'left') {
+					x1 = tooltipPoint.x;
+					x2 = x1 - vm.caretSize;
+					x3 = x1;
+				} else {
+					x1 = tooltipPoint.x + size.width;
+					x2 = x1 + vm.caretSize;
+					x3 = x1;
+				}
+
+				y2 = tooltipPoint.y + (size.height / 2);
+				y1 = y2 - vm.caretSize;
+				y3 = y2 + vm.caretSize;
+			} else {
+				if (vm.xAlign === 'left') {
+					x1 = tooltipPoint.x + vm.cornerRadius;
+					x2 = x1 + vm.caretSize;
+					x3 = x2 + vm.caretSize;
+				} else if (vm.xAlign === 'right') {
+					x1 = tooltipPoint.x + size.width - vm.cornerRadius;
+					x2 = x1 - vm.caretSize;
+					x3 = x2 - vm.caretSize;
+				} else {
+					x2 = tooltipPoint.x + (size.width / 2);
+					x1 = x2 - vm.caretSize;
+					x3 = x2 + vm.caretSize;
+				}
+
+				if (vm.yAlign === 'top') {
+					y1 = tooltipPoint.y;
+					y2 = y1 - vm.caretSize;
+					y3 = y1;
+				} else {
+					y1 = tooltipPoint.y + size.height;
+					y2 = y1 + vm.caretSize;
+					y3 = y1;
+				}
+			}
+
+			var bgColor = helpers.color(vm.backgroundColor);
+			ctx.fillStyle = bgColor.alpha(opacity * bgColor.alpha()).rgbString();
+			ctx.beginPath();
+			ctx.moveTo(x1, y1);
+			ctx.lineTo(x2, y2);
+			ctx.lineTo(x3, y3);
+			ctx.closePath();
+			ctx.fill();
+		},
+		drawTitle: function drawTitle(pt, vm, ctx, opacity) {
+			if (vm.title.length) {
+				ctx.textAlign = vm._titleAlign;
+				ctx.textBaseline = "top";
+				
+				var titleColor = helpers.color(vm.titleColor);
+				ctx.fillStyle = titleColor.alpha(opacity * titleColor.alpha()).rgbString();
+				ctx.font = helpers.fontString(vm.titleFontSize, vm._titleFontStyle, vm._titleFontFamily);
+
+				helpers.each(vm.title, function(title, i) {
+					ctx.fillText(title, pt.x, pt.y);
+					pt.y += vm.titleFontSize + vm.titleSpacing; // Line Height and spacing
+
+					if (i + 1 === vm.title.length) {
+						pt.y += vm.titleMarginBottom - vm.titleSpacing; // If Last, add margin, remove spacing
+					}
+				});
+			}
+		},
+		drawBody: function drawBody(pt, vm, ctx, opacity) {
+			ctx.textAlign = vm._bodyAlign;
+			ctx.textBaseline = "top";
+
+			var bodyColor = helpers.color(vm.bodyColor);
+			ctx.fillStyle = bodyColor.alpha(opacity * bodyColor.alpha()).rgbString();
+			ctx.font = helpers.fontString(vm.bodyFontSize, vm._bodyFontStyle, vm._bodyFontFamily);
+
+			// Before Body
+			helpers.each(vm.beforeBody, function(beforeBody) {
+				ctx.fillText(beforeBody, pt.x, pt.y);
+				pt.y += vm.bodyFontSize + vm.bodySpacing;
+			});
+
+			helpers.each(vm.body, function(body, i) {
+				// Draw Legend-like boxes if needed
+				if (this._options.tooltips.mode !== 'single') {
+					// Fill a white rect so that colours merge nicely if the opacity is < 1
+					ctx.fillStyle = helpers.color(vm.legendColorBackground).alpha(opacity).rgbaString();
+					ctx.fillRect(pt.x, pt.y, vm.bodyFontSize, vm.bodyFontSize);
+
+					// Border
+					ctx.strokeStyle = helpers.color(vm.labelColors[i].borderColor).alpha(opacity).rgbaString();
+					ctx.strokeRect(pt.x, pt.y, vm.bodyFontSize, vm.bodyFontSize);
+
+					// Inner square
+					ctx.fillStyle = helpers.color(vm.labelColors[i].backgroundColor).alpha(opacity).rgbaString();
+					ctx.fillRect(pt.x + 1, pt.y + 1, vm.bodyFontSize - 2, vm.bodyFontSize - 2);
+
+					ctx.fillStyle = helpers.color(vm.bodyColor).alpha(opacity).rgbaString(); // Return fill style for text
+				}
+
+				// Body Line
+				ctx.fillText(body, pt.x + (this._options.tooltips.mode !== 'single' ? (vm.bodyFontSize + 2) : 0), pt.y);
+
+				pt.y += vm.bodyFontSize + vm.bodySpacing;
+			}, this);
+
+			// After Body
+			helpers.each(vm.afterBody, function(afterBody) {
+				ctx.fillText(afterBody, pt.x, pt.y);
+				pt.y += vm.bodyFontSize;
+			});
+
+			pt.y -= vm.bodySpacing; // Remove last body spacing
+		},
+		drawFooter: function drawFooter(pt, vm, ctx, opacity) {
+			if (vm.footer.length) {
+				pt.y += vm.footerMarginTop;
+
+				ctx.textAlign = vm._footerAlign;
+				ctx.textBaseline = "top";
+				
+				var footerColor = helpers.color(vm.footerColor);
+				ctx.fillStyle = footerColor.alpha(opacity * footerColor.alpha()).rgbString();
+				ctx.font = helpers.fontString(vm.footerFontSize, vm._footerFontStyle, vm._footerFontFamily);
+
+				helpers.each(vm.footer, function(footer) {
+					ctx.fillText(footer, pt.x, pt.y);
+					pt.y += vm.footerFontSize + vm.footerSpacing;
+				});
+			}
+		},
+		draw: function draw() {
+			var ctx = this._chart.ctx;
+			var vm = this._view;
+
+			if (vm.opacity === 0) {
+				return;
+			}
+
+			var caretPadding = vm.caretPadding;
+			var tooltipSize = this.getTooltipSize(vm);
+			var pt = {
+				x: vm.x,
+				y: vm.y
+			};
+
+			// IE11/Edge does not like very small opacities, so snap to 0
+			var opacity = Math.abs(vm.opacity < 1e-3) ? 0 : vm.opacity;
+
+			if (this._options.tooltips.enabled) {
+				// Draw Background
+				var bgColor = helpers.color(vm.backgroundColor);
+				ctx.fillStyle = bgColor.alpha(opacity * bgColor.alpha()).rgbString();
+				helpers.drawRoundedRectangle(ctx, pt.x, pt.y, tooltipSize.width, tooltipSize.height, vm.cornerRadius);
+				ctx.fill();
+
+				// Draw Caret
+				this.drawCaret(pt, tooltipSize, opacity, caretPadding);
+
+				// Draw Title, Body, and Footer
+				pt.x += vm.xPadding;
+				pt.y += vm.yPadding;
+
+				// Titles
+				this.drawTitle(pt, vm, ctx, opacity);
+
+				// Body
+				this.drawBody(pt, vm, ctx, opacity);
+
+				// Footer
+				this.drawFooter(pt, vm, ctx, opacity);
+			}
+		}
+	});
+};
+
+},{}],171:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart, moment) {
+
+  var helpers = Chart.helpers;
+
+  Chart.defaults.global.elements.arc = {
+    backgroundColor: Chart.defaults.global.defaultColor,
+    borderColor: "#fff",
+    borderWidth: 2
+  };
+
+  Chart.elements.Arc = Chart.Element.extend({
+    inLabelRange: function(mouseX) {
+      var vm = this._view;
+
+      if (vm) {
+        return (Math.pow(mouseX - vm.x, 2) < Math.pow(vm.radius + vm.hoverRadius, 2));
+      } else {
+        return false;
+      }
+    },
+    inRange: function(chartX, chartY) {
+
+      var vm = this._view;
+
+      if (vm) {
+        var pointRelativePosition = helpers.getAngleFromPoint(vm, {
+          x: chartX,
+          y: chartY
+        });
+
+        // Put into the range of (-PI/2, 3PI/2]
+        var startAngle = vm.startAngle < (-0.5 * Math.PI) ? vm.startAngle + (2.0 * Math.PI) : vm.startAngle > (1.5 * Math.PI) ? vm.startAngle - (2.0 * Math.PI) : vm.startAngle;
+        var endAngle = vm.endAngle < (-0.5 * Math.PI) ? vm.endAngle + (2.0 * Math.PI) : vm.endAngle > (1.5 * Math.PI) ? vm.endAngle - (2.0 * Math.PI) : vm.endAngle;
+
+        //Check if within the range of the open/close angle
+        var betweenAngles = (pointRelativePosition.angle >= startAngle && pointRelativePosition.angle <= endAngle),
+          withinRadius = (pointRelativePosition.distance >= vm.innerRadius && pointRelativePosition.distance <= vm.outerRadius);
+
+        return (betweenAngles && withinRadius);
+      } else {
+        return false;
+      }
+    },
+    tooltipPosition: function() {
+      var vm = this._view;
+
+      var centreAngle = vm.startAngle + ((vm.endAngle - vm.startAngle) / 2),
+        rangeFromCentre = (vm.outerRadius - vm.innerRadius) / 2 + vm.innerRadius;
+      return {
+        x: vm.x + (Math.cos(centreAngle) * rangeFromCentre),
+        y: vm.y + (Math.sin(centreAngle) * rangeFromCentre)
+      };
+    },
+    draw: function() {
+
+      var ctx = this._chart.ctx;
+      var vm = this._view;
+
+      ctx.beginPath();
+
+      ctx.arc(vm.x, vm.y, vm.outerRadius, vm.startAngle, vm.endAngle);
+
+      ctx.arc(vm.x, vm.y, vm.innerRadius, vm.endAngle, vm.startAngle, true);
+
+      ctx.closePath();
+      ctx.strokeStyle = vm.borderColor;
+      ctx.lineWidth = vm.borderWidth;
+
+      ctx.fillStyle = vm.backgroundColor;
+
+      ctx.fill();
+      ctx.lineJoin = 'bevel';
+
+      if (vm.borderWidth) {
+        ctx.stroke();
+      }
+    }
+  });
+};
+
+},{}],172:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.elements.line = {
+		tension: 0.4,
+		backgroundColor: Chart.defaults.global.defaultColor,
+		borderWidth: 3,
+		borderColor: Chart.defaults.global.defaultColor,
+		borderCapStyle: 'butt',
+		borderDash: [],
+		borderDashOffset: 0.0,
+		borderJoinStyle: 'miter',
+		fill: true // do we fill in the area between the line and its base axis
+	};
+
+	Chart.elements.Line = Chart.Element.extend({
+		lineToNextPoint: function(previousPoint, point, nextPoint, skipHandler, previousSkipHandler) {
+			var ctx = this._chart.ctx;
+
+			if (point._view.skip) {
+				skipHandler.call(this, previousPoint, point, nextPoint);
+			} else if (previousPoint._view.skip) {
+				previousSkipHandler.call(this, previousPoint, point, nextPoint);
+			} else if (point._view.tension === 0) {
+				ctx.lineTo(point._view.x, point._view.y);
+			} else {
+				// Line between points
+				ctx.bezierCurveTo(
+					previousPoint._view.controlPointNextX,
+					previousPoint._view.controlPointNextY,
+					point._view.controlPointPreviousX,
+					point._view.controlPointPreviousY,
+					point._view.x,
+					point._view.y
+				);
+			}
+		},
+
+		draw: function() {
+			var _this = this;
+
+			var vm = this._view;
+			var ctx = this._chart.ctx;
+			var first = this._children[0];
+			var last = this._children[this._children.length - 1];
+
+			function loopBackToStart(drawLineToCenter) {
+				if (!first._view.skip && !last._view.skip) {
+					// Draw a bezier line from last to first
+					ctx.bezierCurveTo(
+						last._view.controlPointNextX,
+						last._view.controlPointNextY,
+						first._view.controlPointPreviousX,
+						first._view.controlPointPreviousY,
+						first._view.x,
+						first._view.y
+					);
+				} else if (drawLineToCenter) {
+					// Go to center
+					ctx.lineTo(_this._view.scaleZero.x, _this._view.scaleZero.y);
+				}
+			}
+
+			ctx.save();
+
+			// If we had points and want to fill this line, do so.
+			if (this._children.length > 0 && vm.fill) {
+				// Draw the background first (so the border is always on top)
+				ctx.beginPath();
+
+				helpers.each(this._children, function(point, index) {
+					var previous = helpers.previousItem(this._children, index);
+					var next = helpers.nextItem(this._children, index);
+
+					// First point moves to it's starting position no matter what
+					if (index === 0) {
+						if (this._loop) {
+							ctx.moveTo(vm.scaleZero.x, vm.scaleZero.y);
+						} else {
+							ctx.moveTo(point._view.x, vm.scaleZero);
+						}
+
+						if (point._view.skip) {
+							if (!this._loop) {
+								ctx.moveTo(next._view.x, this._view.scaleZero);
+							}
+						} else {
+							ctx.lineTo(point._view.x, point._view.y);
+						}
+					} else {
+						this.lineToNextPoint(previous, point, next, function(previousPoint, point, nextPoint) {
+							if (this._loop) {
+								// Go to center
+								ctx.lineTo(this._view.scaleZero.x, this._view.scaleZero.y);
+							} else {
+								ctx.lineTo(previousPoint._view.x, this._view.scaleZero);
+								ctx.moveTo(nextPoint._view.x, this._view.scaleZero);
+							}
+						}, function(previousPoint, point) {
+							// If we skipped the last point, draw a line to ourselves so that the fill is nice
+							ctx.lineTo(point._view.x, point._view.y);
+						});
+					}
+				}, this);
+
+				// For radial scales, loop back around to the first point
+				if (this._loop) {
+					loopBackToStart(true);
+				} else {
+					//Round off the line by going to the base of the chart, back to the start, then fill.
+					ctx.lineTo(this._children[this._children.length - 1]._view.x, vm.scaleZero);
+					ctx.lineTo(this._children[0]._view.x, vm.scaleZero);
+				}
+
+				ctx.fillStyle = vm.backgroundColor || Chart.defaults.global.defaultColor;
+				ctx.closePath();
+				ctx.fill();
+			}
+
+			// Now draw the line between all the points with any borders
+			ctx.lineCap = vm.borderCapStyle || Chart.defaults.global.elements.line.borderCapStyle;
+
+			// IE 9 and 10 do not support line dash
+			if (ctx.setLineDash) {
+				ctx.setLineDash(vm.borderDash || Chart.defaults.global.elements.line.borderDash);
+			}
+
+			ctx.lineDashOffset = vm.borderDashOffset || Chart.defaults.global.elements.line.borderDashOffset;
+			ctx.lineJoin = vm.borderJoinStyle || Chart.defaults.global.elements.line.borderJoinStyle;
+			ctx.lineWidth = vm.borderWidth || Chart.defaults.global.elements.line.borderWidth;
+			ctx.strokeStyle = vm.borderColor || Chart.defaults.global.defaultColor;
+			ctx.beginPath();
+
+			helpers.each(this._children, function(point, index) {
+				var previous = helpers.previousItem(this._children, index);
+				var next = helpers.nextItem(this._children, index);
+
+				if (index === 0) {
+					ctx.moveTo(point._view.x, point._view.y);
+				} else {
+					this.lineToNextPoint(previous, point, next, function(previousPoint, point, nextPoint) {
+						ctx.moveTo(nextPoint._view.x, nextPoint._view.y);
+					}, function(previousPoint, point) {
+						// If we skipped the last point, move up to our point preventing a line from being drawn
+						ctx.moveTo(point._view.x, point._view.y);
+					});
+				}
+			}, this);
+
+			if (this._loop && this._children.length > 0) {
+				loopBackToStart();
+			}
+
+			ctx.stroke();
+			ctx.restore();
+		}
+	});
+};
+},{}],173:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.elements.point = {
+		radius: 3,
+		pointStyle: 'circle',
+		backgroundColor: Chart.defaults.global.defaultColor,
+		borderWidth: 1,
+		borderColor: Chart.defaults.global.defaultColor,
+		// Hover
+		hitRadius: 1,
+		hoverRadius: 4,
+		hoverBorderWidth: 1
+	};
+
+
+	Chart.elements.Point = Chart.Element.extend({
+		inRange: function(mouseX, mouseY) {
+			var vm = this._view;
+
+			if (vm) {
+				var hoverRange = vm.hitRadius + vm.radius;
+				return ((Math.pow(mouseX - vm.x, 2) + Math.pow(mouseY - vm.y, 2)) < Math.pow(hoverRange, 2));
+			} else {
+				return false;
+			}
+		},
+		inLabelRange: function(mouseX) {
+			var vm = this._view;
+
+			if (vm) {
+				return (Math.pow(mouseX - vm.x, 2) < Math.pow(vm.radius + vm.hitRadius, 2));
+			} else {
+				return false;
+			}
+		},
+		tooltipPosition: function() {
+			var vm = this._view;
+			return {
+				x: vm.x,
+				y: vm.y,
+				padding: vm.radius + vm.borderWidth
+			};
+		},
+		draw: function() {
+
+			var vm = this._view;
+			var ctx = this._chart.ctx;
+
+
+			if (vm.skip) {
+				return;
+			}
+
+			if (typeof vm.pointStyle === 'object' && ((vm.pointStyle.toString() === '[object HTMLImageElement]') || (vm.pointStyle.toString() === '[object HTMLCanvasElement]'))) {
+				ctx.drawImage(vm.pointStyle, vm.x - vm.pointStyle.width / 2, vm.y - vm.pointStyle.height / 2);
+				return;
+			}
+
+			if (!isNaN(vm.radius) && vm.radius > 0) {
+
+				ctx.strokeStyle = vm.borderColor || Chart.defaults.global.defaultColor;
+				ctx.lineWidth = helpers.getValueOrDefault(vm.borderWidth, Chart.defaults.global.elements.point.borderWidth);
+
+				ctx.fillStyle = vm.backgroundColor || Chart.defaults.global.defaultColor;
+
+				var radius = vm.radius;
+
+				var xOffset;
+				var yOffset;
+
+				switch (vm.pointStyle) {
+					// Default includes circle
+					default: ctx.beginPath();
+					ctx.arc(vm.x, vm.y, radius, 0, Math.PI * 2);
+					ctx.closePath();
+					ctx.fill();
+					break;
+					case 'triangle':
+							ctx.beginPath();
+						var edgeLength = 3 * radius / Math.sqrt(3);
+						var height = edgeLength * Math.sqrt(3) / 2;
+						ctx.moveTo(vm.x - edgeLength / 2, vm.y + height / 3);
+						ctx.lineTo(vm.x + edgeLength / 2, vm.y + height / 3);
+						ctx.lineTo(vm.x, vm.y - 2 * height / 3);
+						ctx.closePath();
+						ctx.fill();
+						break;
+					case 'rect':
+							ctx.fillRect(vm.x - 1 / Math.SQRT2 * radius, vm.y - 1 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius);
+						ctx.strokeRect(vm.x - 1 / Math.SQRT2 * radius, vm.y - 1 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius);
+						break;
+					case 'rectRot':
+							ctx.translate(vm.x, vm.y);
+						ctx.rotate(Math.PI / 4);
+						ctx.fillRect(-1 / Math.SQRT2 * radius, -1 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius);
+						ctx.strokeRect(-1 / Math.SQRT2 * radius, -1 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius, 2 / Math.SQRT2 * radius);
+						ctx.setTransform(1, 0, 0, 1, 0, 0);
+						break;
+					case 'cross':
+							ctx.beginPath();
+						ctx.moveTo(vm.x, vm.y + radius);
+						ctx.lineTo(vm.x, vm.y - radius);
+						ctx.moveTo(vm.x - radius, vm.y);
+						ctx.lineTo(vm.x + radius, vm.y);
+						ctx.closePath();
+						break;
+					case 'crossRot':
+							ctx.beginPath();
+						xOffset = Math.cos(Math.PI / 4) * radius;
+						yOffset = Math.sin(Math.PI / 4) * radius;
+						ctx.moveTo(vm.x - xOffset, vm.y - yOffset);
+						ctx.lineTo(vm.x + xOffset, vm.y + yOffset);
+						ctx.moveTo(vm.x - xOffset, vm.y + yOffset);
+						ctx.lineTo(vm.x + xOffset, vm.y - yOffset);
+						ctx.closePath();
+						break;
+					case 'star':
+							ctx.beginPath();
+						ctx.moveTo(vm.x, vm.y + radius);
+						ctx.lineTo(vm.x, vm.y - radius);
+						ctx.moveTo(vm.x - radius, vm.y);
+						ctx.lineTo(vm.x + radius, vm.y);
+						xOffset = Math.cos(Math.PI / 4) * radius;
+						yOffset = Math.sin(Math.PI / 4) * radius;
+						ctx.moveTo(vm.x - xOffset, vm.y - yOffset);
+						ctx.lineTo(vm.x + xOffset, vm.y + yOffset);
+						ctx.moveTo(vm.x - xOffset, vm.y + yOffset);
+						ctx.lineTo(vm.x + xOffset, vm.y - yOffset);
+						ctx.closePath();
+						break;
+					case 'line':
+							ctx.beginPath();
+						ctx.moveTo(vm.x - radius, vm.y);
+						ctx.lineTo(vm.x + radius, vm.y);
+						ctx.closePath();
+						break;
+					case 'dash':
+							ctx.beginPath();
+						ctx.moveTo(vm.x, vm.y);
+						ctx.lineTo(vm.x + radius, vm.y);
+						ctx.closePath();
+						break;
+				}
+
+				ctx.stroke();
+			}
+		}
+	});
+};
+},{}],174:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	Chart.defaults.global.elements.rectangle = {
+		backgroundColor: Chart.defaults.global.defaultColor,
+		borderWidth: 0,
+		borderColor: Chart.defaults.global.defaultColor,
+		borderSkipped: 'bottom'
+	};
+
+	Chart.elements.Rectangle = Chart.Element.extend({
+		draw: function() {
+
+			var ctx = this._chart.ctx;
+			var vm = this._view;
+
+			var halfWidth = vm.width / 2,
+				leftX = vm.x - halfWidth,
+				rightX = vm.x + halfWidth,
+				top = vm.base - (vm.base - vm.y),
+				halfStroke = vm.borderWidth / 2;
+
+			// Canvas doesn't allow us to stroke inside the width so we can
+			// adjust the sizes to fit if we're setting a stroke on the line
+			if (vm.borderWidth) {
+				leftX += halfStroke;
+				rightX -= halfStroke;
+				top += halfStroke;
+			}
+
+			ctx.beginPath();
+
+			ctx.fillStyle = vm.backgroundColor;
+			ctx.strokeStyle = vm.borderColor;
+			ctx.lineWidth = vm.borderWidth;
+
+			// Corner points, from bottom-left to bottom-right clockwise
+			// | 1 2 |
+			// | 0 3 |
+			var corners = [
+				[leftX, vm.base],
+				[leftX, top],
+				[rightX, top],
+				[rightX, vm.base]
+			];
+
+			// Find first (starting) corner with fallback to 'bottom' 
+			var borders = ['bottom', 'left', 'top', 'right'];
+			var startCorner = borders.indexOf(vm.borderSkipped, 0);
+			if (startCorner === -1)
+				startCorner = 0;
+
+			function cornerAt(index) {
+				return corners[(startCorner + index) % 4];
+			}
+
+			// Draw rectangle from 'startCorner'
+			ctx.moveTo.apply(ctx, cornerAt(0));
+			for (var i = 1; i < 4; i++)
+				ctx.lineTo.apply(ctx, cornerAt(i));
+
+			ctx.fill();
+			if (vm.borderWidth) {
+				ctx.stroke();
+			}
+		},
+		height: function() {
+			var vm = this._view;
+			return vm.base - vm.y;
+		},
+		inRange: function(mouseX, mouseY) {
+			var vm = this._view;
+			var inRange = false;
+
+			if (vm) {
+				if (vm.y < vm.base) {
+					inRange = (mouseX >= vm.x - vm.width / 2 && mouseX <= vm.x + vm.width / 2) && (mouseY >= vm.y && mouseY <= vm.base);
+				} else {
+					inRange = (mouseX >= vm.x - vm.width / 2 && mouseX <= vm.x + vm.width / 2) && (mouseY >= vm.base && mouseY <= vm.y);
+				}
+			}
+
+			return inRange;
+		},
+		inLabelRange: function(mouseX) {
+			var vm = this._view;
+
+			if (vm) {
+				return (mouseX >= vm.x - vm.width / 2 && mouseX <= vm.x + vm.width / 2);
+			} else {
+				return false;
+			}
+		},
+		tooltipPosition: function() {
+			var vm = this._view;
+			return {
+				x: vm.x,
+				y: vm.y
+			};
+		}
+	});
+
+};
+},{}],175:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+	// Default config for a category scale
+	var defaultConfig = {
+		position: "bottom"
+	};
+
+	var DatasetScale = Chart.Scale.extend({
+		buildTicks: function(index) {
+			this.startIndex = 0;
+			this.endIndex = this.chart.data.labels.length;
+			var findIndex;
+
+			if (this.options.ticks.min !== undefined) {
+				// user specified min value
+				findIndex = helpers.indexOf(this.chart.data.labels, this.options.ticks.min);
+				this.startIndex = findIndex !== -1 ? findIndex : this.startIndex;
+			}
+
+			if (this.options.ticks.max !== undefined) {
+				// user specified max value
+				findIndex = helpers.indexOf(this.chart.data.labels, this.options.ticks.max);
+				this.endIndex = findIndex !== -1 ? findIndex : this.endIndex;
+			}
+
+			// If we are viewing some subset of labels, slice the original array
+			this.ticks = (this.startIndex === 0 && this.endIndex === this.chart.data.labels.length) ? this.chart.data.labels : this.chart.data.labels.slice(this.startIndex, this.endIndex + 1);
+		},
+
+		getLabelForIndex: function(index, datasetIndex) {
+			return this.ticks[index];
+		},
+
+		// Used to get data value locations.  Value can either be an index or a numerical value
+		getPixelForValue: function(value, index, datasetIndex, includeOffset) {
+			// 1 is added because we need the length but we have the indexes
+			var offsetAmt = Math.max((this.ticks.length - ((this.options.gridLines.offsetGridLines) ? 0 : 1)), 1);
+
+			if (this.isHorizontal()) {
+				var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+				var valueWidth = innerWidth / offsetAmt;
+				var widthOffset = (valueWidth * (index - this.startIndex)) + this.paddingLeft;
+
+				if (this.options.gridLines.offsetGridLines && includeOffset) {
+					widthOffset += (valueWidth / 2);
+				}
+
+				return this.left + Math.round(widthOffset);
+			} else {
+				var innerHeight = this.height - (this.paddingTop + this.paddingBottom);
+				var valueHeight = innerHeight / offsetAmt;
+				var heightOffset = (valueHeight * (index - this.startIndex)) + this.paddingTop;
+
+				if (this.options.gridLines.offsetGridLines && includeOffset) {
+					heightOffset += (valueHeight / 2);
+				}
+
+				return this.top + Math.round(heightOffset);
+			}
+		},
+		getPixelForTick: function(index, includeOffset) {
+			return this.getPixelForValue(this.ticks[index], index + this.startIndex, null, includeOffset);
+		}
+	});
+
+	Chart.scaleService.registerScaleType("category", DatasetScale, defaultConfig);
+
+};
+},{}],176:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	var defaultConfig = {
+		position: "left",
+		ticks: {
+			callback: function(tickValue, index, ticks) {
+				var delta = ticks[1] - ticks[0];
+
+				// If we have a number like 2.5 as the delta, figure out how many decimal places we need
+				if (Math.abs(delta) > 1) {
+					if (tickValue !== Math.floor(tickValue)) {
+						// not an integer
+						delta = tickValue - Math.floor(tickValue);
+					}
+				}
+
+				var logDelta = helpers.log10(Math.abs(delta));
+				var tickString = '';
+
+				if (tickValue !== 0) {
+					var numDecimal = -1 * Math.floor(logDelta);
+					numDecimal = Math.max(Math.min(numDecimal, 20), 0); // toFixed has a max of 20 decimal places
+					tickString = tickValue.toFixed(numDecimal);
+				} else {
+					tickString = '0'; // never show decimal places for 0
+				}
+
+				return tickString;
+			}
+		}
+	};
+
+	var LinearScale = Chart.Scale.extend({
+		determineDataLimits: function() {
+			// First Calculate the range
+			this.min = null;
+			this.max = null;
+
+			if (this.options.stacked) {
+				var valuesPerType = {};
+				var hasPositiveValues = false;
+				var hasNegativeValues = false;
+
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					if (valuesPerType[dataset.type] === undefined) {
+						valuesPerType[dataset.type] = {
+							positiveValues: [],
+							negativeValues: []
+						};
+					}
+
+					// Store these per type
+					var positiveValues = valuesPerType[dataset.type].positiveValues;
+					var negativeValues = valuesPerType[dataset.type].negativeValues;
+
+					if (helpers.isDatasetVisible(dataset) && (this.isHorizontal() ? dataset.xAxisID === this.id : dataset.yAxisID === this.id)) {
+						helpers.each(dataset.data, function(rawValue, index) {
+
+							var value = +this.getRightValue(rawValue);
+							if (isNaN(value)) {
+								return;
+							}
+
+							positiveValues[index] = positiveValues[index] || 0;
+							negativeValues[index] = negativeValues[index] || 0;
+
+							if (this.options.relativePoints) {
+								positiveValues[index] = 100;
+							} else {
+								if (value < 0) {
+									hasNegativeValues = true;
+									negativeValues[index] += value;
+								} else {
+									hasPositiveValues = true;
+									positiveValues[index] += value;
+								}
+							}
+						}, this);
+					}
+				}, this);
+
+				helpers.each(valuesPerType, function(valuesForType) {
+					var values = valuesForType.positiveValues.concat(valuesForType.negativeValues);
+					var minVal = helpers.min(values);
+					var maxVal = helpers.max(values);
+					this.min = this.min === null ? minVal : Math.min(this.min, minVal);
+					this.max = this.max === null ? maxVal : Math.max(this.max, maxVal);
+				}, this);
+
+			} else {
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					if (helpers.isDatasetVisible(dataset) && (this.isHorizontal() ? dataset.xAxisID === this.id : dataset.yAxisID === this.id)) {
+						helpers.each(dataset.data, function(rawValue, index) {
+							var value = +this.getRightValue(rawValue);
+							if (isNaN(value)) {
+								return;
+							}
+
+							if (this.min === null) {
+								this.min = value;
+							} else if (value < this.min) {
+								this.min = value;
+							}
+
+							if (this.max === null) {
+								this.max = value;
+							} else if (value > this.max) {
+								this.max = value;
+							}
+						}, this);
+					}
+				}, this);
+			}
+
+			// If we are forcing it to begin at 0, but 0 will already be rendered on the chart,
+			// do nothing since that would make the chart weird. If the user really wants a weird chart
+			// axis, they can manually override it
+			if (this.options.ticks.beginAtZero) {
+				var minSign = helpers.sign(this.min);
+				var maxSign = helpers.sign(this.max);
+
+				if (minSign < 0 && maxSign < 0) {
+					// move the top up to 0
+					this.max = 0;
+				} else if (minSign > 0 && maxSign > 0) {
+					// move the botttom down to 0
+					this.min = 0;
+				}
+			}
+
+			if (this.options.ticks.min !== undefined) {
+				this.min = this.options.ticks.min;
+			} else if (this.options.ticks.suggestedMin !== undefined) {
+				this.min = Math.min(this.min, this.options.ticks.suggestedMin);
+			}
+
+			if (this.options.ticks.max !== undefined) {
+				this.max = this.options.ticks.max;
+			} else if (this.options.ticks.suggestedMax !== undefined) {
+				this.max = Math.max(this.max, this.options.ticks.suggestedMax);
+			}
+
+			if (this.min === this.max) {
+				this.min--;
+				this.max++;
+			}
+		},
+		buildTicks: function() {
+
+			// Then calulate the ticks
+			this.ticks = [];
+
+			// Figure out what the max number of ticks we can support it is based on the size of
+			// the axis area. For now, we say that the minimum tick spacing in pixels must be 50
+			// We also limit the maximum number of ticks to 11 which gives a nice 10 squares on
+			// the graph
+
+			var maxTicks;
+
+			if (this.isHorizontal()) {
+				maxTicks = Math.min(this.options.ticks.maxTicksLimit ? this.options.ticks.maxTicksLimit : 11, Math.ceil(this.width / 50));
+			} else {
+				// The factor of 2 used to scale the font size has been experimentally determined.
+				var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+				maxTicks = Math.min(this.options.ticks.maxTicksLimit ? this.options.ticks.maxTicksLimit : 11, Math.ceil(this.height / (2 * tickFontSize)));
+			}
+
+			// Make sure we always have at least 2 ticks
+			maxTicks = Math.max(2, maxTicks);
+
+			// To get a "nice" value for the tick spacing, we will use the appropriately named
+			// "nice number" algorithm. See http://stackoverflow.com/questions/8506881/nice-label-algorithm-for-charts-with-minimum-ticks
+			// for details.
+
+			var spacing;
+			var fixedStepSizeSet = (this.options.ticks.fixedStepSize && this.options.ticks.fixedStepSize > 0) || (this.options.ticks.stepSize && this.options.ticks.stepSize > 0);
+			if (fixedStepSizeSet) {
+				spacing = helpers.getValueOrDefault(this.options.ticks.fixedStepSize, this.options.ticks.stepSize);
+			} else {
+				var niceRange = helpers.niceNum(this.max - this.min, false);
+				spacing = helpers.niceNum(niceRange / (maxTicks - 1), true);
+			}
+			var niceMin = Math.floor(this.min / spacing) * spacing;
+			var niceMax = Math.ceil(this.max / spacing) * spacing;
+			var numSpaces = (niceMax - niceMin) / spacing;
+
+			// If very close to our rounded value, use it.
+			if (helpers.almostEquals(numSpaces, Math.round(numSpaces), spacing / 1000)) {
+				numSpaces = Math.round(numSpaces);
+			} else {
+				numSpaces = Math.ceil(numSpaces);
+			}
+
+			// Put the values into the ticks array
+			this.ticks.push(this.options.ticks.min !== undefined ? this.options.ticks.min : niceMin);
+			for (var j = 1; j < numSpaces; ++j) {
+				this.ticks.push(niceMin + (j * spacing));
+			}
+			this.ticks.push(this.options.ticks.max !== undefined ? this.options.ticks.max : niceMax);
+
+			if (this.options.position === "left" || this.options.position === "right") {
+				// We are in a vertical orientation. The top value is the highest. So reverse the array
+				this.ticks.reverse();
+			}
+
+			// At this point, we need to update our max and min given the tick values since we have expanded the
+			// range of the scale
+			this.max = helpers.max(this.ticks);
+			this.min = helpers.min(this.ticks);
+
+			if (this.options.ticks.reverse) {
+				this.ticks.reverse();
+
+				this.start = this.max;
+				this.end = this.min;
+			} else {
+				this.start = this.min;
+				this.end = this.max;
+			}
+		},
+		getLabelForIndex: function(index, datasetIndex) {
+			return +this.getRightValue(this.chart.data.datasets[datasetIndex].data[index]);
+		},
+		convertTicksToLabels: function() {
+			this.ticksAsNumbers = this.ticks.slice();
+			this.zeroLineIndex = this.ticks.indexOf(0);
+
+			Chart.Scale.prototype.convertTicksToLabels.call(this);
+		},
+		// Utils
+		getPixelForValue: function(value, index, datasetIndex, includeOffset) {
+			// This must be called after fit has been run so that
+			//      this.left, this.top, this.right, and this.bottom have been defined
+			var rightValue = +this.getRightValue(value);
+			var pixel;
+			var range = this.end - this.start;
+
+			if (this.isHorizontal()) {
+				var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+				pixel = this.left + (innerWidth / range * (rightValue - this.start));
+				return Math.round(pixel + this.paddingLeft);
+			} else {
+				var innerHeight = this.height - (this.paddingTop + this.paddingBottom);
+				pixel = (this.bottom - this.paddingBottom) - (innerHeight / range * (rightValue - this.start));
+				return Math.round(pixel);
+			}
+		},
+		getPixelForTick: function(index, includeOffset) {
+			return this.getPixelForValue(this.ticksAsNumbers[index], null, null, includeOffset);
+		}
+	});
+	Chart.scaleService.registerScaleType("linear", LinearScale, defaultConfig);
+
+};
+},{}],177:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	var defaultConfig = {
+		position: "left",
+
+		// label settings
+		ticks: {
+			callback: function(value, index, arr) {
+				var remain = value / (Math.pow(10, Math.floor(Chart.helpers.log10(value))));
+
+				if (remain === 1 || remain === 2 || remain === 5 || index === 0 || index === arr.length - 1) {
+					return value.toExponential();
+				} else {
+					return '';
+				}
+			}
+		}
+	};
+
+	var LogarithmicScale = Chart.Scale.extend({
+		determineDataLimits: function() {
+			// Calculate Range
+			this.min = null;
+			this.max = null;
+
+			if (this.options.stacked) {
+				var valuesPerType = {};
+
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					if (helpers.isDatasetVisible(dataset) && (this.isHorizontal() ? dataset.xAxisID === this.id : dataset.yAxisID === this.id)) {
+						if (valuesPerType[dataset.type] === undefined) {
+							valuesPerType[dataset.type] = [];
+						}
+
+						helpers.each(dataset.data, function(rawValue, index) {
+							var values = valuesPerType[dataset.type];
+							var value = +this.getRightValue(rawValue);
+							if (isNaN(value)) {
+								return;
+							}
+
+							values[index] = values[index] || 0;
+
+							if (this.options.relativePoints) {
+								values[index] = 100;
+							} else {
+								// Don't need to split positive and negative since the log scale can't handle a 0 crossing
+								values[index] += value;
+							}
+						}, this);
+					}
+				}, this);
+
+				helpers.each(valuesPerType, function(valuesForType) {
+					var minVal = helpers.min(valuesForType);
+					var maxVal = helpers.max(valuesForType);
+					this.min = this.min === null ? minVal : Math.min(this.min, minVal);
+					this.max = this.max === null ? maxVal : Math.max(this.max, maxVal);
+				}, this);
+
+			} else {
+				helpers.each(this.chart.data.datasets, function(dataset) {
+					if (helpers.isDatasetVisible(dataset) && (this.isHorizontal() ? dataset.xAxisID === this.id : dataset.yAxisID === this.id)) {
+						helpers.each(dataset.data, function(rawValue, index) {
+							var value = +this.getRightValue(rawValue);
+							if (isNaN(value)) {
+								return;
+							}
+
+							if (this.min === null) {
+								this.min = value;
+							} else if (value < this.min) {
+								this.min = value;
+							}
+
+							if (this.max === null) {
+								this.max = value;
+							} else if (value > this.max) {
+								this.max = value;
+							}
+						}, this);
+					}
+				}, this);
+			}
+
+			this.min = this.options.ticks.min !== undefined ? this.options.ticks.min : this.min;
+			this.max = this.options.ticks.max !== undefined ? this.options.ticks.max : this.max;
+
+			if (this.min === this.max) {
+				if (this.min !== 0 && this.min !== null) {
+					this.min = Math.pow(10, Math.floor(helpers.log10(this.min)) - 1);
+					this.max = Math.pow(10, Math.floor(helpers.log10(this.max)) + 1);
+				} else {
+					this.min = 1;
+					this.max = 10;
+				}
+			}
+		},
+		buildTicks: function() {
+			// Reset the ticks array. Later on, we will draw a grid line at these positions
+			// The array simply contains the numerical value of the spots where ticks will be
+			this.ticks = [];
+
+			// Figure out what the max number of ticks we can support it is based on the size of
+			// the axis area. For now, we say that the minimum tick spacing in pixels must be 50
+			// We also limit the maximum number of ticks to 11 which gives a nice 10 squares on
+			// the graph
+
+			var tickVal = this.options.ticks.min !== undefined ? this.options.ticks.min : Math.pow(10, Math.floor(helpers.log10(this.min)));
+
+			while (tickVal < this.max) {
+				this.ticks.push(tickVal);
+
+				var exp = Math.floor(helpers.log10(tickVal));
+				var significand = Math.floor(tickVal / Math.pow(10, exp)) + 1;
+
+				if (significand === 10) {
+					significand = 1;
+					++exp;
+				}
+
+				tickVal = significand * Math.pow(10, exp);
+			}
+
+			var lastTick = this.options.ticks.max !== undefined ? this.options.ticks.max : tickVal;
+			this.ticks.push(lastTick);
+
+			if (this.options.position === "left" || this.options.position === "right") {
+				// We are in a vertical orientation. The top value is the highest. So reverse the array
+				this.ticks.reverse();
+			}
+
+			// At this point, we need to update our max and min given the tick values since we have expanded the
+			// range of the scale
+			this.max = helpers.max(this.ticks);
+			this.min = helpers.min(this.ticks);
+
+			if (this.options.ticks.reverse) {
+				this.ticks.reverse();
+
+				this.start = this.max;
+				this.end = this.min;
+			} else {
+				this.start = this.min;
+				this.end = this.max;
+			}
+		},
+		convertTicksToLabels: function() {
+			this.tickValues = this.ticks.slice();
+
+			Chart.Scale.prototype.convertTicksToLabels.call(this);
+		},
+		// Get the correct tooltip label
+		getLabelForIndex: function(index, datasetIndex) {
+			return +this.getRightValue(this.chart.data.datasets[datasetIndex].data[index]);
+		},
+		getPixelForTick: function(index, includeOffset) {
+			return this.getPixelForValue(this.tickValues[index], null, null, includeOffset);
+		},
+		getPixelForValue: function(value, index, datasetIndex, includeOffset) {
+			var pixel;
+
+			var newVal = +this.getRightValue(value);
+			var range = helpers.log10(this.end) - helpers.log10(this.start);
+
+			if (this.isHorizontal()) {
+
+				if (newVal === 0) {
+					pixel = this.left + this.paddingLeft;
+				} else {
+					var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+					pixel = this.left + (innerWidth / range * (helpers.log10(newVal) - helpers.log10(this.start)));
+					pixel += this.paddingLeft;
+				}
+			} else {
+				// Bottom - top since pixels increase downard on a screen
+				if (newVal === 0) {
+					pixel = this.top + this.paddingTop;
+				} else {
+					var innerHeight = this.height - (this.paddingTop + this.paddingBottom);
+					pixel = (this.bottom - this.paddingBottom) - (innerHeight / range * (helpers.log10(newVal) - helpers.log10(this.start)));
+				}
+			}
+
+			return pixel;
+		}
+
+	});
+	Chart.scaleService.registerScaleType("logarithmic", LogarithmicScale, defaultConfig);
+
+};
+},{}],178:[function(require,module,exports){
+"use strict";
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+
+	var defaultConfig = {
+		display: true,
+
+		//Boolean - Whether to animate scaling the chart from the centre
+		animate: true,
+		lineArc: false,
+		position: "chartArea",
+
+		angleLines: {
+			display: true,
+			color: "rgba(0, 0, 0, 0.1)",
+			lineWidth: 1
+		},
+
+		// label settings
+		ticks: {
+			//Boolean - Show a backdrop to the scale label
+			showLabelBackdrop: true,
+
+			//String - The colour of the label backdrop
+			backdropColor: "rgba(255,255,255,0.75)",
+
+			//Number - The backdrop padding above & below the label in pixels
+			backdropPaddingY: 2,
+
+			//Number - The backdrop padding to the side of the label in pixels
+			backdropPaddingX: 2
+		},
+
+		pointLabels: {
+			//Number - Point label font size in pixels
+			fontSize: 10,
+
+			//Function - Used to convert point labels
+			callback: function(label) {
+				return label;
+			}
+		}
+	};
+
+	var LinearRadialScale = Chart.Scale.extend({
+		getValueCount: function() {
+			return this.chart.data.labels.length;
+		},
+		setDimensions: function() {
+			// Set the unconstrained dimension before label rotation
+			this.width = this.maxWidth;
+			this.height = this.maxHeight;
+			this.xCenter = Math.round(this.width / 2);
+			this.yCenter = Math.round(this.height / 2);
+
+			var minSize = helpers.min([this.height, this.width]);
+			var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+			this.drawingArea = (this.options.display) ? (minSize / 2) - (tickFontSize / 2 + this.options.ticks.backdropPaddingY) : (minSize / 2);
+		},
+		determineDataLimits: function() {
+			this.min = null;
+			this.max = null;
+
+			helpers.each(this.chart.data.datasets, function(dataset) {
+				if (helpers.isDatasetVisible(dataset)) {
+					helpers.each(dataset.data, function(rawValue, index) {
+						var value = +this.getRightValue(rawValue);
+						if (isNaN(value)) {
+							return;
+						}
+
+						if (this.min === null) {
+							this.min = value;
+						} else if (value < this.min) {
+							this.min = value;
+						}
+
+						if (this.max === null) {
+							this.max = value;
+						} else if (value > this.max) {
+							this.max = value;
+						}
+					}, this);
+				}
+			}, this);
+
+			// If we are forcing it to begin at 0, but 0 will already be rendered on the chart,
+			// do nothing since that would make the chart weird. If the user really wants a weird chart
+			// axis, they can manually override it
+			if (this.options.ticks.beginAtZero) {
+				var minSign = helpers.sign(this.min);
+				var maxSign = helpers.sign(this.max);
+
+				if (minSign < 0 && maxSign < 0) {
+					// move the top up to 0
+					this.max = 0;
+				} else if (minSign > 0 && maxSign > 0) {
+					// move the botttom down to 0
+					this.min = 0;
+				}
+			}
+
+			if (this.options.ticks.min !== undefined) {
+				this.min = this.options.ticks.min;
+			} else if (this.options.ticks.suggestedMin !== undefined) {
+				this.min = Math.min(this.min, this.options.ticks.suggestedMin);
+			}
+
+			if (this.options.ticks.max !== undefined) {
+				this.max = this.options.ticks.max;
+			} else if (this.options.ticks.suggestedMax !== undefined) {
+				this.max = Math.max(this.max, this.options.ticks.suggestedMax);
+			}
+
+			if (this.min === this.max) {
+				this.min--;
+				this.max++;
+			}
+		},
+		buildTicks: function() {
+
+
+			this.ticks = [];
+
+			// Figure out what the max number of ticks we can support it is based on the size of
+			// the axis area. For now, we say that the minimum tick spacing in pixels must be 50
+			// We also limit the maximum number of ticks to 11 which gives a nice 10 squares on
+			// the graph
+			var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+			var maxTicks = Math.min(this.options.ticks.maxTicksLimit ? this.options.ticks.maxTicksLimit : 11, Math.ceil(this.drawingArea / (1.5 * tickFontSize)));
+			maxTicks = Math.max(2, maxTicks); // Make sure we always have at least 2 ticks
+
+			// To get a "nice" value for the tick spacing, we will use the appropriately named
+			// "nice number" algorithm. See http://stackoverflow.com/questions/8506881/nice-label-algorithm-for-charts-with-minimum-ticks
+			// for details.
+
+			var niceRange = helpers.niceNum(this.max - this.min, false);
+			var spacing = helpers.niceNum(niceRange / (maxTicks - 1), true);
+			var niceMin = Math.floor(this.min / spacing) * spacing;
+			var niceMax = Math.ceil(this.max / spacing) * spacing;
+
+			var numSpaces = Math.ceil((niceMax - niceMin) / spacing);
+
+			// Put the values into the ticks array
+			this.ticks.push(this.options.ticks.min !== undefined ? this.options.ticks.min : niceMin);
+			for (var j = 1; j < numSpaces; ++j) {
+				this.ticks.push(niceMin + (j * spacing));
+			}
+			this.ticks.push(this.options.ticks.max !== undefined ? this.options.ticks.max : niceMax);
+
+			// At this point, we need to update our max and min given the tick values since we have expanded the
+			// range of the scale
+			this.max = helpers.max(this.ticks);
+			this.min = helpers.min(this.ticks);
+
+			if (this.options.ticks.reverse) {
+				this.ticks.reverse();
+
+				this.start = this.max;
+				this.end = this.min;
+			} else {
+				this.start = this.min;
+				this.end = this.max;
+			}
+
+			this.zeroLineIndex = this.ticks.indexOf(0);
+		},
+		convertTicksToLabels: function() {
+			Chart.Scale.prototype.convertTicksToLabels.call(this);
+
+			// Point labels
+			this.pointLabels = this.chart.data.labels.map(this.options.pointLabels.callback, this);
+		},
+		getLabelForIndex: function(index, datasetIndex) {
+			return +this.getRightValue(this.chart.data.datasets[datasetIndex].data[index]);
+		},
+		fit: function() {
+			/*
+			 * Right, this is really confusing and there is a lot of maths going on here
+			 * The gist of the problem is here: https://gist.github.com/nnnick/696cc9c55f4b0beb8fe9
+			 *
+			 * Reaction: https://dl.dropboxusercontent.com/u/34601363/toomuchscience.gif
+			 *
+			 * Solution:
+			 *
+			 * We assume the radius of the polygon is half the size of the canvas at first
+			 * at each index we check if the text overlaps.
+			 *
+			 * Where it does, we store that angle and that index.
+			 *
+			 * After finding the largest index and angle we calculate how much we need to remove
+			 * from the shape radius to move the point inwards by that x.
+			 *
+			 * We average the left and right distances to get the maximum shape radius that can fit in the box
+			 * along with labels.
+			 *
+			 * Once we have that, we can find the centre point for the chart, by taking the x text protrusion
+			 * on each side, removing that from the size, halving it and adding the left x protrusion width.
+			 *
+			 * This will mean we have a shape fitted to the canvas, as large as it can be with the labels
+			 * and position it in the most space efficient manner
+			 *
+			 * https://dl.dropboxusercontent.com/u/34601363/yeahscience.gif
+			 */
+
+			var pointLabelFontSize = helpers.getValueOrDefault(this.options.pointLabels.fontSize, Chart.defaults.global.defaultFontSize);
+			var pointLabeFontStyle = helpers.getValueOrDefault(this.options.pointLabels.fontStyle, Chart.defaults.global.defaultFontStyle);
+			var pointLabeFontFamily = helpers.getValueOrDefault(this.options.pointLabels.fontFamily, Chart.defaults.global.defaultFontFamily);
+			var pointLabeFont = helpers.fontString(pointLabelFontSize, pointLabeFontStyle, pointLabeFontFamily);
+
+			// Get maximum radius of the polygon. Either half the height (minus the text width) or half the width.
+			// Use this to calculate the offset + change. - Make sure L/R protrusion is at least 0 to stop issues with centre points
+			var largestPossibleRadius = helpers.min([(this.height / 2 - pointLabelFontSize - 5), this.width / 2]),
+				pointPosition,
+				i,
+				textWidth,
+				halfTextWidth,
+				furthestRight = this.width,
+				furthestRightIndex,
+				furthestRightAngle,
+				furthestLeft = 0,
+				furthestLeftIndex,
+				furthestLeftAngle,
+				xProtrusionLeft,
+				xProtrusionRight,
+				radiusReductionRight,
+				radiusReductionLeft,
+				maxWidthRadius;
+			this.ctx.font = pointLabeFont;
+
+			for (i = 0; i < this.getValueCount(); i++) {
+				// 5px to space the text slightly out - similar to what we do in the draw function.
+				pointPosition = this.getPointPosition(i, largestPossibleRadius);
+				textWidth = this.ctx.measureText(this.pointLabels[i] ? this.pointLabels[i] : '').width + 5;
+				if (i === 0 || i === this.getValueCount() / 2) {
+					// If we're at index zero, or exactly the middle, we're at exactly the top/bottom
+					// of the radar chart, so text will be aligned centrally, so we'll half it and compare
+					// w/left and right text sizes
+					halfTextWidth = textWidth / 2;
+					if (pointPosition.x + halfTextWidth > furthestRight) {
+						furthestRight = pointPosition.x + halfTextWidth;
+						furthestRightIndex = i;
+					}
+					if (pointPosition.x - halfTextWidth < furthestLeft) {
+						furthestLeft = pointPosition.x - halfTextWidth;
+						furthestLeftIndex = i;
+					}
+				} else if (i < this.getValueCount() / 2) {
+					// Less than half the values means we'll left align the text
+					if (pointPosition.x + textWidth > furthestRight) {
+						furthestRight = pointPosition.x + textWidth;
+						furthestRightIndex = i;
+					}
+				} else if (i > this.getValueCount() / 2) {
+					// More than half the values means we'll right align the text
+					if (pointPosition.x - textWidth < furthestLeft) {
+						furthestLeft = pointPosition.x - textWidth;
+						furthestLeftIndex = i;
+					}
+				}
+			}
+
+			xProtrusionLeft = furthestLeft;
+			xProtrusionRight = Math.ceil(furthestRight - this.width);
+
+			furthestRightAngle = this.getIndexAngle(furthestRightIndex);
+			furthestLeftAngle = this.getIndexAngle(furthestLeftIndex);
+
+			radiusReductionRight = xProtrusionRight / Math.sin(furthestRightAngle + Math.PI / 2);
+			radiusReductionLeft = xProtrusionLeft / Math.sin(furthestLeftAngle + Math.PI / 2);
+
+			// Ensure we actually need to reduce the size of the chart
+			radiusReductionRight = (helpers.isNumber(radiusReductionRight)) ? radiusReductionRight : 0;
+			radiusReductionLeft = (helpers.isNumber(radiusReductionLeft)) ? radiusReductionLeft : 0;
+
+			this.drawingArea = Math.round(largestPossibleRadius - (radiusReductionLeft + radiusReductionRight) / 2);
+			this.setCenterPoint(radiusReductionLeft, radiusReductionRight);
+		},
+		setCenterPoint: function(leftMovement, rightMovement) {
+
+			var maxRight = this.width - rightMovement - this.drawingArea,
+				maxLeft = leftMovement + this.drawingArea;
+
+			this.xCenter = Math.round(((maxLeft + maxRight) / 2) + this.left);
+			// Always vertically in the centre as the text height doesn't change
+			this.yCenter = Math.round((this.height / 2) + this.top);
+		},
+
+		getIndexAngle: function(index) {
+			var angleMultiplier = (Math.PI * 2) / this.getValueCount();
+			// Start from the top instead of right, so remove a quarter of the circle
+
+			return index * angleMultiplier - (Math.PI / 2);
+		},
+		getDistanceFromCenterForValue: function(value) {
+			if (value === null) {
+				return 0; // null always in center
+			}
+
+			// Take into account half font size + the yPadding of the top value
+			var scalingFactor = this.drawingArea / (this.max - this.min);
+			if (this.options.reverse) {
+				return (this.max - value) * scalingFactor;
+			} else {
+				return (value - this.min) * scalingFactor;
+			}
+		},
+		getPointPosition: function(index, distanceFromCenter) {
+			var thisAngle = this.getIndexAngle(index);
+			return {
+				x: Math.round(Math.cos(thisAngle) * distanceFromCenter) + this.xCenter,
+				y: Math.round(Math.sin(thisAngle) * distanceFromCenter) + this.yCenter
+			};
+		},
+		getPointPositionForValue: function(index, value) {
+			return this.getPointPosition(index, this.getDistanceFromCenterForValue(value));
+		},
+		draw: function() {
+			if (this.options.display) {
+				var ctx = this.ctx;
+				helpers.each(this.ticks, function(label, index) {
+					// Don't draw a centre value (if it is minimum)
+					if (index > 0 || this.options.reverse) {
+						var yCenterOffset = this.getDistanceFromCenterForValue(this.ticks[index]);
+						var yHeight = this.yCenter - yCenterOffset;
+
+						// Draw circular lines around the scale
+						if (this.options.gridLines.display) {
+							ctx.strokeStyle = this.options.gridLines.color;
+							ctx.lineWidth = this.options.gridLines.lineWidth;
+
+							if (this.options.lineArc) {
+								// Draw circular arcs between the points
+								ctx.beginPath();
+								ctx.arc(this.xCenter, this.yCenter, yCenterOffset, 0, Math.PI * 2);
+								ctx.closePath();
+								ctx.stroke();
+							} else {
+								// Draw straight lines connecting each index
+								ctx.beginPath();
+								for (var i = 0; i < this.getValueCount(); i++) {
+									var pointPosition = this.getPointPosition(i, this.getDistanceFromCenterForValue(this.ticks[index]));
+									if (i === 0) {
+										ctx.moveTo(pointPosition.x, pointPosition.y);
+									} else {
+										ctx.lineTo(pointPosition.x, pointPosition.y);
+									}
+								}
+								ctx.closePath();
+								ctx.stroke();
+							}
+						}
+
+						if (this.options.ticks.display) {
+							var tickFontColor = helpers.getValueOrDefault(this.options.ticks.fontColor, Chart.defaults.global.defaultFontColor);
+							var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+							var tickFontStyle = helpers.getValueOrDefault(this.options.ticks.fontStyle, Chart.defaults.global.defaultFontStyle);
+							var tickFontFamily = helpers.getValueOrDefault(this.options.ticks.fontFamily, Chart.defaults.global.defaultFontFamily);
+							var tickLabelFont = helpers.fontString(tickFontSize, tickFontStyle, tickFontFamily);
+							ctx.font = tickLabelFont;
+
+							if (this.options.ticks.showLabelBackdrop) {
+								var labelWidth = ctx.measureText(label).width;
+								ctx.fillStyle = this.options.ticks.backdropColor;
+								ctx.fillRect(
+									this.xCenter - labelWidth / 2 - this.options.ticks.backdropPaddingX,
+									yHeight - tickFontSize / 2 - this.options.ticks.backdropPaddingY,
+									labelWidth + this.options.ticks.backdropPaddingX * 2,
+									tickFontSize + this.options.ticks.backdropPaddingY * 2
+								);
+							}
+
+							ctx.textAlign = 'center';
+							ctx.textBaseline = "middle";
+							ctx.fillStyle = tickFontColor;
+							ctx.fillText(label, this.xCenter, yHeight);
+						}
+					}
+				}, this);
+
+				if (!this.options.lineArc) {
+					ctx.lineWidth = this.options.angleLines.lineWidth;
+					ctx.strokeStyle = this.options.angleLines.color;
+
+					for (var i = this.getValueCount() - 1; i >= 0; i--) {
+						if (this.options.angleLines.display) {
+							var outerPosition = this.getPointPosition(i, this.getDistanceFromCenterForValue(this.options.reverse ? this.min : this.max));
+							ctx.beginPath();
+							ctx.moveTo(this.xCenter, this.yCenter);
+							ctx.lineTo(outerPosition.x, outerPosition.y);
+							ctx.stroke();
+							ctx.closePath();
+						}
+						// Extra 3px out for some label spacing
+						var pointLabelPosition = this.getPointPosition(i, this.getDistanceFromCenterForValue(this.options.reverse ? this.min : this.max) + 5);
+						
+						var pointLabelFontColor = helpers.getValueOrDefault(this.options.pointLabels.fontColor, Chart.defaults.global.defaultFontColor);
+						var pointLabelFontSize = helpers.getValueOrDefault(this.options.pointLabels.fontSize, Chart.defaults.global.defaultFontSize);
+						var pointLabeFontStyle = helpers.getValueOrDefault(this.options.pointLabels.fontStyle, Chart.defaults.global.defaultFontStyle);
+						var pointLabeFontFamily = helpers.getValueOrDefault(this.options.pointLabels.fontFamily, Chart.defaults.global.defaultFontFamily);
+						var pointLabeFont = helpers.fontString(pointLabelFontSize, pointLabeFontStyle, pointLabeFontFamily);
+
+						ctx.font = pointLabeFont;
+						ctx.fillStyle = pointLabelFontColor;
+
+						var labelsCount = this.pointLabels.length,
+							halfLabelsCount = this.pointLabels.length / 2,
+							quarterLabelsCount = halfLabelsCount / 2,
+							upperHalf = (i < quarterLabelsCount || i > labelsCount - quarterLabelsCount),
+							exactQuarter = (i === quarterLabelsCount || i === labelsCount - quarterLabelsCount);
+						if (i === 0) {
+							ctx.textAlign = 'center';
+						} else if (i === halfLabelsCount) {
+							ctx.textAlign = 'center';
+						} else if (i < halfLabelsCount) {
+							ctx.textAlign = 'left';
+						} else {
+							ctx.textAlign = 'right';
+						}
+
+						// Set the correct text baseline based on outer positioning
+						if (exactQuarter) {
+							ctx.textBaseline = 'middle';
+						} else if (upperHalf) {
+							ctx.textBaseline = 'bottom';
+						} else {
+							ctx.textBaseline = 'top';
+						}
+
+						ctx.fillText(this.pointLabels[i] ? this.pointLabels[i] : '', pointLabelPosition.x, pointLabelPosition.y);
+					}
+				}
+			}
+		}
+	});
+	Chart.scaleService.registerScaleType("radialLinear", LinearRadialScale, defaultConfig);
+
+};
+},{}],179:[function(require,module,exports){
+/*global window: false */
+"use strict";
+
+var moment = require('moment');
+moment = typeof(moment) === 'function' ? moment : window.moment;
+
+module.exports = function(Chart) {
+
+	var helpers = Chart.helpers;
+	var time = {
+		units: [{
+			name: 'millisecond',
+			steps: [1, 2, 5, 10, 20, 50, 100, 250, 500]
+		}, {
+			name: 'second',
+			steps: [1, 2, 5, 10, 30]
+		}, {
+			name: 'minute',
+			steps: [1, 2, 5, 10, 30]
+		}, {
+			name: 'hour',
+			steps: [1, 2, 3, 6, 12]
+		}, {
+			name: 'day',
+			steps: [1, 2, 5]
+		}, {
+			name: 'week',
+			maxStep: 4
+		}, {
+			name: 'month',
+			maxStep: 3
+		}, {
+			name: 'quarter',
+			maxStep: 4
+		}, {
+			name: 'year',
+			maxStep: false
+		}]
+	};
+
+	var defaultConfig = {
+		position: "bottom",
+
+		time: {
+			parser: false, // false == a pattern string from http://momentjs.com/docs/#/parsing/string-format/ or a custom callback that converts its argument to a moment
+			format: false, // DEPRECATED false == date objects, moment object, callback or a pattern string from http://momentjs.com/docs/#/parsing/string-format/
+			unit: false, // false == automatic or override with week, month, year, etc.
+			round: false, // none, or override with week, month, year, etc.
+			displayFormat: false, // DEPRECATED
+
+			// defaults to unit's corresponding unitFormat below or override using pattern string from http://momentjs.com/docs/#/displaying/format/
+			displayFormats: {
+				'millisecond': 'h:mm:ss.SSS a', // 11:20:01.123 AM,
+				'second': 'h:mm:ss a', // 11:20:01 AM
+				'minute': 'h:mm:ss a', // 11:20:01 AM
+				'hour': 'MMM D, hA', // Sept 4, 5PM
+				'day': 'll', // Sep 4 2015
+				'week': 'll', // Week 46, or maybe "[W]WW - YYYY" ?
+				'month': 'MMM YYYY', // Sept 2015
+				'quarter': '[Q]Q - YYYY', // Q3
+				'year': 'YYYY' // 2015
+			}
+		},
+		ticks: {
+			autoSkip: false,
+		}
+	};
+
+	var TimeScale = Chart.Scale.extend({
+		initialize: function() {
+			if (!moment) {
+				throw new Error('Chart.js - Moment.js could not be found! You must include it before Chart.js to use the time scale. Download at https://momentjs.com');
+			}
+
+			Chart.Scale.prototype.initialize.call(this);
+		},
+		getLabelMoment: function(datasetIndex, index) {
+			return this.labelMoments[datasetIndex][index];
+		},
+		determineDataLimits: function() {
+			this.labelMoments = [];
+
+			// Only parse these once. If the dataset does not have data as x,y pairs, we will use
+			// these
+			var scaleLabelMoments = [];
+			if (this.chart.data.labels && this.chart.data.labels.length > 0) {
+				helpers.each(this.chart.data.labels, function(label, index) {
+					var labelMoment = this.parseTime(label);
+					if (this.options.time.round) {
+						labelMoment.startOf(this.options.time.round);
+					}
+					scaleLabelMoments.push(labelMoment);
+				}, this);
+
+				this.firstTick = moment.min.call(this, scaleLabelMoments);
+				this.lastTick = moment.max.call(this, scaleLabelMoments);
+			} else {
+				this.firstTick = null;
+				this.lastTick = null;
+			}
+
+			helpers.each(this.chart.data.datasets, function(dataset, datasetIndex) {
+				var momentsForDataset = [];
+
+				if (typeof dataset.data[0] === 'object') {
+					helpers.each(dataset.data, function(value, index) {
+						var labelMoment = this.parseTime(this.getRightValue(value));
+						if (this.options.time.round) {
+							labelMoment.startOf(this.options.time.round);
+						}
+						momentsForDataset.push(labelMoment);
+
+						// May have gone outside the scale ranges, make sure we keep the first and last ticks updated
+						this.firstTick = this.firstTick !== null ? moment.min(this.firstTick, labelMoment) : labelMoment;
+						this.lastTick = this.lastTick !== null ? moment.max(this.lastTick, labelMoment) : labelMoment;
+					}, this);
+				} else {
+					// We have no labels. Use the ones from the scale
+					momentsForDataset = scaleLabelMoments;
+				}
+
+				this.labelMoments.push(momentsForDataset);
+			}, this);
+
+			// Set these after we've done all the data
+			if (this.options.time.min) {
+				this.firstTick = this.parseTime(this.options.time.min);
+			}
+
+			if (this.options.time.max) {
+				this.lastTick = this.parseTime(this.options.time.max);
+			}
+
+			// We will modify these, so clone for later
+			this.firstTick = (this.firstTick || moment()).clone();
+			this.lastTick = (this.lastTick || moment()).clone();
+		},
+		buildTicks: function(index) {
+
+			this.ticks = [];
+			this.unitScale = 1; // How much we scale the unit by, ie 2 means 2x unit per step
+			this.scaleSizeInUnits = 0; // How large the scale is in the base unit (seconds, minutes, etc)
+
+			// Set unit override if applicable
+			if (this.options.time.unit) {
+				this.tickUnit = this.options.time.unit || 'day';
+				this.displayFormat = this.options.time.displayFormats[this.tickUnit];
+				this.scaleSizeInUnits = this.lastTick.diff(this.firstTick, this.tickUnit, true);
+				this.unitScale = helpers.getValueOrDefault(this.options.time.unitStepSize, 1);
+			} else {
+				// Determine the smallest needed unit of the time
+				var tickFontSize = helpers.getValueOrDefault(this.options.ticks.fontSize, Chart.defaults.global.defaultFontSize);
+				var innerWidth = this.isHorizontal() ? this.width - (this.paddingLeft + this.paddingRight) : this.height - (this.paddingTop + this.paddingBottom);
+				
+				// Crude approximation of what the label length might be
+				var tempFirstLabel = this.tickFormatFunction(this.firstTick, 0, []);
+				var tickLabelWidth = tempFirstLabel.length * tickFontSize;
+				var cosRotation = Math.cos(helpers.toRadians(this.options.ticks.maxRotation));
+				var sinRotation = Math.sin(helpers.toRadians(this.options.ticks.maxRotation));
+				tickLabelWidth = (tickLabelWidth * cosRotation) + (tickFontSize * sinRotation);
+				var labelCapacity = innerWidth / (tickLabelWidth + 10);
+
+				// Start as small as possible
+				this.tickUnit = 'millisecond';
+				this.scaleSizeInUnits = this.lastTick.diff(this.firstTick, this.tickUnit, true);
+				this.displayFormat = this.options.time.displayFormats[this.tickUnit];
+
+				var unitDefinitionIndex = 0;
+				var unitDefinition = time.units[unitDefinitionIndex];
+
+				// While we aren't ideal and we don't have units left
+				while (unitDefinitionIndex < time.units.length) {
+					// Can we scale this unit. If `false` we can scale infinitely
+					this.unitScale = 1;
+
+					if (helpers.isArray(unitDefinition.steps) && Math.ceil(this.scaleSizeInUnits / labelCapacity) < helpers.max(unitDefinition.steps)) {
+						// Use one of the prefedined steps
+						for (var idx = 0; idx < unitDefinition.steps.length; ++idx) {
+							if (unitDefinition.steps[idx] > Math.ceil(this.scaleSizeInUnits / labelCapacity)) {
+								this.unitScale = helpers.getValueOrDefault(this.options.time.unitStepSize, unitDefinition.steps[idx]);
+								break;
+							}
+						}
+
+						break;
+					} else if ((unitDefinition.maxStep === false) || (Math.ceil(this.scaleSizeInUnits / labelCapacity) < unitDefinition.maxStep)) {
+						// We have a max step. Scale this unit
+						this.unitScale = helpers.getValueOrDefault(this.options.time.unitStepSize, Math.ceil(this.scaleSizeInUnits / labelCapacity));
+						break;
+					} else {
+						// Move to the next unit up
+						++unitDefinitionIndex;
+						unitDefinition = time.units[unitDefinitionIndex];
+
+						this.tickUnit = unitDefinition.name;
+						this.scaleSizeInUnits = this.lastTick.diff(this.firstTick, this.tickUnit, true);
+						this.displayFormat = this.options.time.displayFormats[unitDefinition.name];
+					}
+				}
+			}
+
+			var roundedStart;
+
+			// Only round the first tick if we have no hard minimum
+			if (!this.options.time.min) {
+				this.firstTick.startOf(this.tickUnit);
+				roundedStart = this.firstTick;
+			} else {
+				roundedStart = this.firstTick.clone().startOf(this.tickUnit);
+			}
+
+			// Only round the last tick if we have no hard maximum
+			if (!this.options.time.max) {
+				this.lastTick.endOf(this.tickUnit);
+			}
+
+			this.smallestLabelSeparation = this.width;
+
+			helpers.each(this.chart.data.datasets, function(dataset, datasetIndex) {
+				for (var i = 1; i < this.labelMoments[datasetIndex].length; i++) {
+					this.smallestLabelSeparation = Math.min(this.smallestLabelSeparation, this.labelMoments[datasetIndex][i].diff(this.labelMoments[datasetIndex][i - 1], this.tickUnit, true));
+				}
+			}, this);
+
+			// Tick displayFormat override
+			if (this.options.time.displayFormat) {
+				this.displayFormat = this.options.time.displayFormat;
+			}
+
+			// first tick. will have been rounded correctly if options.time.min is not specified
+			this.ticks.push(this.firstTick.clone());
+
+			// For every unit in between the first and last moment, create a moment and add it to the ticks tick
+			for (var i = 1; i < this.scaleSizeInUnits; ++i) {
+				var newTick = roundedStart.clone().add(i, this.tickUnit);
+
+				// Are we greater than the max time
+				if (this.options.time.max && newTick.diff(this.lastTick, this.tickUnit, true) >= 0) {
+					break;
+				}
+
+				if (i % this.unitScale === 0) {
+					this.ticks.push(newTick);
+				}
+			}
+
+			// Always show the right tick
+			if (this.ticks[this.ticks.length - 1].diff(this.lastTick, this.tickUnit) !== 0 || this.scaleSizeInUnits === 0) {
+			// this is a weird case. If the <max> option is the same as the end option, we can't just diff the times because the tick was created from the roundedStart
+			// but the last tick was not rounded.
+				if (this.options.time.max) {
+					this.ticks.push(this.lastTick.clone());
+					this.scaleSizeInUnits = this.lastTick.diff(this.ticks[0], this.tickUnit, true);
+				} else {
+					this.scaleSizeInUnits = Math.ceil(this.scaleSizeInUnits / this.unitScale) * this.unitScale;
+					this.ticks.push(this.firstTick.clone().add(this.scaleSizeInUnits, this.tickUnit));
+					this.lastTick = this.ticks[this.ticks.length - 1].clone();
+				}
+			}
+		},
+		// Get tooltip label
+		getLabelForIndex: function(index, datasetIndex) {
+			var label = this.chart.data.labels && index < this.chart.data.labels.length ? this.chart.data.labels[index] : '';
+
+			if (typeof this.chart.data.datasets[datasetIndex].data[0] === 'object') {
+				label = this.getRightValue(this.chart.data.datasets[datasetIndex].data[index]);
+			}
+
+			// Format nicely
+			if (this.options.time.tooltipFormat) {
+				label = this.parseTime(label).format(this.options.time.tooltipFormat);
+			}
+
+			return label;
+		},
+		// Function to format an individual tick mark
+		tickFormatFunction: function tickFormatFunction(tick, index, ticks) {
+			var formattedTick = tick.format(this.displayFormat);
+
+			if (this.options.ticks.userCallback) {
+				return this.options.ticks.userCallback(formattedTick, index, ticks);
+			} else {
+				return formattedTick;
+			}
+		},
+		convertTicksToLabels: function() {
+			this.ticks = this.ticks.map(this.tickFormatFunction, this);
+		},
+		getPixelForValue: function(value, index, datasetIndex, includeOffset) {
+			var labelMoment = this.getLabelMoment(datasetIndex, index);
+
+			if (labelMoment) {
+				var offset = labelMoment.diff(this.firstTick, this.tickUnit, true);
+
+				var decimal = offset / this.scaleSizeInUnits;
+
+				if (this.isHorizontal()) {
+					var innerWidth = this.width - (this.paddingLeft + this.paddingRight);
+					var valueWidth = innerWidth / Math.max(this.ticks.length - 1, 1);
+					var valueOffset = (innerWidth * decimal) + this.paddingLeft;
+
+					return this.left + Math.round(valueOffset);
+				} else {
+					var innerHeight = this.height - (this.paddingTop + this.paddingBottom);
+					var valueHeight = innerHeight / Math.max(this.ticks.length - 1, 1);
+					var heightOffset = (innerHeight * decimal) + this.paddingTop;
+
+					return this.top + Math.round(heightOffset);
+				}
+			}
+		},
+		parseTime: function(label) {
+			if (typeof this.options.time.parser === 'string') {
+				return moment(label, this.options.time.parser);
+			}
+			if (typeof this.options.time.parser === 'function') {
+				return this.options.time.parser(label);
+			}
+			// Date objects
+			if (typeof label.getMonth === 'function' || typeof label === 'number') {
+				return moment(label);
+			}
+			// Moment support
+			if (label.isValid && label.isValid()) {
+				return label;
+			}
+			// Custom parsing (return an instance of moment)
+			if (typeof this.options.time.format !== 'string' && this.options.time.format.call) {
+				console.warn("options.time.format is deprecated and replaced by options.time.parser. See http://nnnick.github.io/Chart.js/docs-v2/#scales-time-scale");
+				return this.options.time.format(label);
+			}
+			// Moment format parsing
+			return moment(label, this.options.time.format);
+		}
+	});
+	Chart.scaleService.registerScaleType("time", TimeScale, defaultConfig);
+
+};
+},{"moment":192}],180:[function(require,module,exports){
+/* MIT license */
+
+var convert = require("color-convert"),
+  string = require("color-string");
+
+var Color = function(obj) {
+  if (obj instanceof Color) return obj;
+  if (!(this instanceof Color)) return new Color(obj);
+
+  this.values = {
+    rgb: [0, 0, 0],
+    hsl: [0, 0, 0],
+    hsv: [0, 0, 0],
+    hwb: [0, 0, 0],
+    cmyk: [0, 0, 0, 0],
+    alpha: 1
+  }
+
+  // parse Color() argument
+  if (typeof obj == "string") {
+    var vals = string.getRgba(obj);
+    if (vals) {
+      this.setValues("rgb", vals);
+    } else if (vals = string.getHsla(obj)) {
+      this.setValues("hsl", vals);
+    } else if (vals = string.getHwb(obj)) {
+      this.setValues("hwb", vals);
+    } else {
+      throw new Error("Unable to parse color from string \"" + obj + "\"");
+    }
+  } else if (typeof obj == "object") {
+    var vals = obj;
+    if (vals["r"] !== undefined || vals["red"] !== undefined) {
+      this.setValues("rgb", vals)
+    } else if (vals["l"] !== undefined || vals["lightness"] !== undefined) {
+      this.setValues("hsl", vals)
+    } else if (vals["v"] !== undefined || vals["value"] !== undefined) {
+      this.setValues("hsv", vals)
+    } else if (vals["w"] !== undefined || vals["whiteness"] !== undefined) {
+      this.setValues("hwb", vals)
+    } else if (vals["c"] !== undefined || vals["cyan"] !== undefined) {
+      this.setValues("cmyk", vals)
+    } else {
+      throw new Error("Unable to parse color from object " + JSON.stringify(obj));
+    }
+  }
+}
+
+Color.prototype = {
+  rgb: function(vals) {
+    return this.setSpace("rgb", arguments);
+  },
+  hsl: function(vals) {
+    return this.setSpace("hsl", arguments);
+  },
+  hsv: function(vals) {
+    return this.setSpace("hsv", arguments);
+  },
+  hwb: function(vals) {
+    return this.setSpace("hwb", arguments);
+  },
+  cmyk: function(vals) {
+    return this.setSpace("cmyk", arguments);
+  },
+
+  rgbArray: function() {
+    return this.values.rgb;
+  },
+  hslArray: function() {
+    return this.values.hsl;
+  },
+  hsvArray: function() {
+    return this.values.hsv;
+  },
+  hwbArray: function() {
+    if (this.values.alpha !== 1) {
+      return this.values.hwb.concat([this.values.alpha])
+    }
+    return this.values.hwb;
+  },
+  cmykArray: function() {
+    return this.values.cmyk;
+  },
+  rgbaArray: function() {
+    var rgb = this.values.rgb;
+    return rgb.concat([this.values.alpha]);
+  },
+  hslaArray: function() {
+    var hsl = this.values.hsl;
+    return hsl.concat([this.values.alpha]);
+  },
+  alpha: function(val) {
+    if (val === undefined) {
+      return this.values.alpha;
+    }
+    this.setValues("alpha", val);
+    return this;
+  },
+
+  red: function(val) {
+    return this.setChannel("rgb", 0, val);
+  },
+  green: function(val) {
+    return this.setChannel("rgb", 1, val);
+  },
+  blue: function(val) {
+    return this.setChannel("rgb", 2, val);
+  },
+  hue: function(val) {
+    return this.setChannel("hsl", 0, val);
+  },
+  saturation: function(val) {
+    return this.setChannel("hsl", 1, val);
+  },
+  lightness: function(val) {
+    return this.setChannel("hsl", 2, val);
+  },
+  saturationv: function(val) {
+    return this.setChannel("hsv", 1, val);
+  },
+  whiteness: function(val) {
+    return this.setChannel("hwb", 1, val);
+  },
+  blackness: function(val) {
+    return this.setChannel("hwb", 2, val);
+  },
+  value: function(val) {
+    return this.setChannel("hsv", 2, val);
+  },
+  cyan: function(val) {
+    return this.setChannel("cmyk", 0, val);
+  },
+  magenta: function(val) {
+    return this.setChannel("cmyk", 1, val);
+  },
+  yellow: function(val) {
+    return this.setChannel("cmyk", 2, val);
+  },
+  black: function(val) {
+    return this.setChannel("cmyk", 3, val);
+  },
+
+  hexString: function() {
+    return string.hexString(this.values.rgb);
+  },
+  rgbString: function() {
+    return string.rgbString(this.values.rgb, this.values.alpha);
+  },
+  rgbaString: function() {
+    return string.rgbaString(this.values.rgb, this.values.alpha);
+  },
+  percentString: function() {
+    return string.percentString(this.values.rgb, this.values.alpha);
+  },
+  hslString: function() {
+    return string.hslString(this.values.hsl, this.values.alpha);
+  },
+  hslaString: function() {
+    return string.hslaString(this.values.hsl, this.values.alpha);
+  },
+  hwbString: function() {
+    return string.hwbString(this.values.hwb, this.values.alpha);
+  },
+  keyword: function() {
+    return string.keyword(this.values.rgb, this.values.alpha);
+  },
+
+  rgbNumber: function() {
+    return (this.values.rgb[0] << 16) | (this.values.rgb[1] << 8) | this.values.rgb[2];
+  },
+
+  luminosity: function() {
+    // http://www.w3.org/TR/WCAG20/#relativeluminancedef
+    var rgb = this.values.rgb;
+    var lum = [];
+    for (var i = 0; i < rgb.length; i++) {
+      var chan = rgb[i] / 255;
+      lum[i] = (chan <= 0.03928) ? chan / 12.92 : Math.pow(((chan + 0.055) / 1.055), 2.4)
+    }
+    return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+  },
+
+  contrast: function(color2) {
+    // http://www.w3.org/TR/WCAG20/#contrast-ratiodef
+    var lum1 = this.luminosity();
+    var lum2 = color2.luminosity();
+    if (lum1 > lum2) {
+      return (lum1 + 0.05) / (lum2 + 0.05)
+    };
+    return (lum2 + 0.05) / (lum1 + 0.05);
+  },
+
+  level: function(color2) {
+    var contrastRatio = this.contrast(color2);
+    return (contrastRatio >= 7.1) ? 'AAA' : (contrastRatio >= 4.5) ? 'AA' : '';
+  },
+
+  dark: function() {
+    // YIQ equation from http://24ways.org/2010/calculating-color-contrast
+    var rgb = this.values.rgb,
+      yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+    return yiq < 128;
+  },
+
+  light: function() {
+    return !this.dark();
+  },
+
+  negate: function() {
+    var rgb = []
+    for (var i = 0; i < 3; i++) {
+      rgb[i] = 255 - this.values.rgb[i];
+    }
+    this.setValues("rgb", rgb);
+    return this;
+  },
+
+  lighten: function(ratio) {
+    this.values.hsl[2] += this.values.hsl[2] * ratio;
+    this.setValues("hsl", this.values.hsl);
+    return this;
+  },
+
+  darken: function(ratio) {
+    this.values.hsl[2] -= this.values.hsl[2] * ratio;
+    this.setValues("hsl", this.values.hsl);
+    return this;
+  },
+
+  saturate: function(ratio) {
+    this.values.hsl[1] += this.values.hsl[1] * ratio;
+    this.setValues("hsl", this.values.hsl);
+    return this;
+  },
+
+  desaturate: function(ratio) {
+    this.values.hsl[1] -= this.values.hsl[1] * ratio;
+    this.setValues("hsl", this.values.hsl);
+    return this;
+  },
+
+  whiten: function(ratio) {
+    this.values.hwb[1] += this.values.hwb[1] * ratio;
+    this.setValues("hwb", this.values.hwb);
+    return this;
+  },
+
+  blacken: function(ratio) {
+    this.values.hwb[2] += this.values.hwb[2] * ratio;
+    this.setValues("hwb", this.values.hwb);
+    return this;
+  },
+
+  greyscale: function() {
+    var rgb = this.values.rgb;
+    // http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+    var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
+    this.setValues("rgb", [val, val, val]);
+    return this;
+  },
+
+  clearer: function(ratio) {
+    this.setValues("alpha", this.values.alpha - (this.values.alpha * ratio));
+    return this;
+  },
+
+  opaquer: function(ratio) {
+    this.setValues("alpha", this.values.alpha + (this.values.alpha * ratio));
+    return this;
+  },
+
+  rotate: function(degrees) {
+    var hue = this.values.hsl[0];
+    hue = (hue + degrees) % 360;
+    hue = hue < 0 ? 360 + hue : hue;
+    this.values.hsl[0] = hue;
+    this.setValues("hsl", this.values.hsl);
+    return this;
+  },
+
+  mix: function(color2, weight) {
+    weight = 1 - (weight == null ? 0.5 : weight);
+
+    // algorithm from Sass's mix(). Ratio of first color in mix is
+    // determined by the alphas of both colors and the weight
+    var t1 = weight * 2 - 1,
+      d = this.alpha() - color2.alpha();
+
+    var weight1 = (((t1 * d == -1) ? t1 : (t1 + d) / (1 + t1 * d)) + 1) / 2;
+    var weight2 = 1 - weight1;
+
+    var rgb = this.rgbArray();
+    var rgb2 = color2.rgbArray();
+
+    for (var i = 0; i < rgb.length; i++) {
+      rgb[i] = rgb[i] * weight1 + rgb2[i] * weight2;
+    }
+    this.setValues("rgb", rgb);
+
+    var alpha = this.alpha() * weight + color2.alpha() * (1 - weight);
+    this.setValues("alpha", alpha);
+
+    return this;
+  },
+
+  toJSON: function() {
+    return this.rgb();
+  },
+
+  clone: function() {
+    return new Color(this.rgb());
+  }
+}
+
+
+Color.prototype.getValues = function(space) {
+  var vals = {};
+  for (var i = 0; i < space.length; i++) {
+    vals[space.charAt(i)] = this.values[space][i];
+  }
+  if (this.values.alpha != 1) {
+    vals["a"] = this.values.alpha;
+  }
+  // {r: 255, g: 255, b: 255, a: 0.4}
+  return vals;
+}
+
+Color.prototype.setValues = function(space, vals) {
+  var spaces = {
+    "rgb": ["red", "green", "blue"],
+    "hsl": ["hue", "saturation", "lightness"],
+    "hsv": ["hue", "saturation", "value"],
+    "hwb": ["hue", "whiteness", "blackness"],
+    "cmyk": ["cyan", "magenta", "yellow", "black"]
+  };
+
+  var maxes = {
+    "rgb": [255, 255, 255],
+    "hsl": [360, 100, 100],
+    "hsv": [360, 100, 100],
+    "hwb": [360, 100, 100],
+    "cmyk": [100, 100, 100, 100]
+  };
+
+  var alpha = 1;
+  if (space == "alpha") {
+    alpha = vals;
+  } else if (vals.length) {
+    // [10, 10, 10]
+    this.values[space] = vals.slice(0, space.length);
+    alpha = vals[space.length];
+  } else if (vals[space.charAt(0)] !== undefined) {
+    // {r: 10, g: 10, b: 10}
+    for (var i = 0; i < space.length; i++) {
+      this.values[space][i] = vals[space.charAt(i)];
+    }
+    alpha = vals.a;
+  } else if (vals[spaces[space][0]] !== undefined) {
+    // {red: 10, green: 10, blue: 10}
+    var chans = spaces[space];
+    for (var i = 0; i < space.length; i++) {
+      this.values[space][i] = vals[chans[i]];
+    }
+    alpha = vals.alpha;
+  }
+  this.values.alpha = Math.max(0, Math.min(1, (alpha !== undefined ? alpha : this.values.alpha)));
+  if (space == "alpha") {
+    return;
+  }
+
+  // cap values of the space prior converting all values
+  for (var i = 0; i < space.length; i++) {
+    var capped = Math.max(0, Math.min(maxes[space][i], this.values[space][i]));
+    this.values[space][i] = Math.round(capped);
+  }
+
+  // convert to all the other color spaces
+  for (var sname in spaces) {
+    if (sname != space) {
+      this.values[sname] = convert[space][sname](this.values[space])
+    }
+
+    // cap values
+    for (var i = 0; i < sname.length; i++) {
+      var capped = Math.max(0, Math.min(maxes[sname][i], this.values[sname][i]));
+      this.values[sname][i] = Math.round(capped);
+    }
+  }
+  return true;
+}
+
+Color.prototype.setSpace = function(space, args) {
+  var vals = args[0];
+  if (vals === undefined) {
+    // color.rgb()
+    return this.getValues(space);
+  }
+  // color.rgb(10, 10, 10)
+  if (typeof vals == "number") {
+    vals = Array.prototype.slice.call(args);
+  }
+  this.setValues(space, vals);
+  return this;
+}
+
+Color.prototype.setChannel = function(space, index, val) {
+  if (val === undefined) {
+    // color.red()
+    return this.values[space][index];
+  }
+  // color.red(100)
+  this.values[space][index] = val;
+  this.setValues(space, this.values[space]);
+  return this;
+}
+
+window.Color = module.exports = Color
+
+},{"color-convert":182,"color-string":184}],181:[function(require,module,exports){
+/* MIT license */
+
+module.exports = {
+  rgb2hsl: rgb2hsl,
+  rgb2hsv: rgb2hsv,
+  rgb2hwb: rgb2hwb,
+  rgb2cmyk: rgb2cmyk,
+  rgb2keyword: rgb2keyword,
+  rgb2xyz: rgb2xyz,
+  rgb2lab: rgb2lab,
+  rgb2lch: rgb2lch,
+
+  hsl2rgb: hsl2rgb,
+  hsl2hsv: hsl2hsv,
+  hsl2hwb: hsl2hwb,
+  hsl2cmyk: hsl2cmyk,
+  hsl2keyword: hsl2keyword,
+
+  hsv2rgb: hsv2rgb,
+  hsv2hsl: hsv2hsl,
+  hsv2hwb: hsv2hwb,
+  hsv2cmyk: hsv2cmyk,
+  hsv2keyword: hsv2keyword,
+
+  hwb2rgb: hwb2rgb,
+  hwb2hsl: hwb2hsl,
+  hwb2hsv: hwb2hsv,
+  hwb2cmyk: hwb2cmyk,
+  hwb2keyword: hwb2keyword,
+
+  cmyk2rgb: cmyk2rgb,
+  cmyk2hsl: cmyk2hsl,
+  cmyk2hsv: cmyk2hsv,
+  cmyk2hwb: cmyk2hwb,
+  cmyk2keyword: cmyk2keyword,
+
+  keyword2rgb: keyword2rgb,
+  keyword2hsl: keyword2hsl,
+  keyword2hsv: keyword2hsv,
+  keyword2hwb: keyword2hwb,
+  keyword2cmyk: keyword2cmyk,
+  keyword2lab: keyword2lab,
+  keyword2xyz: keyword2xyz,
+
+  xyz2rgb: xyz2rgb,
+  xyz2lab: xyz2lab,
+  xyz2lch: xyz2lch,
+
+  lab2xyz: lab2xyz,
+  lab2rgb: lab2rgb,
+  lab2lch: lab2lch,
+
+  lch2lab: lch2lab,
+  lch2xyz: lch2xyz,
+  lch2rgb: lch2rgb
+}
+
+
+function rgb2hsl(rgb) {
+  var r = rgb[0]/255,
+      g = rgb[1]/255,
+      b = rgb[2]/255,
+      min = Math.min(r, g, b),
+      max = Math.max(r, g, b),
+      delta = max - min,
+      h, s, l;
+
+  if (max == min)
+    h = 0;
+  else if (r == max)
+    h = (g - b) / delta;
+  else if (g == max)
+    h = 2 + (b - r) / delta;
+  else if (b == max)
+    h = 4 + (r - g)/ delta;
+
+  h = Math.min(h * 60, 360);
+
+  if (h < 0)
+    h += 360;
+
+  l = (min + max) / 2;
+
+  if (max == min)
+    s = 0;
+  else if (l <= 0.5)
+    s = delta / (max + min);
+  else
+    s = delta / (2 - max - min);
+
+  return [h, s * 100, l * 100];
+}
+
+function rgb2hsv(rgb) {
+  var r = rgb[0],
+      g = rgb[1],
+      b = rgb[2],
+      min = Math.min(r, g, b),
+      max = Math.max(r, g, b),
+      delta = max - min,
+      h, s, v;
+
+  if (max == 0)
+    s = 0;
+  else
+    s = (delta/max * 1000)/10;
+
+  if (max == min)
+    h = 0;
+  else if (r == max)
+    h = (g - b) / delta;
+  else if (g == max)
+    h = 2 + (b - r) / delta;
+  else if (b == max)
+    h = 4 + (r - g) / delta;
+
+  h = Math.min(h * 60, 360);
+
+  if (h < 0)
+    h += 360;
+
+  v = ((max / 255) * 1000) / 10;
+
+  return [h, s, v];
+}
+
+function rgb2hwb(rgb) {
+  var r = rgb[0],
+      g = rgb[1],
+      b = rgb[2],
+      h = rgb2hsl(rgb)[0],
+      w = 1/255 * Math.min(r, Math.min(g, b)),
+      b = 1 - 1/255 * Math.max(r, Math.max(g, b));
+
+  return [h, w * 100, b * 100];
+}
+
+function rgb2cmyk(rgb) {
+  var r = rgb[0] / 255,
+      g = rgb[1] / 255,
+      b = rgb[2] / 255,
+      c, m, y, k;
+
+  k = Math.min(1 - r, 1 - g, 1 - b);
+  c = (1 - r - k) / (1 - k) || 0;
+  m = (1 - g - k) / (1 - k) || 0;
+  y = (1 - b - k) / (1 - k) || 0;
+  return [c * 100, m * 100, y * 100, k * 100];
+}
+
+function rgb2keyword(rgb) {
+  return reverseKeywords[JSON.stringify(rgb)];
+}
+
+function rgb2xyz(rgb) {
+  var r = rgb[0] / 255,
+      g = rgb[1] / 255,
+      b = rgb[2] / 255;
+
+  // assume sRGB
+  r = r > 0.04045 ? Math.pow(((r + 0.055) / 1.055), 2.4) : (r / 12.92);
+  g = g > 0.04045 ? Math.pow(((g + 0.055) / 1.055), 2.4) : (g / 12.92);
+  b = b > 0.04045 ? Math.pow(((b + 0.055) / 1.055), 2.4) : (b / 12.92);
+
+  var x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805);
+  var y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+  var z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505);
+
+  return [x * 100, y *100, z * 100];
+}
+
+function rgb2lab(rgb) {
+  var xyz = rgb2xyz(rgb),
+        x = xyz[0],
+        y = xyz[1],
+        z = xyz[2],
+        l, a, b;
+
+  x /= 95.047;
+  y /= 100;
+  z /= 108.883;
+
+  x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + (16 / 116);
+  y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + (16 / 116);
+  z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + (16 / 116);
+
+  l = (116 * y) - 16;
+  a = 500 * (x - y);
+  b = 200 * (y - z);
+
+  return [l, a, b];
+}
+
+function rgb2lch(args) {
+  return lab2lch(rgb2lab(args));
+}
+
+function hsl2rgb(hsl) {
+  var h = hsl[0] / 360,
+      s = hsl[1] / 100,
+      l = hsl[2] / 100,
+      t1, t2, t3, rgb, val;
+
+  if (s == 0) {
+    val = l * 255;
+    return [val, val, val];
+  }
+
+  if (l < 0.5)
+    t2 = l * (1 + s);
+  else
+    t2 = l + s - l * s;
+  t1 = 2 * l - t2;
+
+  rgb = [0, 0, 0];
+  for (var i = 0; i < 3; i++) {
+    t3 = h + 1 / 3 * - (i - 1);
+    t3 < 0 && t3++;
+    t3 > 1 && t3--;
+
+    if (6 * t3 < 1)
+      val = t1 + (t2 - t1) * 6 * t3;
+    else if (2 * t3 < 1)
+      val = t2;
+    else if (3 * t3 < 2)
+      val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
+    else
+      val = t1;
+
+    rgb[i] = val * 255;
+  }
+
+  return rgb;
+}
+
+function hsl2hsv(hsl) {
+  var h = hsl[0],
+      s = hsl[1] / 100,
+      l = hsl[2] / 100,
+      sv, v;
+
+  if(l === 0) {
+      // no need to do calc on black
+      // also avoids divide by 0 error
+      return [0, 0, 0];
+  }
+
+  l *= 2;
+  s *= (l <= 1) ? l : 2 - l;
+  v = (l + s) / 2;
+  sv = (2 * s) / (l + s);
+  return [h, sv * 100, v * 100];
+}
+
+function hsl2hwb(args) {
+  return rgb2hwb(hsl2rgb(args));
+}
+
+function hsl2cmyk(args) {
+  return rgb2cmyk(hsl2rgb(args));
+}
+
+function hsl2keyword(args) {
+  return rgb2keyword(hsl2rgb(args));
+}
+
+
+function hsv2rgb(hsv) {
+  var h = hsv[0] / 60,
+      s = hsv[1] / 100,
+      v = hsv[2] / 100,
+      hi = Math.floor(h) % 6;
+
+  var f = h - Math.floor(h),
+      p = 255 * v * (1 - s),
+      q = 255 * v * (1 - (s * f)),
+      t = 255 * v * (1 - (s * (1 - f))),
+      v = 255 * v;
+
+  switch(hi) {
+    case 0:
+      return [v, t, p];
+    case 1:
+      return [q, v, p];
+    case 2:
+      return [p, v, t];
+    case 3:
+      return [p, q, v];
+    case 4:
+      return [t, p, v];
+    case 5:
+      return [v, p, q];
+  }
+}
+
+function hsv2hsl(hsv) {
+  var h = hsv[0],
+      s = hsv[1] / 100,
+      v = hsv[2] / 100,
+      sl, l;
+
+  l = (2 - s) * v;
+  sl = s * v;
+  sl /= (l <= 1) ? l : 2 - l;
+  sl = sl || 0;
+  l /= 2;
+  return [h, sl * 100, l * 100];
+}
+
+function hsv2hwb(args) {
+  return rgb2hwb(hsv2rgb(args))
+}
+
+function hsv2cmyk(args) {
+  return rgb2cmyk(hsv2rgb(args));
+}
+
+function hsv2keyword(args) {
+  return rgb2keyword(hsv2rgb(args));
+}
+
+// http://dev.w3.org/csswg/css-color/#hwb-to-rgb
+function hwb2rgb(hwb) {
+  var h = hwb[0] / 360,
+      wh = hwb[1] / 100,
+      bl = hwb[2] / 100,
+      ratio = wh + bl,
+      i, v, f, n;
+
+  // wh + bl cant be > 1
+  if (ratio > 1) {
+    wh /= ratio;
+    bl /= ratio;
+  }
+
+  i = Math.floor(6 * h);
+  v = 1 - bl;
+  f = 6 * h - i;
+  if ((i & 0x01) != 0) {
+    f = 1 - f;
+  }
+  n = wh + f * (v - wh);  // linear interpolation
+
+  switch (i) {
+    default:
+    case 6:
+    case 0: r = v; g = n; b = wh; break;
+    case 1: r = n; g = v; b = wh; break;
+    case 2: r = wh; g = v; b = n; break;
+    case 3: r = wh; g = n; b = v; break;
+    case 4: r = n; g = wh; b = v; break;
+    case 5: r = v; g = wh; b = n; break;
+  }
+
+  return [r * 255, g * 255, b * 255];
+}
+
+function hwb2hsl(args) {
+  return rgb2hsl(hwb2rgb(args));
+}
+
+function hwb2hsv(args) {
+  return rgb2hsv(hwb2rgb(args));
+}
+
+function hwb2cmyk(args) {
+  return rgb2cmyk(hwb2rgb(args));
+}
+
+function hwb2keyword(args) {
+  return rgb2keyword(hwb2rgb(args));
+}
+
+function cmyk2rgb(cmyk) {
+  var c = cmyk[0] / 100,
+      m = cmyk[1] / 100,
+      y = cmyk[2] / 100,
+      k = cmyk[3] / 100,
+      r, g, b;
+
+  r = 1 - Math.min(1, c * (1 - k) + k);
+  g = 1 - Math.min(1, m * (1 - k) + k);
+  b = 1 - Math.min(1, y * (1 - k) + k);
+  return [r * 255, g * 255, b * 255];
+}
+
+function cmyk2hsl(args) {
+  return rgb2hsl(cmyk2rgb(args));
+}
+
+function cmyk2hsv(args) {
+  return rgb2hsv(cmyk2rgb(args));
+}
+
+function cmyk2hwb(args) {
+  return rgb2hwb(cmyk2rgb(args));
+}
+
+function cmyk2keyword(args) {
+  return rgb2keyword(cmyk2rgb(args));
+}
+
+
+function xyz2rgb(xyz) {
+  var x = xyz[0] / 100,
+      y = xyz[1] / 100,
+      z = xyz[2] / 100,
+      r, g, b;
+
+  r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986);
+  g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415);
+  b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570);
+
+  // assume sRGB
+  r = r > 0.0031308 ? ((1.055 * Math.pow(r, 1.0 / 2.4)) - 0.055)
+    : r = (r * 12.92);
+
+  g = g > 0.0031308 ? ((1.055 * Math.pow(g, 1.0 / 2.4)) - 0.055)
+    : g = (g * 12.92);
+
+  b = b > 0.0031308 ? ((1.055 * Math.pow(b, 1.0 / 2.4)) - 0.055)
+    : b = (b * 12.92);
+
+  r = Math.min(Math.max(0, r), 1);
+  g = Math.min(Math.max(0, g), 1);
+  b = Math.min(Math.max(0, b), 1);
+
+  return [r * 255, g * 255, b * 255];
+}
+
+function xyz2lab(xyz) {
+  var x = xyz[0],
+      y = xyz[1],
+      z = xyz[2],
+      l, a, b;
+
+  x /= 95.047;
+  y /= 100;
+  z /= 108.883;
+
+  x = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + (16 / 116);
+  y = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + (16 / 116);
+  z = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + (16 / 116);
+
+  l = (116 * y) - 16;
+  a = 500 * (x - y);
+  b = 200 * (y - z);
+
+  return [l, a, b];
+}
+
+function xyz2lch(args) {
+  return lab2lch(xyz2lab(args));
+}
+
+function lab2xyz(lab) {
+  var l = lab[0],
+      a = lab[1],
+      b = lab[2],
+      x, y, z, y2;
+
+  if (l <= 8) {
+    y = (l * 100) / 903.3;
+    y2 = (7.787 * (y / 100)) + (16 / 116);
+  } else {
+    y = 100 * Math.pow((l + 16) / 116, 3);
+    y2 = Math.pow(y / 100, 1/3);
+  }
+
+  x = x / 95.047 <= 0.008856 ? x = (95.047 * ((a / 500) + y2 - (16 / 116))) / 7.787 : 95.047 * Math.pow((a / 500) + y2, 3);
+
+  z = z / 108.883 <= 0.008859 ? z = (108.883 * (y2 - (b / 200) - (16 / 116))) / 7.787 : 108.883 * Math.pow(y2 - (b / 200), 3);
+
+  return [x, y, z];
+}
+
+function lab2lch(lab) {
+  var l = lab[0],
+      a = lab[1],
+      b = lab[2],
+      hr, h, c;
+
+  hr = Math.atan2(b, a);
+  h = hr * 360 / 2 / Math.PI;
+  if (h < 0) {
+    h += 360;
+  }
+  c = Math.sqrt(a * a + b * b);
+  return [l, c, h];
+}
+
+function lab2rgb(args) {
+  return xyz2rgb(lab2xyz(args));
+}
+
+function lch2lab(lch) {
+  var l = lch[0],
+      c = lch[1],
+      h = lch[2],
+      a, b, hr;
+
+  hr = h / 360 * 2 * Math.PI;
+  a = c * Math.cos(hr);
+  b = c * Math.sin(hr);
+  return [l, a, b];
+}
+
+function lch2xyz(args) {
+  return lab2xyz(lch2lab(args));
+}
+
+function lch2rgb(args) {
+  return lab2rgb(lch2lab(args));
+}
+
+function keyword2rgb(keyword) {
+  return cssKeywords[keyword];
+}
+
+function keyword2hsl(args) {
+  return rgb2hsl(keyword2rgb(args));
+}
+
+function keyword2hsv(args) {
+  return rgb2hsv(keyword2rgb(args));
+}
+
+function keyword2hwb(args) {
+  return rgb2hwb(keyword2rgb(args));
+}
+
+function keyword2cmyk(args) {
+  return rgb2cmyk(keyword2rgb(args));
+}
+
+function keyword2lab(args) {
+  return rgb2lab(keyword2rgb(args));
+}
+
+function keyword2xyz(args) {
+  return rgb2xyz(keyword2rgb(args));
+}
+
+var cssKeywords = {
+  aliceblue:  [240,248,255],
+  antiquewhite: [250,235,215],
+  aqua: [0,255,255],
+  aquamarine: [127,255,212],
+  azure:  [240,255,255],
+  beige:  [245,245,220],
+  bisque: [255,228,196],
+  black:  [0,0,0],
+  blanchedalmond: [255,235,205],
+  blue: [0,0,255],
+  blueviolet: [138,43,226],
+  brown:  [165,42,42],
+  burlywood:  [222,184,135],
+  cadetblue:  [95,158,160],
+  chartreuse: [127,255,0],
+  chocolate:  [210,105,30],
+  coral:  [255,127,80],
+  cornflowerblue: [100,149,237],
+  cornsilk: [255,248,220],
+  crimson:  [220,20,60],
+  cyan: [0,255,255],
+  darkblue: [0,0,139],
+  darkcyan: [0,139,139],
+  darkgoldenrod:  [184,134,11],
+  darkgray: [169,169,169],
+  darkgreen:  [0,100,0],
+  darkgrey: [169,169,169],
+  darkkhaki:  [189,183,107],
+  darkmagenta:  [139,0,139],
+  darkolivegreen: [85,107,47],
+  darkorange: [255,140,0],
+  darkorchid: [153,50,204],
+  darkred:  [139,0,0],
+  darksalmon: [233,150,122],
+  darkseagreen: [143,188,143],
+  darkslateblue:  [72,61,139],
+  darkslategray:  [47,79,79],
+  darkslategrey:  [47,79,79],
+  darkturquoise:  [0,206,209],
+  darkviolet: [148,0,211],
+  deeppink: [255,20,147],
+  deepskyblue:  [0,191,255],
+  dimgray:  [105,105,105],
+  dimgrey:  [105,105,105],
+  dodgerblue: [30,144,255],
+  firebrick:  [178,34,34],
+  floralwhite:  [255,250,240],
+  forestgreen:  [34,139,34],
+  fuchsia:  [255,0,255],
+  gainsboro:  [220,220,220],
+  ghostwhite: [248,248,255],
+  gold: [255,215,0],
+  goldenrod:  [218,165,32],
+  gray: [128,128,128],
+  green:  [0,128,0],
+  greenyellow:  [173,255,47],
+  grey: [128,128,128],
+  honeydew: [240,255,240],
+  hotpink:  [255,105,180],
+  indianred:  [205,92,92],
+  indigo: [75,0,130],
+  ivory:  [255,255,240],
+  khaki:  [240,230,140],
+  lavender: [230,230,250],
+  lavenderblush:  [255,240,245],
+  lawngreen:  [124,252,0],
+  lemonchiffon: [255,250,205],
+  lightblue:  [173,216,230],
+  lightcoral: [240,128,128],
+  lightcyan:  [224,255,255],
+  lightgoldenrodyellow: [250,250,210],
+  lightgray:  [211,211,211],
+  lightgreen: [144,238,144],
+  lightgrey:  [211,211,211],
+  lightpink:  [255,182,193],
+  lightsalmon:  [255,160,122],
+  lightseagreen:  [32,178,170],
+  lightskyblue: [135,206,250],
+  lightslategray: [119,136,153],
+  lightslategrey: [119,136,153],
+  lightsteelblue: [176,196,222],
+  lightyellow:  [255,255,224],
+  lime: [0,255,0],
+  limegreen:  [50,205,50],
+  linen:  [250,240,230],
+  magenta:  [255,0,255],
+  maroon: [128,0,0],
+  mediumaquamarine: [102,205,170],
+  mediumblue: [0,0,205],
+  mediumorchid: [186,85,211],
+  mediumpurple: [147,112,219],
+  mediumseagreen: [60,179,113],
+  mediumslateblue:  [123,104,238],
+  mediumspringgreen:  [0,250,154],
+  mediumturquoise:  [72,209,204],
+  mediumvioletred:  [199,21,133],
+  midnightblue: [25,25,112],
+  mintcream:  [245,255,250],
+  mistyrose:  [255,228,225],
+  moccasin: [255,228,181],
+  navajowhite:  [255,222,173],
+  navy: [0,0,128],
+  oldlace:  [253,245,230],
+  olive:  [128,128,0],
+  olivedrab:  [107,142,35],
+  orange: [255,165,0],
+  orangered:  [255,69,0],
+  orchid: [218,112,214],
+  palegoldenrod:  [238,232,170],
+  palegreen:  [152,251,152],
+  paleturquoise:  [175,238,238],
+  palevioletred:  [219,112,147],
+  papayawhip: [255,239,213],
+  peachpuff:  [255,218,185],
+  peru: [205,133,63],
+  pink: [255,192,203],
+  plum: [221,160,221],
+  powderblue: [176,224,230],
+  purple: [128,0,128],
+  rebeccapurple: [102, 51, 153],
+  red:  [255,0,0],
+  rosybrown:  [188,143,143],
+  royalblue:  [65,105,225],
+  saddlebrown:  [139,69,19],
+  salmon: [250,128,114],
+  sandybrown: [244,164,96],
+  seagreen: [46,139,87],
+  seashell: [255,245,238],
+  sienna: [160,82,45],
+  silver: [192,192,192],
+  skyblue:  [135,206,235],
+  slateblue:  [106,90,205],
+  slategray:  [112,128,144],
+  slategrey:  [112,128,144],
+  snow: [255,250,250],
+  springgreen:  [0,255,127],
+  steelblue:  [70,130,180],
+  tan:  [210,180,140],
+  teal: [0,128,128],
+  thistle:  [216,191,216],
+  tomato: [255,99,71],
+  turquoise:  [64,224,208],
+  violet: [238,130,238],
+  wheat:  [245,222,179],
+  white:  [255,255,255],
+  whitesmoke: [245,245,245],
+  yellow: [255,255,0],
+  yellowgreen:  [154,205,50]
+};
+
+var reverseKeywords = {};
+for (var key in cssKeywords) {
+  reverseKeywords[JSON.stringify(cssKeywords[key])] = key;
+}
+
+},{}],182:[function(require,module,exports){
+var conversions = require("./conversions");
+
+var convert = function() {
+   return new Converter();
+}
+
+for (var func in conversions) {
+  // export Raw versions
+  convert[func + "Raw"] =  (function(func) {
+    // accept array or plain args
+    return function(arg) {
+      if (typeof arg == "number")
+        arg = Array.prototype.slice.call(arguments);
+      return conversions[func](arg);
+    }
+  })(func);
+
+  var pair = /(\w+)2(\w+)/.exec(func),
+      from = pair[1],
+      to = pair[2];
+
+  // export rgb2hsl and ["rgb"]["hsl"]
+  convert[from] = convert[from] || {};
+
+  convert[from][to] = convert[func] = (function(func) { 
+    return function(arg) {
+      if (typeof arg == "number")
+        arg = Array.prototype.slice.call(arguments);
+      
+      var val = conversions[func](arg);
+      if (typeof val == "string" || val === undefined)
+        return val; // keyword
+
+      for (var i = 0; i < val.length; i++)
+        val[i] = Math.round(val[i]);
+      return val;
+    }
+  })(func);
+}
+
+
+/* Converter does lazy conversion and caching */
+var Converter = function() {
+   this.convs = {};
+};
+
+/* Either get the values for a space or
+  set the values for a space, depending on args */
+Converter.prototype.routeSpace = function(space, args) {
+   var values = args[0];
+   if (values === undefined) {
+      // color.rgb()
+      return this.getValues(space);
+   }
+   // color.rgb(10, 10, 10)
+   if (typeof values == "number") {
+      values = Array.prototype.slice.call(args);        
+   }
+
+   return this.setValues(space, values);
+};
+  
+/* Set the values for a space, invalidating cache */
+Converter.prototype.setValues = function(space, values) {
+   this.space = space;
+   this.convs = {};
+   this.convs[space] = values;
+   return this;
+};
+
+/* Get the values for a space. If there's already
+  a conversion for the space, fetch it, otherwise
+  compute it */
+Converter.prototype.getValues = function(space) {
+   var vals = this.convs[space];
+   if (!vals) {
+      var fspace = this.space,
+          from = this.convs[fspace];
+      vals = convert[fspace][space](from);
+
+      this.convs[space] = vals;
+   }
+  return vals;
+};
+
+["rgb", "hsl", "hsv", "cmyk", "keyword"].forEach(function(space) {
+   Converter.prototype[space] = function(vals) {
+      return this.routeSpace(space, arguments);
+   }
+});
+
+module.exports = convert;
+},{"./conversions":181}],183:[function(require,module,exports){
+module.exports = {
+	"aliceblue": [240, 248, 255],
+	"antiquewhite": [250, 235, 215],
+	"aqua": [0, 255, 255],
+	"aquamarine": [127, 255, 212],
+	"azure": [240, 255, 255],
+	"beige": [245, 245, 220],
+	"bisque": [255, 228, 196],
+	"black": [0, 0, 0],
+	"blanchedalmond": [255, 235, 205],
+	"blue": [0, 0, 255],
+	"blueviolet": [138, 43, 226],
+	"brown": [165, 42, 42],
+	"burlywood": [222, 184, 135],
+	"cadetblue": [95, 158, 160],
+	"chartreuse": [127, 255, 0],
+	"chocolate": [210, 105, 30],
+	"coral": [255, 127, 80],
+	"cornflowerblue": [100, 149, 237],
+	"cornsilk": [255, 248, 220],
+	"crimson": [220, 20, 60],
+	"cyan": [0, 255, 255],
+	"darkblue": [0, 0, 139],
+	"darkcyan": [0, 139, 139],
+	"darkgoldenrod": [184, 134, 11],
+	"darkgray": [169, 169, 169],
+	"darkgreen": [0, 100, 0],
+	"darkgrey": [169, 169, 169],
+	"darkkhaki": [189, 183, 107],
+	"darkmagenta": [139, 0, 139],
+	"darkolivegreen": [85, 107, 47],
+	"darkorange": [255, 140, 0],
+	"darkorchid": [153, 50, 204],
+	"darkred": [139, 0, 0],
+	"darksalmon": [233, 150, 122],
+	"darkseagreen": [143, 188, 143],
+	"darkslateblue": [72, 61, 139],
+	"darkslategray": [47, 79, 79],
+	"darkslategrey": [47, 79, 79],
+	"darkturquoise": [0, 206, 209],
+	"darkviolet": [148, 0, 211],
+	"deeppink": [255, 20, 147],
+	"deepskyblue": [0, 191, 255],
+	"dimgray": [105, 105, 105],
+	"dimgrey": [105, 105, 105],
+	"dodgerblue": [30, 144, 255],
+	"firebrick": [178, 34, 34],
+	"floralwhite": [255, 250, 240],
+	"forestgreen": [34, 139, 34],
+	"fuchsia": [255, 0, 255],
+	"gainsboro": [220, 220, 220],
+	"ghostwhite": [248, 248, 255],
+	"gold": [255, 215, 0],
+	"goldenrod": [218, 165, 32],
+	"gray": [128, 128, 128],
+	"green": [0, 128, 0],
+	"greenyellow": [173, 255, 47],
+	"grey": [128, 128, 128],
+	"honeydew": [240, 255, 240],
+	"hotpink": [255, 105, 180],
+	"indianred": [205, 92, 92],
+	"indigo": [75, 0, 130],
+	"ivory": [255, 255, 240],
+	"khaki": [240, 230, 140],
+	"lavender": [230, 230, 250],
+	"lavenderblush": [255, 240, 245],
+	"lawngreen": [124, 252, 0],
+	"lemonchiffon": [255, 250, 205],
+	"lightblue": [173, 216, 230],
+	"lightcoral": [240, 128, 128],
+	"lightcyan": [224, 255, 255],
+	"lightgoldenrodyellow": [250, 250, 210],
+	"lightgray": [211, 211, 211],
+	"lightgreen": [144, 238, 144],
+	"lightgrey": [211, 211, 211],
+	"lightpink": [255, 182, 193],
+	"lightsalmon": [255, 160, 122],
+	"lightseagreen": [32, 178, 170],
+	"lightskyblue": [135, 206, 250],
+	"lightslategray": [119, 136, 153],
+	"lightslategrey": [119, 136, 153],
+	"lightsteelblue": [176, 196, 222],
+	"lightyellow": [255, 255, 224],
+	"lime": [0, 255, 0],
+	"limegreen": [50, 205, 50],
+	"linen": [250, 240, 230],
+	"magenta": [255, 0, 255],
+	"maroon": [128, 0, 0],
+	"mediumaquamarine": [102, 205, 170],
+	"mediumblue": [0, 0, 205],
+	"mediumorchid": [186, 85, 211],
+	"mediumpurple": [147, 112, 219],
+	"mediumseagreen": [60, 179, 113],
+	"mediumslateblue": [123, 104, 238],
+	"mediumspringgreen": [0, 250, 154],
+	"mediumturquoise": [72, 209, 204],
+	"mediumvioletred": [199, 21, 133],
+	"midnightblue": [25, 25, 112],
+	"mintcream": [245, 255, 250],
+	"mistyrose": [255, 228, 225],
+	"moccasin": [255, 228, 181],
+	"navajowhite": [255, 222, 173],
+	"navy": [0, 0, 128],
+	"oldlace": [253, 245, 230],
+	"olive": [128, 128, 0],
+	"olivedrab": [107, 142, 35],
+	"orange": [255, 165, 0],
+	"orangered": [255, 69, 0],
+	"orchid": [218, 112, 214],
+	"palegoldenrod": [238, 232, 170],
+	"palegreen": [152, 251, 152],
+	"paleturquoise": [175, 238, 238],
+	"palevioletred": [219, 112, 147],
+	"papayawhip": [255, 239, 213],
+	"peachpuff": [255, 218, 185],
+	"peru": [205, 133, 63],
+	"pink": [255, 192, 203],
+	"plum": [221, 160, 221],
+	"powderblue": [176, 224, 230],
+	"purple": [128, 0, 128],
+	"rebeccapurple": [102, 51, 153],
+	"red": [255, 0, 0],
+	"rosybrown": [188, 143, 143],
+	"royalblue": [65, 105, 225],
+	"saddlebrown": [139, 69, 19],
+	"salmon": [250, 128, 114],
+	"sandybrown": [244, 164, 96],
+	"seagreen": [46, 139, 87],
+	"seashell": [255, 245, 238],
+	"sienna": [160, 82, 45],
+	"silver": [192, 192, 192],
+	"skyblue": [135, 206, 235],
+	"slateblue": [106, 90, 205],
+	"slategray": [112, 128, 144],
+	"slategrey": [112, 128, 144],
+	"snow": [255, 250, 250],
+	"springgreen": [0, 255, 127],
+	"steelblue": [70, 130, 180],
+	"tan": [210, 180, 140],
+	"teal": [0, 128, 128],
+	"thistle": [216, 191, 216],
+	"tomato": [255, 99, 71],
+	"turquoise": [64, 224, 208],
+	"violet": [238, 130, 238],
+	"wheat": [245, 222, 179],
+	"white": [255, 255, 255],
+	"whitesmoke": [245, 245, 245],
+	"yellow": [255, 255, 0],
+	"yellowgreen": [154, 205, 50]
+};
+},{}],184:[function(require,module,exports){
+/* MIT license */
+var colorNames = require('color-name');
+
+module.exports = {
+   getRgba: getRgba,
+   getHsla: getHsla,
+   getRgb: getRgb,
+   getHsl: getHsl,
+   getHwb: getHwb,
+   getAlpha: getAlpha,
+
+   hexString: hexString,
+   rgbString: rgbString,
+   rgbaString: rgbaString,
+   percentString: percentString,
+   percentaString: percentaString,
+   hslString: hslString,
+   hslaString: hslaString,
+   hwbString: hwbString,
+   keyword: keyword
+}
+
+function getRgba(string) {
+   if (!string) {
+      return;
+   }
+   var abbr =  /^#([a-fA-F0-9]{3})$/,
+       hex =  /^#([a-fA-F0-9]{6})$/,
+       rgba = /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/,
+       per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/,
+       keyword = /(\w+)/;
+
+   var rgb = [0, 0, 0],
+       a = 1,
+       match = string.match(abbr);
+   if (match) {
+      match = match[1];
+      for (var i = 0; i < rgb.length; i++) {
+         rgb[i] = parseInt(match[i] + match[i], 16);
+      }
+   }
+   else if (match = string.match(hex)) {
+      match = match[1];
+      for (var i = 0; i < rgb.length; i++) {
+         rgb[i] = parseInt(match.slice(i * 2, i * 2 + 2), 16);
+      }
+   }
+   else if (match = string.match(rgba)) {
+      for (var i = 0; i < rgb.length; i++) {
+         rgb[i] = parseInt(match[i + 1]);
+      }
+      a = parseFloat(match[4]);
+   }
+   else if (match = string.match(per)) {
+      for (var i = 0; i < rgb.length; i++) {
+         rgb[i] = Math.round(parseFloat(match[i + 1]) * 2.55);
+      }
+      a = parseFloat(match[4]);
+   }
+   else if (match = string.match(keyword)) {
+      if (match[1] == "transparent") {
+         return [0, 0, 0, 0];
+      }
+      rgb = colorNames[match[1]];
+      if (!rgb) {
+         return;
+      }
+   }
+
+   for (var i = 0; i < rgb.length; i++) {
+      rgb[i] = scale(rgb[i], 0, 255);
+   }
+   if (!a && a != 0) {
+      a = 1;
+   }
+   else {
+      a = scale(a, 0, 1);
+   }
+   rgb[3] = a;
+   return rgb;
+}
+
+function getHsla(string) {
+   if (!string) {
+      return;
+   }
+   var hsl = /^hsla?\(\s*([+-]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)/;
+   var match = string.match(hsl);
+   if (match) {
+      var alpha = parseFloat(match[4]);
+      var h = scale(parseInt(match[1]), 0, 360),
+          s = scale(parseFloat(match[2]), 0, 100),
+          l = scale(parseFloat(match[3]), 0, 100),
+          a = scale(isNaN(alpha) ? 1 : alpha, 0, 1);
+      return [h, s, l, a];
+   }
+}
+
+function getHwb(string) {
+   if (!string) {
+      return;
+   }
+   var hwb = /^hwb\(\s*([+-]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)/;
+   var match = string.match(hwb);
+   if (match) {
+    var alpha = parseFloat(match[4]);
+      var h = scale(parseInt(match[1]), 0, 360),
+          w = scale(parseFloat(match[2]), 0, 100),
+          b = scale(parseFloat(match[3]), 0, 100),
+          a = scale(isNaN(alpha) ? 1 : alpha, 0, 1);
+      return [h, w, b, a];
+   }
+}
+
+function getRgb(string) {
+   var rgba = getRgba(string);
+   return rgba && rgba.slice(0, 3);
+}
+
+function getHsl(string) {
+  var hsla = getHsla(string);
+  return hsla && hsla.slice(0, 3);
+}
+
+function getAlpha(string) {
+   var vals = getRgba(string);
+   if (vals) {
+      return vals[3];
+   }
+   else if (vals = getHsla(string)) {
+      return vals[3];
+   }
+   else if (vals = getHwb(string)) {
+      return vals[3];
+   }
+}
+
+// generators
+function hexString(rgb) {
+   return "#" + hexDouble(rgb[0]) + hexDouble(rgb[1])
+              + hexDouble(rgb[2]);
+}
+
+function rgbString(rgba, alpha) {
+   if (alpha < 1 || (rgba[3] && rgba[3] < 1)) {
+      return rgbaString(rgba, alpha);
+   }
+   return "rgb(" + rgba[0] + ", " + rgba[1] + ", " + rgba[2] + ")";
+}
+
+function rgbaString(rgba, alpha) {
+   if (alpha === undefined) {
+      alpha = (rgba[3] !== undefined ? rgba[3] : 1);
+   }
+   return "rgba(" + rgba[0] + ", " + rgba[1] + ", " + rgba[2]
+           + ", " + alpha + ")";
+}
+
+function percentString(rgba, alpha) {
+   if (alpha < 1 || (rgba[3] && rgba[3] < 1)) {
+      return percentaString(rgba, alpha);
+   }
+   var r = Math.round(rgba[0]/255 * 100),
+       g = Math.round(rgba[1]/255 * 100),
+       b = Math.round(rgba[2]/255 * 100);
+
+   return "rgb(" + r + "%, " + g + "%, " + b + "%)";
+}
+
+function percentaString(rgba, alpha) {
+   var r = Math.round(rgba[0]/255 * 100),
+       g = Math.round(rgba[1]/255 * 100),
+       b = Math.round(rgba[2]/255 * 100);
+   return "rgba(" + r + "%, " + g + "%, " + b + "%, " + (alpha || rgba[3] || 1) + ")";
+}
+
+function hslString(hsla, alpha) {
+   if (alpha < 1 || (hsla[3] && hsla[3] < 1)) {
+      return hslaString(hsla, alpha);
+   }
+   return "hsl(" + hsla[0] + ", " + hsla[1] + "%, " + hsla[2] + "%)";
+}
+
+function hslaString(hsla, alpha) {
+   if (alpha === undefined) {
+      alpha = (hsla[3] !== undefined ? hsla[3] : 1);
+   }
+   return "hsla(" + hsla[0] + ", " + hsla[1] + "%, " + hsla[2] + "%, "
+           + alpha + ")";
+}
+
+// hwb is a bit different than rgb(a) & hsl(a) since there is no alpha specific syntax
+// (hwb have alpha optional & 1 is default value)
+function hwbString(hwb, alpha) {
+   if (alpha === undefined) {
+      alpha = (hwb[3] !== undefined ? hwb[3] : 1);
+   }
+   return "hwb(" + hwb[0] + ", " + hwb[1] + "%, " + hwb[2] + "%"
+           + (alpha !== undefined && alpha !== 1 ? ", " + alpha : "") + ")";
+}
+
+function keyword(rgb) {
+  return reverseNames[rgb.slice(0, 3)];
+}
+
+// helpers
+function scale(num, min, max) {
+   return Math.min(Math.max(min, num), max);
+}
+
+function hexDouble(num) {
+  var str = num.toString(16).toUpperCase();
+  return (str.length < 2) ? "0" + str : str;
+}
+
+
+//create a list of reverse color names
+var reverseNames = {};
+for (var name in colorNames) {
+   reverseNames[colorNames[name]] = name;
+}
+
+},{"color-name":183}],185:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -62344,7 +71878,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],142:[function(require,module,exports){
+},{}],186:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -72177,7 +81711,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],143:[function(require,module,exports){
+},{}],187:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -72212,7 +81746,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],144:[function(require,module,exports){
+},{}],188:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -84568,7 +94102,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],145:[function(require,module,exports){
+},{}],189:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -85153,7 +94687,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],146:[function(require,module,exports){
+},{}],190:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -89576,7 +99110,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":145,"fs":139}],147:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":189,"fs":143}],191:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -90866,7 +100400,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],148:[function(require,module,exports){
+},{}],192:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -94473,7 +104007,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],149:[function(require,module,exports){
+},{}],193:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -94600,10 +104134,10 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],150:[function(require,module,exports){
+},{}],194:[function(require,module,exports){
 /*! ng-csv 10-10-2015 */
 !function(a){angular.module("ngCsv.config",[]).value("ngCsv.config",{debug:!0}).config(["$compileProvider",function(a){angular.isDefined(a.urlSanitizationWhitelist)?a.urlSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/):a.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/)}]),angular.module("ngCsv.directives",["ngCsv.services"]),angular.module("ngCsv.services",[]),angular.module("ngCsv",["ngCsv.config","ngCsv.services","ngCsv.directives","ngSanitize"]),"undefined"!=typeof module&&"undefined"!=typeof exports&&module.exports===exports&&(module.exports="ngCsv"),angular.module("ngCsv.services").service("CSV",["$q",function(a){var b="\r\n",c="﻿",d={"\\t":"	","\\b":"\b","\\v":"","\\f":"\f","\\r":"\r"};this.stringifyField=function(a,b){return"locale"===b.decimalSep&&this.isFloat(a)?a.toLocaleString():"."!==b.decimalSep&&this.isFloat(a)?a.toString().replace(".",b.decimalSep):"string"==typeof a?(a=a.replace(/"/g,'""'),(b.quoteStrings||a.indexOf(",")>-1||a.indexOf("\n")>-1||a.indexOf("\r")>-1)&&(a=b.txtDelim+a+b.txtDelim),a):"boolean"==typeof a?a?"TRUE":"FALSE":a},this.isFloat=function(a){return+a===a&&(!isFinite(a)||Boolean(a%1))},this.stringify=function(d,e){var f=a.defer(),g=this,h="",i="",j=a.when(d).then(function(a){if(angular.isDefined(e.header)&&e.header){var d,j;d=[],angular.forEach(e.header,function(a){this.push(g.stringifyField(a,e))},d),j=d.join(e.fieldSep?e.fieldSep:","),i+=j+b}var k=[];if(angular.isArray(a)?k=a:angular.isFunction(a)&&(k=a()),angular.isDefined(e.label)&&e.label&&"boolean"==typeof e.label){var l,m;l=[],angular.forEach(k[0],function(a,b){this.push(g.stringifyField(b,e))},l),m=l.join(e.fieldSep?e.fieldSep:","),i+=m+b}angular.forEach(k,function(a,c){var d,f,h=angular.copy(k[c]);f=[];var j=e.columnOrder?e.columnOrder:h;angular.forEach(j,function(a){var b=e.columnOrder?h[a]:a;this.push(g.stringifyField(b,e))},f),d=f.join(e.fieldSep?e.fieldSep:","),i+=c<k.length?d+b:d}),e.addByteOrderMarker&&(h+=c),h+=i,f.resolve(h)});return"function"==typeof j["catch"]&&j["catch"](function(a){f.reject(a)}),f.promise},this.isSpecialChar=function(a){return void 0!==d[a]},this.getSpecialChar=function(a){return d[a]}}]),angular.module("ngCsv.directives").directive("ngCsv",["$parse","$q","CSV","$document","$timeout",function(b,c,d,e,f){return{restrict:"AC",scope:{data:"&ngCsv",filename:"@filename",header:"&csvHeader",columnOrder:"&csvColumnOrder",txtDelim:"@textDelimiter",decimalSep:"@decimalSeparator",quoteStrings:"@quoteStrings",fieldSep:"@fieldSeparator",lazyLoad:"@lazyLoad",addByteOrderMarker:"@addBom",ngClick:"&",charset:"@charset",label:"&csvLabel"},controller:["$scope","$element","$attrs","$transclude",function(a,b,e){function f(){var b={txtDelim:a.txtDelim?a.txtDelim:'"',decimalSep:a.decimalSep?a.decimalSep:".",quoteStrings:a.quoteStrings,addByteOrderMarker:a.addByteOrderMarker};return angular.isDefined(e.csvHeader)&&(b.header=a.$eval(a.header)),angular.isDefined(e.csvColumnOrder)&&(b.columnOrder=a.$eval(a.columnOrder)),angular.isDefined(e.csvLabel)&&(b.label=a.$eval(a.label)),b.fieldSep=a.fieldSep?a.fieldSep:",",b.fieldSep=d.isSpecialChar(b.fieldSep)?d.getSpecialChar(b.fieldSep):b.fieldSep,b}a.csv="",angular.isDefined(a.lazyLoad)&&"true"==a.lazyLoad||angular.isArray(a.data)&&a.$watch("data",function(){a.buildCSV()},!0),a.getFilename=function(){return a.filename||"download.csv"},a.buildCSV=function(){var g=c.defer();return b.addClass(e.ngCsvLoadingClass||"ng-csv-loading"),d.stringify(a.data(),f()).then(function(c){a.csv=c,b.removeClass(e.ngCsvLoadingClass||"ng-csv-loading"),g.resolve(c)}),a.$apply(),g.promise}}],link:function(b,c){function d(){var c=b.charset||"utf-8",d=new Blob([b.csv],{type:"text/csv;charset="+c+";"});if(a.navigator.msSaveOrOpenBlob)navigator.msSaveBlob(d,b.getFilename());else{var g=angular.element('<div data-tap-disabled="true"><a></a></div>'),h=angular.element(g.children()[0]);h.attr("href",a.URL.createObjectURL(d)),h.attr("download",b.getFilename()),h.attr("target","_blank"),e.find("body").append(g),f(function(){h[0].click(),h.remove()},null)}}c.bind("click",function(){b.buildCSV().then(function(){d()}),b.$apply()})}}}])}(window,document);
-},{}],151:[function(require,module,exports){
+},{}],195:[function(require,module,exports){
 (function() {
   var module = angular.module('ngDownloadCsv', [])
   module.factory('DownloadCSV', ['$http', function ($http) {
@@ -94625,7 +104159,7 @@ module.exports.toTitle = toTitle;
   }])
 }())
 
-},{}],152:[function(require,module,exports){
+},{}],196:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -94657,7 +104191,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],153:[function(require,module,exports){
+},{}],197:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -94676,7 +104210,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],154:[function(require,module,exports){
+},{}],198:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -95167,7 +104701,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],155:[function(require,module,exports){
+},{}],199:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -96016,10 +105550,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],156:[function(require,module,exports){
+},{}],200:[function(require,module,exports){
 require('app')
 
-},{"app":88}]},{},[156])
+},{"app":91}]},{},[200])
 
 
 //# sourceMappingURL=../maps/index.js.map
