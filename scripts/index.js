@@ -637,6 +637,7 @@ module.exports = {
 },{"./group-page.html":28}],28:[function(require,module,exports){
 module.exports = "<div class=\"group-page\" ng-if=\"authorized\">\n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"group-page__content\">\n    <group-page-header></group-page-header>\n    <group-page-help></group-page-help>\n    <group-page-buckets ng-if=\"tabSelected == 0\"></group-page-buckets>\n    <group-page-funders ng-if=\"tabSelected == 1\"></group-page-funders>\n  </md-content>\n</div>\n";
 },{}],29:[function(require,module,exports){
+(function (global){
 module.exports = {
   onEnter: function($location) {
     return $location.url($location.path());
@@ -644,6 +645,9 @@ module.exports = {
   resolve: {
     userValidated: function($auth) {
       return $auth.validateUser();
+    },
+    membershipsLoaded: function() {
+      return global.cobudgetApp.membershipsLoaded;
     }
   },
   url: '/setup_group',
@@ -670,6 +674,8 @@ module.exports = {
   }
 };
 
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./group-setup-page.html":30}],30:[function(require,module,exports){
 module.exports = "<div class=\"group-setup-page\">\n  <setup-toolbar></setup-toolbar>\n\n  <img class=\"group-setup-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <md-card class=\"group-setup-page__content-card\">\n      <md-card-content>\n        <div class=\"group-setup-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"group\"\n            size=\"40\"\n            class=\"group-setup-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\">\n          </ng-md-icon>\n        </div>\n\n        <h2 class=\"group-setup-page__logo-subheader\">Give your group a name</h2>\n\n        <form novalidate class=\"group-setup-page__form\" name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\" ng-autodisable>\n\n          <div class=\"group-setup-page__input-container\">\n            <input required class=\"group-setup-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"group name\">\n            <div ng-if=\"newGroupForm.name.$error.required && newGroupForm.$submitted\" class=\"group-setup-page__input-error\">Name is required.</div>\n          </div>\n\n          <md-button class=\"group-setup-page__submit-btn\">let's go!</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
