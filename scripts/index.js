@@ -34,7 +34,7 @@ app.factory('Records', ["RecordStore", "GroupRecordsInterface", "BucketRecordsIn
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"angular_record_store":139,"lokijs":191}],2:[function(require,module,exports){
+},{"angular_record_store":151,"lokijs":203}],2:[function(require,module,exports){
 (function (global){
 null;
 
@@ -81,6 +81,20 @@ global.cobudgetApp.run(["$auth", "CurrentUser", "Dialog", "LoadBar", "$location"
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],3:[function(require,module,exports){
+module.exports = {
+  url: '/about',
+  template: require('./about-page.html'),
+  controller: function($location, $scope) {
+    $scope.redirectToLandingPage = function() {
+      return $location.path('/');
+    };
+  }
+};
+
+
+},{"./about-page.html":4}],4:[function(require,module,exports){
+module.exports = "<div class=\"about-page\" layout=\"column\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <h1 class=\"about-page__header-text\">About Page</h1>\n\n  <div class=\"about-page__content\" layout=\"column\" flex>\n    <p>\n      words lol ..\n    </p>\n\n    <div flex></div>\n\n    <a href=\"\" class=\"about-page__return-home-link\" ng-click=\"redirectToLandingPage()\">return home</a>\n  </div>\n</div>\n";
+},{}],5:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -129,9 +143,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./admin-page.html":4}],4:[function(require,module,exports){
+},{"./admin-page.html":6}],6:[function(require,module,exports){
 module.exports = "<div class=\"admin-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 admin-page__toolbar\">\n    <div class=\"md-toolbar-tools\" layout=\"column\" layout-align=\"center center\">\n      hi admin\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"admin-page__content\">\n    <md-subheader class=\"admin-page__group-list-subheader\">Edit Existing Groups</md-subheader>\n\n    <md-list class=\"admin-page__group-list\">\n      <div class=\"admin-page__group-list-item-container\" ng-repeat=\"group in accessibleGroups\">\n        <md-list-item class=\"admin-page__group-list-item\">\n          <div>\n            <div class=\"admin-page__group-info\" layout=\"row\" layout-align=\"start center\">\n              <div class=\"admin-page__group-name\">\n                {{ group.name }}\n                <md-button ng-click=\"viewGroup(group.id)\">view</md-button>\n              </div>\n            </div>\n\n            <div class=\"admin-page__group-options\">\n              <span>\n                <md-input-container class='admin-page__currency-code-input'>\n                  <label>Currency</label>\n                  <md-select ng-model=\"group.currencyCode\" ng-change=\"updateGroupCurrency(group.id, group.currencyCode)\">\n                    <md-option ng-repeat=\"currency in currencies\" value=\"{{currency.code}}\">{{ currency.code + \" - \" + currency.symbol }}</md-option>\n                  </md-select>\n                </md-input-container>\n              </span>\n            </div>\n          </div>\n        </md-list-item>\n\n        <md-divider></md-divider>\n      </div>\n    </md-list>\n  </md-content>\n</div>\n";
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -162,9 +176,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./analytics-page.html":6}],6:[function(require,module,exports){
+},{"./analytics-page.html":8}],8:[function(require,module,exports){
 module.exports = "<div class=\"analytics-page\" ng-if=\"authorized && dataLoaded\">\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>cumulative user count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.cumulative_user_count_data.y]\"\n      chart-labels=\"data.cumulative_user_count_data.x\"\n      chart-series=\"['cumulative user count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>cumulative group count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.cumulative_group_count_data.y]\"\n      chart-labels=\"data.cumulative_group_count_data.x\"\n      chart-series=\"['cumulative group count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__chart-container\">\n    <h2>contribution count vs time</h2>\n    <canvas\n      class=\"chart chart-line analytics-page__chart\"\n      chart-data=\"[data.contribution_count_data.y]\"\n      chart-labels=\"data.contribution_count_data.x\"\n      chart-series=\"['contribution count']\"\n    ></canvas>\n  </div>\n\n  <md-divider></md-divider>\n\n  <div class=\"analytics-page__unconfirmed-user-count-container\">\n    <h2>number of unconfirmed users right now: {{ data.unconfirmed_user_count }}</h2>\n  </div>\n\n  <md-divider></md-divider>\n\n  <h2>group data</h2>\n\n  <div ng-repeat=\"group in data.group_data\">\n    <table class=\"analytics-page__group-data-table\">\n      <tr>\n        <th colspan=\"4\"> {{ group.name }} </th>\n      </tr>\n      <tr class=\"analytics-page__group-data-table-header\">\n        <td>age</td>\n        <td>last activity</td>\n        <td>confirmed member count</td>\n        <td>unconfirmed member count</td>\n      </tr>\n      <tr>\n        <td>{{ group.created_at | timeFromNowInWords }}</td>\n        <td>{{ group.last_activity_at | timeFromNowInWords }}</td>\n        <td>{{ group.confirmed_member_count }}</td>\n        <td>{{ group.unconfirmed_member_count }}</td>\n      </tr>\n    </table>\n\n    <div class=\"analytics-page__group-admins-container\">\n      <span>\n        <b>contact:</b>\n        <span ng-repeat=\"admin in group.admins\">{{ admin.name }} ({{admin.email}}), </span>\n      </span>\n    </div>\n  </div>\n</div>\n";
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./archive-bucket-dialog.html'),
@@ -192,9 +206,9 @@ module.exports = function(params) {
 };
 
 
-},{"./archive-bucket-dialog.html":8}],8:[function(require,module,exports){
+},{"./archive-bucket-dialog.html":10}],10:[function(require,module,exports){
 module.exports = "<md-dialog aria-label=\"archive bucket dialog\" class=\"archive-bucket-dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"archive-bucket-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-warning-icon' : 'archive-bucket-dialog__yellow-warning-icon'\"\n        size=\"35\"\n      ></ng-md-icon>\n\n      <div class=\"archive-bucket-dialog__header-text\">\n        Are you sure you want to archive this bucket?\n      </div>\n    </div>\n\n    <md-divider ng-if=\"bucket.status == 'live'\"></md-divider>\n\n    <div class=\"archive-bucket-dialog__details-container\">\n      <p class=\"archive-bucket-dialog__details\" ng-if=\"bucket.status == 'live'\">\n        If you confirm, the money that has already been given to this bucket will be returned to its funders.\n      </p>\n\n      <div class=\"archive-bucket-dialog__final-caution\">\n        Caution: This cannot be undone\n      </div>\n    </div>\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"archive-bucket-dialog__btn archive-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button\n      class=\"md-raised archive-bucket-dialog__btn archive-bucket-dialog__proceed-btn\"\n      ng-class=\"bucket.status == 'live' ? 'archive-bucket-dialog__red-proceed-btn' : 'archive-bucket-dialog__yellow-proceed-btn'\"\n      ng-click=\"proceed()\"\n    >yes, archive it</md-button>\n  </div>\n</md-dialog>\n";
-},{}],9:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -241,15 +255,18 @@ module.exports = {
       Toast.hide();
       return $location.path("/groups/" + $scope.group.id);
     };
+    $scope.userCanManageBucket = function() {
+      return $scope.bucket && !$scope.bucket.isArchived() && ($scope.membership.isAdmin || $scope.bucket.author().id === $scope.membership.member().id);
+    };
   }
 };
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page.html":10}],10:[function(require,module,exports){
-module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <bucket-page-toolbar></bucket-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <bucket-page-header-card></bucket-page-header-card>\n    <div ng-if=\"!bucket.isArchived()\">\n      <bucket-page-progress-card ng-if=\"bucket.status == 'live'\"></bucket-page-progress-card>\n      <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\"></bucket-page-backers-card>\n    </div>\n    <bucket-page-status-card></bucket-page-status-card>\n    <bucket-page-activity-card></bucket-page-activity-card>\n  </md-content>\n</div>\n";
-},{}],11:[function(require,module,exports){
+},{"./bucket-page.html":12}],12:[function(require,module,exports){
+module.exports = "<div class=\"bucket-page\" ng-if=\"authorized\">\n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"bucket-page__content\">\n    <md-button class=\"bucket-page__group-btn\" ng-click=\"back()\">{{ group.name }}</md-button>\n\n    <div layout=\"row\" layout-align=\"start start\" class=\"bucket-page__desktop-layout-container\">\n      <div layout=\"column\" layout-align=\"center center\" class=\"bucket-page__left-column\">\n        <bucket-page-header-card></bucket-page-header-card>\n        <bucket-page-activity-card></bucket-page-activity-card>\n      </div>\n\n      <div layout=\"column\" layout-align=\"center center\" class=\"bucket-page__right-column\">\n        <bucket-page-manage-card ng-if=\"userCanManageBucket()\"></bucket-page-manage-card>\n        <bucket-page-status-card ng-if=\"bucket.status != 'live'\"></bucket-page-status-card>\n        <bucket-page-progress-card ng-if=\"!bucket.isArchived() && bucket.status == 'live'\"></bucket-page-progress-card>\n        <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\" current-user=\"currentUser\"></bucket-page-backers-card>\n      </div>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center center\" class=\"bucket-page__mobile-layout-container\">\n      <bucket-page-header-card></bucket-page-header-card>\n      <bucket-page-manage-card ng-if=\"userCanManageBucket()\"></bucket-page-manage-card>\n      <bucket-page-status-card ng-if=\"bucket.status != 'live'\"></bucket-page-status-card>\n      <bucket-page-progress-card ng-if=\"!bucket.isArchived() && bucket.status == 'live'\"></bucket-page-progress-card>\n      <bucket-page-backers-card ng-if=\"bucket.status != 'draft' && contributions.length > 0\" contributions=\"contributions\" current-user=\"currentUser\"></bucket-page-backers-card>\n      <bucket-page-activity-card></bucket-page-activity-card>\n    </div>\n  </md-content>\n</div>\n";
+},{}],13:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./bulk-allocation-primer-dialog.html'),
@@ -290,9 +307,9 @@ module.exports = function(params) {
 };
 
 
-},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":48,"./bulk-allocation-primer-dialog.html":12}],12:[function(require,module,exports){
+},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":55,"./bulk-allocation-primer-dialog.html":14}],14:[function(require,module,exports){
 module.exports = "<md-dialog class=\"bulk-allocation-primer-dialog\" aria-label=\"bulk-allocation-primer-dialog\">\n  <md-dialog-content class=\"sticky-container bulk-allocation-primer-dialog__content\">\n    <h2 class=\"bulk-allocation-primer-dialog__header\">Give many members funds at once using a CSV file</h2>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      In order to give many members funds and / or invite them at the same time, you'll need to create a csv file to upload. <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"bulk-allocation-primer-dialog__link\">How do I do that?</a>\n    </p>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      Please upload a csv file with 2 columns (no headings), with email addresses in the first column, and an amount that you want to <b>ADD</b> to their account in the second column. Check out the example below.\n    </p>\n\n    <img class=\"bulk-allocation-primer-dialog__upload-csv-primer-img\" src=\"./img/example-csv.png\" alt=\"example csv\" />\n\n    <p class=\"bulk-allocation-primer-dialog__upload-csv-primer-img-caption\">\n      Example spreadsheet\n    </p>\n\n    <p class=\"bulk-allocation-primer-dialog__paragraph\">\n      <b>PS.</b> Don't worry, you'll be able to review and confirm changes before they are applied.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions bulk-allocation-primer-dialog__btns\" layout=\"row\">\n    <md-button class=\"bulk-allocation-primer-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n\n    <md-button class=\"bulk-allocation-primer-dialog__ok-btn\" ng-click=\"openCSVUploadDialog()\">ok, select file</md-button>\n\n    <div upload-button\n      class=\"bulk-allocation-primer-dialog__hidden-btn\"\n      url=\"{{ uploadPath() }}\"\n      param=\"csv\"\n      accept=\"text/csv\"\n      on-success=\"onCSVUploadSuccess(response)\"\n      on-complete=\"onCSVUploadCompletion()\"\n      on-error=\"onCSVUploadError(response)\"\n    ></div>\n  </div>\n</md-dialog>\n";
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./bulk-invite-members-primer-dialog.html'),
@@ -333,9 +350,9 @@ module.exports = function(params) {
 };
 
 
-},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":48,"./bulk-invite-members-primer-dialog.html":14}],14:[function(require,module,exports){
+},{"./../upload-csv-primer-dialog-error/upload-csv-primer-dialog-error.coffee":55,"./bulk-invite-members-primer-dialog.html":16}],16:[function(require,module,exports){
 module.exports = "<md-dialog class=\"bulk-invite-members-primer-dialog\" aria-label=\"bulk-invite-members-primer-dialog\">\n  <md-dialog-content class=\"sticky-container bulk-invite-members-primer-dialog__content\">\n    <h2 class=\"bulk-invite-members-primer-dialog__header\">Invite many members at once using a CSV file</h2>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      In order to invite many members at the same time, you'll need to create a csv file to upload. <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"bulk-invite-members-primer-dialog__link\">How do I do that?</a>\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      Please upload a csv file with 1 column (no heading), with the email addresses of the members you want to invite. Check out the example below.\n    </p>\n\n    <img class=\"bulk-invite-members-primer-dialog__upload-csv-primer-img\" src=\"./img/example-members-csv.png\" alt=\"example csv\" />\n\n    <p class=\"bulk-invite-members-primer-dialog__upload-csv-primer-img-caption\">\n      Example spreadsheet\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      If you want to add many members and give them funds at the same time,  <a href=\"\" class=\"bulk-invite-members-primer-dialog__link\" ng-click=\"redirectToManageGroupFundsPage()\">click here.</a>\n    </p>\n\n    <p class=\"bulk-invite-members-primer-dialog__paragraph\">\n      <b>PS.</b> Don't worry, you'll be able to review and confirm changes before they are applied.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions bulk-invite-members-primer-dialog__btns\" layout=\"row\">\n    <md-button class=\"bulk-invite-members-primer-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n\n    <md-button class=\"bulk-invite-members-primer-dialog__ok-btn\" ng-click=\"openCSVUploadDialog()\">ok, select file</md-button>\n\n    <div upload-button\n      class=\"bulk-invite-members-primer-dialog__hidden-btn\"\n      url=\"{{ uploadPath() }}\"\n      param=\"csv\"\n      accept=\"text/csv\"\n      on-success=\"onCSVUploadSuccess(response)\"\n      on-complete=\"onCSVUploadCompletion()\"\n      on-error=\"onCSVUploadError(response)\"\n    ></div>\n  </div>\n</md-dialog>\n";
-},{}],15:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = {
   onExit: function($location) {
     return $location.url($location.path());
@@ -383,9 +400,9 @@ module.exports = {
 };
 
 
-},{"./confirm-account-page.html":16}],16:[function(require,module,exports){
-module.exports = "<div class=\"confirm-account-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"confirm-account-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <md-card class=\"confirm-account-page__content-card\">\n      <md-card-content>\n        <div class=\"confirm-account-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"person\"\n            size=\"60\"\n            class=\"confirm-account-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <h2 class=\"confirm-account-page__logo-subheader\">Let's set up your account</h2>\n\n        <form novalidate class=\"confirm-account-page__form\" name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\" ng-autodisable>\n          <div class=\"confirm-account-page__input-container\">\n            <input required class=\"confirm-account-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"name\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.name.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Name is required.</div>\n          </div>\n\n          <div class=\"confirm-account-page__input-container\">\n            <input class=\"confirm-account-page__input-field\" minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\" placeholder=\"password\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.password.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password is required.</div>\n            <div ng-if=\"newUserForm.password.$error.minlength && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password must be longer than 8 characters.</div>\n          </div>\n\n          <md-button class=\"confirm-account-page__submit-btn\">next</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
-},{}],17:[function(require,module,exports){
+},{"./confirm-account-page.html":18}],18:[function(require,module,exports){
+module.exports = "<div class=\"confirm-account-page\">\n  <setup-toolbar></setup-toolbar>\n\n  <img class=\"confirm-account-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"confirm-account-page__content\">\n    <md-card class=\"confirm-account-page__content-card\">\n      <md-card-content>\n        <div class=\"confirm-account-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"person\"\n            size=\"60\"\n            class=\"confirm-account-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <h2 class=\"confirm-account-page__logo-subheader\">Let's set up your account</h2>\n\n        <form novalidate class=\"confirm-account-page__form\" name=\"newUserForm\" ng-submit=\"newUserForm.$valid && confirmAccount(formData)\" ng-autodisable>\n          <div class=\"confirm-account-page__input-container\">\n            <input required class=\"confirm-account-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"name\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.name.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Name is required.</div>\n          </div>\n\n          <div class=\"confirm-account-page__input-container\">\n            <input class=\"confirm-account-page__input-field\" minlength=\"8\" required name=\"password\" type=\"password\" ng-model=\"formData.password\" placeholder=\"password\" autocomplete=\"off\">\n            <div ng-if=\"newUserForm.password.$error.required && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password is required.</div>\n            <div ng-if=\"newUserForm.password.$error.minlength && newUserForm.$submitted\" class=\"confirm-account-page__input-error\">Password must be longer than 8 characters.</div>\n          </div>\n\n          <md-button class=\"confirm-account-page__submit-btn\">next</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
+},{}],19:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -435,9 +452,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./create-bucket-page.html":18}],18:[function(require,module,exports){
+},{"./create-bucket-page.html":20}],20:[function(require,module,exports){
 module.exports = "<div class=\"create-bucket-page\">\n  <md-toolbar class=\"md-whiteframe-z1 create-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"create-bucket-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"create-bucket-page__header-text\">New Idea</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button create-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done()\" ng-autodisable>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"create-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"create-bucket-page__content\">\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-title\">You're about to propose an idea</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"create-bucket-page__subheader-text\">Members in your group can comment on your idea, and when you're ready you can request funding.</md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"create-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\" ng-if=\"bucketForm.name.$dirty || formSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"create-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\" ng-if=\"bucketForm.description.$dirty || formSubmitted\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"create-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Group</label>\n        <md-select required name=\"groupId\" ng-model=\"bucket.groupId\">\n          <md-option required ng-repeat=\"group in accessibleGroups\" value=\"{{group.id}}\">\n            {{group.name}}\n          </md-option>\n        </md-select>\n        <div ng-messages=\"bucketForm.groupId.$error\" ng-if=\"bucketForm.groupId.$dirty || formSubmitted\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input name=\"target\" type=\"text\" ng-model=\"bucket.target\" min=\"1\" only-digits>\n        <div ng-messages=\"bucketForm.target.$error\" ng-if=\"bucketForm.target.$dirty || formSubmitted\">\n          <div ng-message=\"min\">Bucket target must be greater than zero</div>\n        </div>\n      </md-input-container>\n    </form>\n  </md-content>\n</div>\n";
-},{}],19:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -481,9 +498,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./edit-bucket-page.html":20}],20:[function(require,module,exports){
+},{"./edit-bucket-page.html":22}],22:[function(require,module,exports){
 module.exports = "<div class=\"edit-bucket-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 edit-bucket-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"cancel()\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"edit-bucket-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"edit-bucket-page__header-text\">Edit {{ bucket.status == 'draft' ? 'Idea' : 'Bucket' }}</span>\n      <span flex></span>\n      <md-button class=\"md-icon-button edit-bucket-page__done-button\" aria-label=\"done\" ng-click=\"done(bucketForm)\" ng-autodisable>\n        <div layout=\"column\" layout-align=\"center center\">\n          <span class=\"edit-bucket-page__done-button-text\">Done</span>\n        </div>\n      </md-button>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"edit-bucket-page__content\">\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-title\">You're about to edit a {{ bucket.status == 'draft' ? 'bucket idea' : 'bucket' }}</md-subheader>\n    </div>\n\n    <div>\n      <md-subheader class=\"edit-bucket-page__subheader-text\">\n        You can continue to edit this {{ bucket.status == 'draft' ? 'idea' : 'bucket' }}, propose it to your peers, and get feedback.\n        <span ng-if=\"bucket.status == 'draft'\">When you're ready, you can request funding.</span>\n      </md-subheader>\n    </div>\n\n    <form name='bucketForm' class=\"edit-bucket-page__form\">\n      <md-input-container>\n        <label>Title</label>\n        <input required name=\"name\" type=\"text\" ng-model=\"bucket.name\">\n        <div ng-messages=\"bucketForm.name.$error\">\n          <div ng-message=\"required\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <div class=\"edit-bucket-page__description-container\">\n        <md-input-container>\n          <label>Description</label>\n          <textarea required name=\"description\" ng-model=\"bucket.description\"></textarea>\n          <div ng-messages=\"bucketForm.description.$error\">\n            <div ng-message=\"required\">This is required.</div>\n          </div>\n        </md-input-container>\n        <a class=\"edit-bucket-page__markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n      </div>\n\n      <md-input-container>\n        <label>Funding Target (required for funding)</label>\n        <input ng-disabled=\"bucket.status != 'draft'\" name=\"target\" min=\"1\" type=\"text\" ng-model=\"bucket.target\" only-digits>\n        <div ng-messages=\"bucketForm.target.$error\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"min\">Bucket target must be greater than zero</div>\n        </div>\n      </md-input-container>\n    </form>\n  </md-content>\n</div>\n";
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 (function (global){
 module.exports = {
   url: '/email_settings?previous_group_id',
@@ -537,9 +554,43 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./email-settings-page.html":22}],22:[function(require,module,exports){
+},{"./email-settings-page.html":24}],24:[function(require,module,exports){
 module.exports = "<div class=\"email-settings-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-whiteframe-z1 email-settings-page__toolbar\" layout-align=\"column\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" ng-click=\"attemptCancel(emailSettingsForm)\" aria-label=\"cancel\">\n        <ng-md-icon icon=\"close\"\n          class=\"email-settings-page__cancel-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n      <span class=\"email-settings-page__header-text\">Email Settings</span>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"email-settings-page__content\">\n    <form novalidate name=\"emailSettingsForm\" class=\"email-settings-page__form\" ng-submit=\"save(); emailSettingsForm.$setPristine()\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email notifications?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-checkbox\n          name=\"subscribedToEmailNotifications\"\n          ng-model=\"subscriptionTracker.subscribedToEmailNotifications\"\n          aria-label=\"subscribed to email notifications\"\n          class=\"email-settings-page__checkbox\">\n        </md-checkbox>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting-note\">\n        <span>Check the box to get updates on buckets you create or participate in.</span>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting\">\n        <div layout=\"column\" layout-align=\"start center\">\n          <div class=\"email-settings-page__setting-header\">\n            Receive email digest?\n          </div>\n        </div>\n\n        <span flex></span>\n\n        <md-select required\n          class=\"email-settings-page__notification-frequency-options\"\n          name=\"emailDigestDeliveryFrequency\"\n          ng-model=\"subscriptionTracker.emailDigestDeliveryFrequency\"\n          aria-label=\"notification frequency options\"\n        >\n          <md-option required ng-repeat=\"option in emailDigestDeliveryFrequencyOptions\" value=\"{{option}}\">\n            {{option}}\n          </md-option>\n        </md-select>\n      </div>\n      \n      <div layout=\"row\" layout-align=\"start center\" class=\"email-settings-page__email-setting-note\">\n        <span>Choose how frequently you would like to receive email about new activity in your groups.</span>\n      </div>\n\n      <md-button class=\"md-raised md-primary email-settings-page__save-btn\" ng-disabled=\"emailSettingsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
+module.exports = function(params) {
+  return {
+    template: require('./finish-bucket-dialog.html'),
+    scope: params.scope,
+    controller: function(Dialog, LoadBar, $location, $mdDialog, $scope, Toast) {
+      $scope.cancel = function() {
+        return $mdDialog.cancel();
+      };
+      return $scope.proceed = function() {
+        LoadBar.start();
+        $scope.cancel();
+        params = {
+          bucket: {
+            status: 'funded'
+          }
+        };
+        return $scope.bucket.remote.update($scope.bucket.id, params).then(function() {
+          LoadBar.stop();
+          return Toast.show('Funding Accepted!');
+        })["catch"](function() {
+          LoadBar.stop();
+          return Dialog.alert({
+            title: "Error!"
+          });
+        });
+      };
+    }
+  };
+};
+
+
+},{"./finish-bucket-dialog.html":26}],26:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"finish bucket dialog\" class=\"finish-bucket-dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"finish-bucket-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"check_circle\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"finish-bucket-dialog__icon\"\n        size=\"50\"\n      ></ng-md-icon>\n\n      <div class=\"finish-bucket-dialog__header-text\">\n        Finish and accept funding from this bucket?\n      </div>\n    </div>\n\n    <md-divider ng-if=\"bucket.status == 'live'\"></md-divider>\n\n    <div class=\"finish-bucket-dialog__details-container\">\n      <div class=\"finish-bucket-dialog__final-caution\">\n        Warning: This cannot be undone\n      </div>\n\n      <p class=\"finish-bucket-dialog__details\">\n        If you accept, funding for this bucket will end, and you will no longer be able to collect money in this bucket.\n      </p>\n    </div>\n  </md-dialog-content>\n\n  <div class=\"md-actions finish-bucket-dialog__btns\" layout=\"row\" layout-align=\"center center\">\n    <div layout=\"row\" class=\"finish-bucket-dialog__btns-horizontal-layout\">\n      <span flex></span>\n      <md-button class=\"finish-bucket-dialog__btn finish-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n      <md-button\n        class=\"md-raised finish-bucket-dialog__btn finish-bucket-dialog__proceed-btn\"\n        ng-click=\"proceed()\"\n      >yes, accept funding</md-button>\n    </div>\n\n    <div layout=\"column\" class=\"finish-bucket-dialog__btns-vertical-layout\" layout-align=\"center center\">\n      <md-button\n        class=\"md-raised finish-bucket-dialog__btn finish-bucket-dialog__proceed-btn\"\n        ng-click=\"proceed()\"\n      >yes, accept funding</md-button>\n      <md-button class=\"finish-bucket-dialog__btn finish-bucket-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    </div>\n  </div>\n</md-dialog>\n";
+},{}],27:[function(require,module,exports){
 module.exports = {
   url: '/forgot_password',
   template: require('./forgot-password-page.html'),
@@ -564,9 +615,9 @@ module.exports = {
 };
 
 
-},{"./forgot-password-page.html":24}],24:[function(require,module,exports){
+},{"./forgot-password-page.html":28}],28:[function(require,module,exports){
 module.exports = "<div class=\"forgot-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary forgot-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools forgot-password-page__heading\" layout-align=\"center\">Having trouble logging in?</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"forgot-password-page__content\">\n    <div class=\"forgot-password-page__subheading\">\n      Enter your email address here and we'll send you an email to reset your account.\n    </div>\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && requestPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"form.email.$error\" ng-if=\"form.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"forgot-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
-},{}],25:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -580,9 +631,10 @@ module.exports = {
   url: '/groups/:groupId',
   template: require('./group-page.html'),
   params: {
-    openMembersTab: null
+    openMembersTab: null,
+    firstTimeSeeingGroup: null
   },
-  controller: function(CurrentUser, Error, LoadBar, Records, $scope, $stateParams, UserCan) {
+  controller: function(CurrentUser, Error, LoadBar, $location, Records, $scope, $stateParams, UserCan) {
     var groupId;
     LoadBar.start();
     if ($stateParams.openMembersTab) {
@@ -616,9 +668,10 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page.html":26}],26:[function(require,module,exports){
-module.exports = "<div class=\"group-page\" ng-if=\"authorized\">\n  <group-page-sidenav></group-page-sidenav>\n  \n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"group-page__content\">\n    <group-page-buckets ng-if=\"tabSelected == 0\"></group-page-buckets>\n    <group-page-funders ng-if=\"tabSelected == 1\"></group-page-funders>\n  </md-content>\n</div>";
-},{}],27:[function(require,module,exports){
+},{"./group-page.html":30}],30:[function(require,module,exports){
+module.exports = "<div class=\"group-page\" ng-if=\"authorized\">\n  <group-page-toolbar></group-page-toolbar>\n\n  <md-content class=\"group-page__content\">\n    <group-page-header></group-page-header>\n    <group-page-help></group-page-help>\n    <group-page-buckets ng-if=\"tabSelected == 0\"></group-page-buckets>\n    <group-page-funders ng-if=\"tabSelected == 1\"></group-page-funders>\n  </md-content>\n</div>\n";
+},{}],31:[function(require,module,exports){
+(function (global){
 module.exports = {
   onEnter: function($location) {
     return $location.url($location.path());
@@ -626,11 +679,14 @@ module.exports = {
   resolve: {
     userValidated: function($auth) {
       return $auth.validateUser();
+    },
+    membershipsLoaded: function() {
+      return global.cobudgetApp.membershipsLoaded;
     }
   },
   url: '/setup_group',
   template: require('./group-setup-page.html'),
-  controller: function(LoadBar, $location, Records, $scope) {
+  controller: function(LoadBar, Records, $scope, $state) {
     return $scope.createGroup = function(formData) {
       LoadBar.start();
       return Records.groups.build({
@@ -641,7 +697,10 @@ module.exports = {
           newGroup = _.find(data.groups, function(group) {
             return group.name === formData.name;
           });
-          $location.path("/groups/" + newGroup.id);
+          $state.go('group', {
+            groupId: newGroup.id,
+            firstTimeSeeingGroup: true
+          });
           return LoadBar.stop();
         });
       });
@@ -650,9 +709,11 @@ module.exports = {
 };
 
 
-},{"./group-setup-page.html":28}],28:[function(require,module,exports){
-module.exports = "<div class=\"group-setup-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <img class=\"group-setup-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <md-card class=\"group-setup-page__content-card\">\n      <md-card-content>\n        <div class=\"group-setup-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"group\"\n            size=\"40\"\n            class=\"group-setup-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\">\n          </ng-md-icon>\n        </div>\n\n        <h2 class=\"group-setup-page__logo-subheader\">Give your group a name</h2>\n\n        <form novalidate class=\"group-setup-page__form\" name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\" ng-autodisable>\n\n          <div class=\"group-setup-page__input-container\">\n            <input required class=\"group-setup-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"group name\">\n            <div ng-if=\"newGroupForm.name.$error.required && newGroupForm.$submitted\" class=\"group-setup-page__input-error\">Name is required.</div>\n          </div>\n\n          <md-button class=\"group-setup-page__submit-btn\">let's go!</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
-},{}],29:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./group-setup-page.html":32}],32:[function(require,module,exports){
+module.exports = "<div class=\"group-setup-page\">\n  <setup-toolbar></setup-toolbar>\n\n  <img class=\"group-setup-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n  <md-content layout-padding class=\"group-setup-page__content\">\n    <md-card class=\"group-setup-page__content-card\">\n      <md-card-content>\n        <div class=\"group-setup-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"group\"\n            size=\"40\"\n            class=\"group-setup-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\">\n          </ng-md-icon>\n        </div>\n\n        <h2 class=\"group-setup-page__logo-subheader\">Give your group a name</h2>\n\n        <form novalidate class=\"group-setup-page__form\" name=\"newGroupForm\" ng-submit=\"newGroupForm.$valid && createGroup(formData)\" ng-autodisable>\n\n          <div class=\"group-setup-page__input-container\">\n            <input required class=\"group-setup-page__input-field\" name=\"name\" type=\"text\" ng-model=\"formData.name\" placeholder=\"group name\">\n            <div ng-if=\"newGroupForm.name.$error.required && newGroupForm.$submitted\" class=\"group-setup-page__input-error\">Name is required.</div>\n          </div>\n\n          <md-button class=\"group-setup-page__submit-btn\">let's go!</md-button>\n        </form>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
+},{}],33:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -723,14 +784,19 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./invite-members-page.html":30}],30:[function(require,module,exports){
+},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":15,"./invite-members-page.html":34}],34:[function(require,module,exports){
 module.exports = "<div class=\"invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person_add\"\n        class=\"invite-members-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"invite-members-page__header-text\">\n        Invite Members\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"invite-members-page__content\">\n    <h2 class=\"invite-members-page__subheader\">\n      Members can see, comment on, and fund buckets in {{ group.name }}\n    </h2>\n\n    <md-divider></md-divider>\n\n    <form novalidate class=\"invite-members-page__details-form\" name=\"inviteMemberForm\">\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">EMAIL ADDRESS</label>\n        <input class=\"invite-members-page__text-input\" type=\"email\" required name=\"email\" ng-model=\"inviteMemberFormParams.email\"/>\n        <div ng-if=\"inviteMemberForm.email.$error.required && formSubmitted\" class=\"invite-members-page__input-error\">Email is required.</div>\n        <div ng-if=\"inviteMemberForm.email.$error.email && formSubmitted\" class=\"invite-members-page__input-error\">Email address must be valid.</div>\n      </div>\n\n      <div class=\"invite-members-page__input-container\">\n        <label class=\"invite-members-page__input-label\" for=\"name\">NAME (OPTIONAL)</label>\n        <input class=\"invite-members-page__text-input\" type=\"text\" name=\"name\" ng-model=\"inviteMemberFormParams.name\" />\n      </div>\n    </form>\n\n    <div class=\"invite-members-page__bulk-invite-btn-container\">\n      big group?\n      <a class=\"invite-members-page__bulk-invite-btn\" href=\"\" ng-click=\"openInviteMembersPrimerDialog()\">\n        Add many members at once\n      </a>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\">\n      <md-button class=\"invite-members-page__btn invite-members-page__confirm-btn\" ng-click=\"formSubmitted = true; inviteMemberForm.$valid && inviteMember(); inviteMemberForm.$setUntouched()\" ng-autodisable>Invite 1 Member</md-button>\n      <md-button class=\"invite-members-page__btn invite-members-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
-},{}],31:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = {
   url: '/',
   template: require('./landing-page.html'),
   controller: function(Dialog, LoadBar, $location, Records, $scope, Session, ValidateAndRedirectLoggedInUser) {
     ValidateAndRedirectLoggedInUser();
+    $scope.openVirtualTourDialog = function() {
+      return Dialog.custom({
+        template: require('./virtual-tour-dialog.tmpl.html')
+      });
+    };
     $scope.startGroup = function() {
       var newUser;
       LoadBar.start();
@@ -751,9 +817,11 @@ module.exports = {
 };
 
 
-},{"./landing-page.html":32}],32:[function(require,module,exports){
-module.exports = "<div class=\"landing-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n  <md-content class=\"landing-page__content\" layout=\"column\" layout-align=\"center center\">\n    <div class=\"landing-page__content-container\">\n      <img class=\"landing-page__dollar-logo\" src=\"./img/cobudget_icon_512px.png\" alt=\"Cobudget\" />\n      <img class=\"landing-page__cobudget-logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n      <h2 class=\"landing-page__logo-subheader\">Create more together</h2>\n\n      <form novalidate name=\"emailForm\" class=\"landing-page__start-group-form\" ng-submit=\"emailForm.$valid && startGroup()\">\n        <div class=\"landing-page__input-container\">\n          <input required class=\"landing-page__email-field\" type=\"email\" name=\"email\" placeholder=\"Email Address\" ng-model=\"formData.email\">\n          <div ng-if=\"emailForm.email.$error.required && emailForm.$submitted\" class=\"landing-page__input-error\">Email is required.</div>\n          <div ng-if=\"emailForm.email.$error.email && emailForm.$submitted\" class=\"landing-page__input-error\">Email address must be valid.</div>\n        </div>\n        <md-button class=\"landing-page__submit-btn\">start a group</md-button>\n      </form>\n    </div>\n  </md-content>\n</div>\n";
-},{}],33:[function(require,module,exports){
+},{"./landing-page.html":36,"./virtual-tour-dialog.tmpl.html":37}],36:[function(require,module,exports){
+module.exports = "<div class=\"landing-page\">\n  <landing-page-toolbar></landing-page-toolbar>\n  \n  <div class=\"landing-page__top-content\" layout=\"row\" layout-align=\"space-around center\">\n    <div class=\"landing-page__mobile-preview\">\n      <img src=\"./img/smartphone.svg\" class=\"landing-page__smartphone-img\" alt=\"\" />\n    </div>\n\n    <div class=\"landing-page__form-container\" layout=\"column\" layout-align=\"center center\">\n      <h2 class=\"landing-page__form-header\">Crowdsource and fund projects together</h2>\n\n      <form novalidate name=\"emailForm\" class=\"landing-page__form\" ng-submit=\"emailForm.$valid && startGroup()\">\n        <div class=\"landing-page__input-container\">\n          <input required class=\"landing-page__email-field\" type=\"email\" name=\"email\" placeholder=\"Email Address\" ng-model=\"formData.email\">\n          <div ng-if=\"emailForm.email.$error.required && emailForm.$submitted\" class=\"landing-page__input-error\">Email is required.</div>\n          <div ng-if=\"emailForm.email.$error.email && emailForm.$submitted\" class=\"landing-page__input-error\">Email address must be valid.</div>\n        </div>\n\n        <md-button class=\"landing-page__submit-btn\">start a group</md-button>\n\n        <a class=\"landing-page__virtual-tour-link\" ng-click=\"openVirtualTourDialog()\" href=\"\">or take a virtual tour</a>\n      </form>\n    </div>\n  </div>\n</div>\n";
+},{}],37:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"virtual tour dialog\" class=\"landing-page__virtual-tour-dialog\">\n  <div class=\"landing-page__video-wrapper\">\n    <iframe width=\"420\" height=\"315\" src=\"https://www.youtube.com/embed/Nw2GKV2TM6s\" frameborder=\"0\" allowfullscreen></iframe>\n  </div>\n</md-dialog>\n";
+},{}],38:[function(require,module,exports){
 module.exports = {
   url: '/login',
   template: require('./login-page.html'),
@@ -787,9 +855,9 @@ module.exports = {
 };
 
 
-},{"./login-page.html":34}],34:[function(require,module,exports){
-module.exports = "<div class=\"login-page\" ng-if=\"authorized\">\n  <md-toolbar class=\"md-primary login-page__toolbar\">\n    <h1 class=\"md-toolbar-tools login-page__heading\" layout-align=\"center\">Welcome to Cobudget!</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"login-page__content\">\n    <form novalidate name=\"loginForm\" class=\"login-page__login-form\" ng-submit=\"login(formData)\">\n      <div class=\"login-page__form-errors\">{{ formError }}</div>\n\n      <md-input-container>\n        <label>email</label>\n        <input required name=\"email\" type=\"email\" ng-pattern=\"/^.+@.+\\..+$/\" ng-model=\"formData.email\">\n        <div ng-messages=\"loginForm.email.$error\" ng-if=\"loginForm.$submitted\" multiple>\n          <div ng-message=\"required\">This is required.</div>\n          <div ng-message=\"pattern\">Invalid email format.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>password</label>\n        <input required name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"loginForm.password.$error\">\n          <div ng-message=\"required\" ng-if=\"loginForm.password.$dirty || loginForm.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n\n\n      <md-button class=\"login-page__login-btn\">Log In</md-button>\n    </form>\n\n    <div class=\"login-page__buttons-container\">\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n      <md-button class=\"login-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n    </div>\n\n  </md-content>\n</div>\n";
-},{}],35:[function(require,module,exports){
+},{"./login-page.html":39}],39:[function(require,module,exports){
+module.exports = "<div class=\"login-page\" ng-if=\"authorized\">\n  <md-content layout-padding class=\"login-page__content\">\n    <img class=\"login-page__logo\" src=\"./img/color_logo.svg\" alt=\"Cobudget\" />\n\n    <h1 class=\"login-page__heading\">Sign in to continue</h1>\n\n    <md-card class=\"login-page__content-card\">\n      <md-card-content>\n        <div class=\"login-page__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n          <ng-md-icon icon=\"person\"\n            size=\"60\"\n            class=\"login-page__person-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <form novalidate class=\"login-page__form\" name=\"loginForm\" ng-submit=\"login(formData)\" ng-autodisable>\n          <div class=\"login-page__form-errors\">{{ formError }}</div>\n\n          <div class=\"login-page__input-container\">\n            <input required class=\"login-page__input-field\" name=\"email\" type=\"email\" ng-model=\"formData.email\" placeholder=\"email\" ng-pattern=\"/^.+@.+\\..+$/\">\n            <div ng-if=\"loginForm.email.$error.required && loginForm.$submitted\" class=\"login-page__input-error\">This is required.</div>\n            <div ng-if=\"loginForm.email.$error.pattern && loginForm.$submitted\" class=\"login-page__input-error\">Invalid email format.</div>\n          </div>\n\n          <div class=\"login-page__input-container\">\n            <input class=\"login-page__input-field\" required name=\"password\" type=\"password\" ng-model=\"formData.password\" placeholder=\"password\">\n            <div ng-if=\"loginForm.password.$error.required && loginForm.$submitted\" class=\"login-page__input-error\">This is required.</div>\n          </div>\n\n          <md-button class=\"login-page__submit-btn\">Log In</md-button>\n        </form>\n\n        <div class=\"login-page__buttons-container\" layout=\"column\" layout-align=\"center end\">\n          <md-button class=\"login-page__forgot-password-btn\" ng-click=\"visitForgotPasswordPage()\">Having trouble logging in?</md-button>\n          <md-button class=\"login-page__forgot-password-btn\" ng-click=\"openFeedbackForm()\">Give us feedback!</md-button>\n        </div>\n      </md-card-content>\n    </md-card>\n  </md-content>\n</div>\n";
+},{}],40:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -846,11 +914,11 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./manage-group-funds-page.html":36}],36:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":13,"./manage-group-funds-page.html":41}],41:[function(require,module,exports){
 module.exports = "<div class=\"manage-group-funds-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"manage-group-funds-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <ng-md-icon icon=\"attach_money\"\n        class=\"manage-group-funds-page__money-icon\"\n        size=\"30\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n      <h1 class=\"manage-group-funds-page__header-text\">\n        Manage Group Funds\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"manage-group-funds-page__content\">\n    <h2 class=\"manage-group-funds-page__subheader\">\n      Here you can change members' available funds using CSV files\n    </h2>\n\n    <md-divider></md-divider>\n\n    <div class=\"manage-group-funds-page__btns-container\">\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container manage-group-funds-page__upload-btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\"  ng-click=\"openUploadCSVPrimerDialog()\">\n          <ng-md-icon icon=\"cloud_upload\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Update by CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Upload a csv file to update many members' funds at once. You can also invite new members at the same time. (more details)\n        </p>\n      </div>\n\n      <div layout=\"column\" layout-align=\"center start\" class=\"manage-group-funds-page__btn-container\" flex>\n        <div layout=\"row\" layout-align=\"start center\" class=\"manage-group-funds-page__btn\" ng-click=\"downloadCSV()\">\n          <ng-md-icon icon=\"file_download\"\n            class=\"manage-group-funds-page__btn-icon\"\n            size=\"20\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n\n          <div class=\"manage-group-funds-page__btn-label\">\n            Download CSV file\n          </div>\n        </div>\n\n        <p class=\"manage-group-funds-page__btn-info\">\n          Download a csv of all your group members, their emails, and their available funds.\n        </p>\n\n        <p class=\"manage-group-funds-page__btn-info manage-group-funds-page__safari-help\" ng-if=\"usingSafari\">\n          <b>Using Safari?</b><br/>\n          A bug in Safari names all downloaded CSVs as <code>Unknown</code>.\n          So after downloading, you will need to rename the file to <code>YOUR_PREFERRED_NAME.csv</code>.\n        </p>\n      </div>\n    </div>\n  </md-content>\n</div>\n";
-},{}],37:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = "<md-dialog class=\"profile-settings-page__discard-changes-dialog\" aria-label=\"discard changes dialog\">\n  <md-dialog-content class=\"sticky-container profile-settings-page__discard-changes-dialog-content\">\n    <h2 class=\"profile-settings-page__discard-changes-dialog-header\">Discard Changes?</h2>\n    <p class=\"profile-settings-page__discard-changes-dialog-text\">\n      Looks like you have some unsaved changes made to your <span ng-bind-html=\"unsavedFields()\"></span>.<br/><br/>\n      Any changes you have made to your account will be lost.\n    </p>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"profile-settings-page__discard-changes-dialog-btn\" ng-click=\"okay()\">okay</md-button>\n  </div>\n</md-dialog>\n";
-},{}],38:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -982,9 +1050,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./discard-changes-dialog.tmpl.html":37,"./profile-settings-page.html":39}],39:[function(require,module,exports){
+},{"./discard-changes-dialog.tmpl.html":42,"./profile-settings-page.html":44}],44:[function(require,module,exports){
 module.exports = "<div class=\"profile-settings-page\">\n  <md-toolbar class=\"profile-settings-page__toolbar\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" aria-label=\"back\" ng-click=\"attemptBack()\">\n        <ng-md-icon icon=\"arrow_back\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"profile-settings-page__back-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <h1>Profile Settings</h1>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"profile-settings-page__content\">\n    <form novalidate class=\"profile-settings-page__details-form\" name=\"accountDetailsForm\" ng-submit=\"save(); accountDetailsForm.$setPristine()\">\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">NAME</label>\n        <input class=\"profile-settings-page__text-input\" type=\"text\" required name=\"name\" ng-model=\"currentUser.name\" />\n        <div ng-if=\"accountDetailsForm.name.$error.required && formSubmitted\" class=\"profile-settings-page__input-error\">Name is required.</div>\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\" for=\"name\">EMAIL</label>\n        <input class=\"profile-settings-page__text-input\" disabled type=\"email\" name=\"email\" ng-model=\"currentUser.email\" />\n      </div>\n\n      <div class=\"profile-settings-page__input-container\">\n        <label class=\"profile-settings-page__input-label\">PASSWORD</label>\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <a class=\"profile-settings-page__change-password-link\" ng-click=\"openPasswordFields()\">CHANGE PASSWORD</a>\n          <span flex></span>\n          <ng-md-icon icon=\"close\"\n            ng-if=\"showPasswordFields\"\n            ng-click=\"closePasswordFields()\"\n            size=\"20\"\n            class=\"profile-settings-page__cancel-btn\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n      </div>\n\n    <div class=\"profile-settings-page__password-fields\" ng-show=\"showPasswordFields\">\n        <md-divider class=\"profile-settings-page__form-divider\"></md-divider>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"current_password\">CURRENT PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"current_password\" ng-model=\"passwordParams.current_password\"/>\n          <div ng-if=\"passwordErrors.currentPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.currentPassword }}</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"password\">NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"password\" ng-model=\"passwordParams.password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n\n        <div class=\"profile-settings-page__input-container\">\n          <label class=\"profile-settings-page__input-label\" for=\"confirm_password\">REPEAT NEW PASSWORD</label>\n          <input class=\"profile-settings-page__text-input\" type=\"password\" name=\"confirm_password\" ng-model=\"passwordParams.confirm_password\"/>\n          <div ng-if=\"passwordErrors.newPassword\" class=\"profile-settings-page__input-error\">{{ passwordErrors.newPassword }}</div>\n          <div ng-if=\"passwordParams.confirm_password.length < 8 && formSubmitted\" class=\"profile-settings-page__input-error\">Password must be longer than 8 characters</div>\n        </div>\n      </div>\n\n      <md-button class=\"md-raised md-primary profile-settings-page__save-btn\" ng-disabled=\"accountDetailsForm.$pristine\">save</md-button>\n    </form>\n  </md-content>\n</div>\n";
-},{}],40:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./remove-membership-dialog.html'),
@@ -1013,9 +1081,9 @@ module.exports = function(params) {
 };
 
 
-},{"./remove-membership-dialog.html":41}],41:[function(require,module,exports){
+},{"./remove-membership-dialog.html":46}],46:[function(require,module,exports){
 module.exports = "<md-dialog aria-label=\"remove membership dialog\">\n  <md-dialog-content class=\"sticky-container\">\n\n    <div class=\"remove-membership-dialog__header\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"warning\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"remove-membership-dialog__warning-icon\"\n        size=\"35\"\n      ></ng-md-icon>\n      <div class=\"remove-membership-dialog__header-text\">\n        Remove {{ member.name }} from {{ group.name }}\n      </div>\n    </div>\n    <md-divider></md-divider>\n\n    <div class=\"remove-membership-dialog__list-container\">\n      <div class=\"remove-membership-dialog__list-header\">\n        Warning: This cannot be undone\n      </div>\n      <ul class=\"remove-membership-dialog__list\">\n        <li class=\"remove-membership-dialog__list-item\" ng-repeat=\"warning in warnings\" layout=\"row\" layout-align=\"start start\">\n          <ng-md-icon icon=\"check\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            class=\"remove-membership-dialog__checkbox-icon\"\n            size=\"20\"\n          ></ng-md-icon>\n          <div class=\"remove-membership-dialog__warning-text\">{{ warning }}</div>\n        </li>\n      </ul>\n    </div>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"md-raised remove-membership-dialog__remove-btn\" ng-click=\"proceed()\" ng-autodisable>remove</md-button>\n    <md-button class=\"remove-membership-dialog__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n  </div>\n</md-dialog>\n";
-},{}],42:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 module.exports = {
   url: '/reset_password?reset_password_token',
   template: require('./reset-password-page.html'),
@@ -1063,9 +1131,31 @@ module.exports = {
 };
 
 
-},{"./reset-password-page.html":43}],43:[function(require,module,exports){
+},{"./reset-password-page.html":48}],48:[function(require,module,exports){
 module.exports = "<div class=\"reset-password-page\" ng-hide=\"userConfirmingAccount\">\n  <md-toolbar class=\"md-primary reset-password-page__toolbar\">\n    <h1 class=\"md-toolbar-tools reset-password-page__heading\" layout-align=\"center\">Reset Password</h1>\n  </md-toolbar>\n\n  <md-content layout-padding class=\"reset-password-page__content\">\n\n    <form novalidate name=\"form\" ng-submit=\"form.$valid && resetPassword(); form.$setUntouched()\">\n      <md-input-container>\n        <label>password</label>\n        <input required minlength=\"8\" name=\"password\" type=\"password\" ng-model=\"formData.password\">\n        <div ng-messages=\"form.password.$error\" multiple>\n          <div ng-message=\"required\" ng-if=\"form.password.$dirty || form.$submitted\">This is required.</div>\n          <div ng-message=\"minlength\" ng-if=\"form.$submitted\">Password must be at least 8 characters long.</div>\n        </div>\n      </md-input-container>\n\n      <md-input-container>\n        <label>confirm password</label>\n        <input required name=\"confirmPassword\" type=\"password\" ng-model=\"formData.confirmPassword\">\n        <div ng-messages=\"form.confirmPassword.$error\">\n          <div ng-message=\"required\" ng-if=\"form.confirmPassword.$dirty || form.$submitted\">This is required.</div>\n        </div>\n      </md-input-container>\n\n      <md-button class=\"reset-password-page__submit-btn\">submit</md-button>\n    </form>\n  </md-content>\n</div>";
-},{}],44:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
+module.exports = {
+  url: '/resources',
+  template: require('./resources-page.html'),
+  controller: function($location, $scope) {
+    $scope.articles = [
+      {
+        title: "Getting started with collaborative funding.",
+        description: "A basic guide on using cobudget in your team, group, or community.",
+        articleUrl: "https://medium.com/@Cobudget/getting-started-with-collaborative-funding-265dabef30e3#.n9evseijx",
+        imgUrl: "http://i.imgur.com/zd7n4QX.png"
+      }
+    ];
+    $scope.redirectToLandingPage = function() {
+      return $location.path('/');
+    };
+  }
+};
+
+
+},{"./resources-page.html":50}],50:[function(require,module,exports){
+module.exports = "<div class=\"resources-page\" layout=\"column\">\n  <landing-page-toolbar></landing-page-toolbar>\n\n  <h1 class=\"resources-page__header-text\">Resources and Stories</h1>\n\n  <div class=\"resources-page__content\" layout=\"column\" flex>\n    <div layout=\"row\" layout-align=\"start start\" ng-repeat=\"article in articles\">\n      <img class=\"resources-page__article-img\" ng-src=\"{{article.imgUrl}}\" />\n\n      <div>\n        <h2 class=\"resources-page__article-header-text\">\n          <a href=\"{{ article.articleUrl }}\" target=\"_blank\" class=\"resources-page__article-link\">\n            {{ article.title }}\n          </a>\n        </h2>\n        <p class=\"resources-page__article-description-text\">{{ article.description }}</p>\n      </div>\n    </div>\n\n    <div flex></div>\n\n    <a href=\"\" class=\"resources-page__return-home-link\" ng-click=\"redirectToLandingPage()\">return home</a>\n  </div>\n</div>\n";
+},{}],51:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -1211,9 +1301,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./review-bulk-allocation-page.html":45}],45:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":13,"./review-bulk-allocation-page.html":52}],52:[function(require,module,exports){
 module.exports = "<div class=\"review-bulk-allocation-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-allocation-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-allocation-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-allocation-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-allocation-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-allocation-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-allocation-page__content\">\n    <h2 class=\"review-bulk-allocation-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-allocation-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to {{ uploadStatus == 'standby' ? 'add' : 'gave'}} <b>{{ summedAllocationsFrom(peopleWithPositiveAllocations) | currency : group.currencySymbol }} total</b> to\n        <b><ng-pluralize count=\"peopleWithPositiveAllocations.length\" when=\"{ 'one': '1 member', 'other': '{} members' }\"></ng-pluralize></b>\n\n        <span ng-if=\"newMembers.length > 0\">\n          and {{ uploadStatus == 'standby' ? 'add' : 'added'}}\n          <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 new member', 'other': '{} new members' }\" ></ng-pluralize></b>\n        </span>\n\n        {{ newMembers.length > 0 ? 'to' : 'in' }} {{ group.name }}\n      </div>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-allocation-page__list-header\">Members & status</div>\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"start center\">\n          <div class=\"review-bulk-allocation-page__list-header\">Funds</div>\n        </div>\n      </div>\n\n      <md-divider class=\"review-bulk-allocation-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-allocation-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-allocation-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-allocation-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n          class=\"review-bulk-allocation-page__upload-member-complete-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-allocation-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-allocation-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-allocation-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n        </div>\n\n        <div flex></div>\n\n        <div class=\"review-bulk-allocation-page__funds-column-container\" layout=\"row\" layout-align=\"space-between center\">\n          <div class=\"review-bulk-allocation-page__funds-amount\"\n            ng-class=\"person.allocation_amount >= 0 ? 'review-bulk-allocation-page__funds-positive-amount' : 'review-bulk-allocation-page__funds-negative-amount'\"\n          >\n            <span class=\"review-bulk-allocation-page__funds-sign\">{{ person.allocation_amount >= 0 ? '+' : '-'}}</span>\n            {{ abs(person.allocation_amount) | currency : group.currencySymbol }}\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-allocation-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"confirmBulkAllocations()\">Confirm</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-allocation-page__btn review-bulk-allocation-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
-},{}],46:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 (function (global){
 module.exports = {
   resolve: {
@@ -1325,9 +1415,9 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./review-bulk-invite-members-page.html":47}],47:[function(require,module,exports){
+},{"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":15,"./review-bulk-invite-members-page.html":54}],54:[function(require,module,exports){
 module.exports = "<div class=\"review-bulk-invite-members-page\" ng-if=\"authorized\">\n  <admin-toolbar></admin-toolbar>\n\n  <div class=\"review-bulk-invite-members-page__header\" layout=\"column\" layout-align=\"end center\">\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'standby'\">\n      <div class=\"review-bulk-invite-members-page__upload-icon-container\">\n        <ng-md-icon icon=\"cloud_upload\"\n        class=\"review-bulk-invite-members-page__upload-icon\"\n        size=\"22\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        Please review & confirm your upload\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'pending'\">\n      <ng-md-icon icon=\"sync\"\n      class=\"review-bulk-invite-members-page__upload-pending-icon\"\n      size=\"30\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        Uploading ...\n      </h1>\n    </div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"uploadStatus == 'complete'\">\n      <ng-md-icon icon=\"check\"\n      class=\"review-bulk-invite-members-page__upload-pending-icon\"\n      size=\"40\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <h1 class=\"review-bulk-invite-members-page__header-text\">\n        It worked!\n      </h1>\n    </div>\n  </div>\n\n  <md-content class=\"review-bulk-invite-members-page__content\">\n    <h2 class=\"review-bulk-invite-members-page__subheader\">\n      Overview\n    </h2>\n\n    <div class=\"review-bulk-invite-members-page__text-overview\" ng-if=\"uploadStatus != 'pending'\">\n      <div ng-if=\"uploadStatus == 'standby'\">\n        Looks like you're trying to add\n        <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 new member', 'other': '{} new members' }\" ></ng-pluralize></b>\n        to {{ group.name }}\n      </div>\n\n      <div ng-if=\"uploadStatus == 'complete'\">\n        You invited\n        <b><ng-pluralize count=\"newMembers.length\" when=\"{ 'one': '1 member', 'other': '{} members' }\" ></ng-pluralize></b>\n        to {{ group.name }}\n      </div>\n    </div>\n\n    <div layout=\"column\">\n      <div layout=\"row\" layout-align=\"space-between center\">\n        <div class=\"review-bulk-invite-members-page__list-header\">Members & status</div>\n      </div>\n\n      <md-divider class=\"review-bulk-invite-members-page__top-divider\"></md-divider>\n\n      <div class=\"review-bulk-invite-members-page__list-row\" layout=\"row\" layout-align=\"start start\" ng-repeat=\"person in people\">\n        <div ng-if=\"person.status == 'pending'\" class=\"review-bulk-invite-members-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"sync\"\n          class=\"review-bulk-invite-members-page__upload-member-pending-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n        <div ng-if=\"person.status == 'complete'\" class=\"review-bulk-invite-members-page__upload-member-status-icon\">\n          <ng-md-icon icon=\"check_circle\"\n            class=\"{{person.new_member ?  'review-bulk-invite-members-page__upload-member-complete-icon' : 'review-bulk-invite-members-page__upload-member-skipped-icon'}}\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n        </div>\n\n        <div layout=\"column\" layout-align=\"start start\">\n          <div ng-if=\"person.new_member\" class=\"review-bulk-invite-members-page__name-and-email\"><b>{{ person.email }}</b></div>\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-invite-members-page__name-and-email\"><b>{{ person.name }}</b> ( {{ person.email }} )</div>\n\n          <div ng-if=\"person.new_member\" class=\"review-bulk-invite-members-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"mail\"\n              class=\"review-bulk-invite-members-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Invitation {{person.status == 'complete' ? 'Sent!' : 'Ready'}}</div>\n          </div>\n\n          <div ng-if=\"!person.new_member\" class=\"review-bulk-invite-members-page__invitation-text\" layout=\"row\" layout-align=\"space-between center\">\n            <ng-md-icon icon=\"person\"\n              class=\"review-bulk-invite-members-page__item-icon\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div>Already a member</div>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"review-bulk-invite-members-page__bottom-divider\"></md-divider>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus == 'standby'\">\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__confirm-btn\" ng-click=\"confirmBulkInvites()\">Confirm</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__try-again-btn\" ng-click=\"openUploadCSVPrimerDialog()\">Try Again</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__cancel-btn\" ng-click=\"cancel()\">Cancel</md-button>\n    </div>\n\n    <div layout=\"column\" layout-align=\"center space-between\" ng-if=\"uploadStatus != 'standby'\">\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__confirm-btn\" ng-click=\"done()\" ng-disabled=\"uploadStatus != 'complete'\">Done</md-button>\n      <md-button class=\"review-bulk-invite-members-page__btn review-bulk-invite-members-page__try-again-btn\" ng-click=\"seeAllMembers()\" ng-disabled=\"uploadStatus != 'complete'\">See All Members</md-button>\n    </div>\n  </md-content>\n</div>\n";
-},{}],48:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 module.exports = function(params) {
   return {
     template: require('./upload-csv-primer-dialog-error.html'),
@@ -1355,11 +1445,11 @@ module.exports = function(params) {
 };
 
 
-},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":11,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":13,"./upload-csv-primer-dialog-error.html":49}],49:[function(require,module,exports){
+},{"./../bulk-allocation-primer-dialog/bulk-allocation-primer-dialog.coffee":13,"./../bulk-invite-members-primer-dialog/bulk-invite-members-primer-dialog.coffee":15,"./upload-csv-primer-dialog-error.html":56}],56:[function(require,module,exports){
 module.exports = "<md-dialog class=\"upload-csv-primer-dialog-error\" aria-label=\"upload-csv-primer-dialog\">\n  <md-dialog-content class=\"sticky-container upload-csv-primer-dialog-error__content\">\n    <h2 class=\"upload-csv-primer-dialog-error__header\">\n      Looks like there was a problem...\n    </h2>\n\n    <p class=\"upload-csv-primer-dialog-error__paragraph\">\n      Sorry, but we couldn't upload your file for the following reasons:\n      <ul>\n        <li class=\"upload-csv-primer-dialog-error__error\" ng-repeat=\"error in csvUploadErrors\">\n          {{ error }}\n        </li>\n      </ul>\n    </p>\n\n    <p>\n       Please try again or <a target=\"_blank\" href=\"https://docs.google.com/document/d/1_a2Wn8z27tZl08Tk80akGdScEBkWczS43YM7wlXesQY/edit#heading=h.cpommtpjsm9r\" class=\"upload-csv-primer-dialog-error__link\">check out our help documentation</a>.\n    </p>\n  </md-dialog-content>\n\n  <div class=\"md-actions upload-csv-primer-dialog-error__btns\" layout=\"row\">\n    <md-button class=\"upload-csv-primer-dialog-error__cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"upload-csv-primer-dialog-error__ok-btn\" ng-click=\"tryAgain()\">try again</md-button>\n  </div>\n</md-dialog>\n";
-},{}],50:[function(require,module,exports){
-module.exports = {"apiPrefix":"https://cobudget-beta-api.herokuapp.com/api/v1","env":"production"}
-},{}],51:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
+module.exports = {"apiPrefix":"https://staging-cobudget-api.herokuapp.com/api/v1","env":"staging"}
+},{}],58:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1373,7 +1463,7 @@ global.cobudgetApp.config(["$authProvider", "config", function($authProvider, co
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],52:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1387,7 +1477,7 @@ global.cobudgetApp.config(["ChartJsProvider", "config", function(ChartJsProvider
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],53:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
@@ -1396,7 +1486,7 @@ global.cobudgetApp.controller('ApplicationController', ["Records", function(Reco
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],54:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1421,9 +1511,9 @@ global.cobudgetApp.directive('adminToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./admin-toolbar.html":55}],55:[function(require,module,exports){
+},{"./admin-toolbar.html":62}],62:[function(require,module,exports){
 module.exports = "<div class=\"admin-toolbar\" layout=\"row\" layout-align=\"center center\">\n  <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"cancel()\">\n    <ng-md-icon icon=\"clear\"\n      class=\"admin-toolbar__cancel-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n\n  <span flex></span>\n\n  <toolbar-dropdown-menu></toolbar-dropdown-menu>\n</div>\n";
-},{}],56:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1456,9 +1546,9 @@ global.cobudgetApp.directive('bucketPageActivityCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-activity-card.html":57}],57:[function(require,module,exports){
-module.exports = "<div>\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Activity\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.authorName }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n        <div class=\"bucket-page__comment-timestamp\">{{ comment.createdAt | timeFromNowInWords }} ago</div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" required placeholder=\"Add a comment, question, or offer of support\" name=\"body\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\" ng-disabled=\"commentForm.$invalid || commentCreated\">submit</md-button>\n        </md-input-container>\n      </div>\n    </form>\n  </md-card>\n</div>\n";
-},{}],58:[function(require,module,exports){
+},{"./bucket-page-activity-card.html":64}],64:[function(require,module,exports){
+module.exports = "<div class=\"bucket-page__activity-card-container\">\n  <md-card class=\"bucket-page__activity-card\">\n    <md-card-content class=\"bucket-page__activity-card-content\">\n      <div class=\"bucket-page__activity-header\" layout=\"row\">\n        <span>\n          <div layout=\"column\" layout-align=\"center center\">\n            Discussion\n          </div>\n        </span>\n        <span flex></span>\n        <span>\n          <ng-md-icon icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"bucket.hasComments() ? 'bucket-page__comment-icon-active' : 'bucket-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n          <div class=\"bucket-page__comment-count\" ng-if=\"bucket.hasComments()\">{{ bucket.comments().length }}</div>\n        </span>\n      </div>\n    </md-card-content>\n\n    <md-list class=\"bucket-page__comment-list\">\n      <md-list-item class=\"bucket-page__comment\" ng-repeat=\"comment in bucket.comments()\" layout=\"column\" layout-align=\"center start\">\n        <md-divider></md-divider>\n        <div class=\"bucket-page__comment-author-name\">{{ comment.authorName }}</div>\n        <div class=\"bucket-page__comment-body\" marked=\"comment.body\"></div>\n        <div class=\"bucket-page__comment-timestamp\">{{ comment.createdAt | timeFromNowInWords }} ago</div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"bucket-page__comment-form-card\">\n    <form name='commentForm' class=\"bucket-page__comment-form\" ng-submit=\"createComment()\">\n      <md-input-container class=\"bucket-page__comment-input-container\" md-no-float>\n        <textarea type=\"text\" class=\"bucket-page__comment-input\" required placeholder=\"Add a comment, question, or offer of support\" name=\"body\" ng-model=\"newComment.body\" />\n      </md-input-container>\n\n      <div class=\"bucket-page__submit-comment-container\">\n        <a class=\"bucket-page__comment-form-markdown-link\" href=\"https://www.loomio.org/markdown\" target=\"_blank\">formatting help</a>\n        <md-input-container class=\"bucket-page__submit-comment-btn-container\">\n          <md-button class=\"md-primary bucket-page__submit-comment-btn\" ng-disabled=\"commentForm.$invalid || commentCreated\">submit</md-button>\n        </md-input-container>\n      </div>\n    </form>\n  </md-card>\n</div>\n";
+},{}],65:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1471,7 +1561,8 @@ global.cobudgetApp.directive('bucketPageBackersCard', function() {
     template: require('./bucket-page-backers-card.html'),
     replace: true,
     scope: {
-      contributions: '='
+      contributions: '=',
+      currentUser: '='
     },
     controller: ["$scope", function($scope) {
       var groupedContributions;
@@ -1483,6 +1574,7 @@ global.cobudgetApp.directive('bucketPageBackersCard', function() {
         };
         totalContributionAmount = _.reduce(contributions, callback, 0);
         return {
+          id: contributions[0].user().id,
           name: contributions[0].user().name,
           contributionAmount: totalContributionAmount
         };
@@ -1494,9 +1586,9 @@ global.cobudgetApp.directive('bucketPageBackersCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-backers-card.html":59}],59:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__backers-card\">\n  <md-card-content class=\"bucket-page__backers-card-content\">\n    <div class=\"bucket-page__status-header\">Backers</div>\n    </div>\n\n    <p>\n      <ul class=\"bucket-page__backers-card-backers-list\">\n        <li ng-repeat=\"backer in backers\">\n          <b>{{ backer.name }}</b>: {{ backer.contributionAmount | currency : group.currencySymbol }}\n        </li>\n      </ul>\n    </p>\n  </md-card-content>\n</md-card>\n";
-},{}],60:[function(require,module,exports){
+},{"./bucket-page-backers-card.html":66}],66:[function(require,module,exports){
+module.exports = "<md-card class=\"bucket-page-backers-card\">\n  <md-card-content class=\"bucket-page-backers-card__content\">\n    <div class=\"bucket-page-backers-card__header\">Backers</div>\n\n    <ul class=\"bucket-page-backers-card__list\">\n      <li ng-repeat=\"backer in backers\">\n        <span class=\"bucket-page-backers-card__name\">\n          <b>{{ backer.name }}</b>:\n        </span>\n\n        <span class=\"bucket-page-backers-card__contribution\"\n          ng-class=\"backer.id == currentUser.id ? 'bucket-page-backers-card__contribution-personal' : 'bucket-page-backers-card__contribution-other'\"\n        >\n          <b>{{ backer.contributionAmount | currency : group.currencySymbol : 0 }}</b>\n        </span>\n\n      </li>\n    </ul>\n  </md-card-content>\n</md-card>\n";
+},{}],67:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1508,11 +1600,10 @@ global.cobudgetApp.directive('bucketPageHeaderCard', function() {
     restrict: 'E',
     template: require('./bucket-page-header-card.html'),
     replace: true,
-    controller: ["$filter", "marked", "$scope", function($filter, marked, $scope) {
+    controller: ["marked", "$scope", function(marked, $scope) {
       $scope.filteredBucketDescription = function() {
         return marked($scope.bucket.description);
       };
-      $scope.textTruncated = function() {};
     }]
   };
 });
@@ -1520,9 +1611,48 @@ global.cobudgetApp.directive('bucketPageHeaderCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-header-card.html":61}],61:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.authorName }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" ng-if=\"bucket.target > 0\">\n      <span class=\"bucket-page__description-header\">Funding Target</span>\n      <span flex=\"10\"></span>\n      <span class=\"bucket-page__description-header\" flex>{{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n      <!-- <div class=\"bucket-page__description-text-overlay\"></div> -->\n    </div>\n\n   <!--  <md-button \n      md-no-ink \n      ng-if=\"bucket.description.length > 200\"\n      class=\"md-primary bucket-page__more-button\" \n      ng-click=\"toggleMore()\"\n    >{{ moreButtonText() }}</md-button>           -->\n\n  </md-card-content>\n\n</md-card>\n";
-},{}],62:[function(require,module,exports){
+},{"./bucket-page-header-card.html":68}],68:[function(require,module,exports){
+module.exports = "<md-card class=\"bucket-page__header-card\">\n  <md-card-content class=\"bucket-page__meta\">\n    <div class=\"bucket-page__title\">{{ bucket.name }}</div>\n    <div class=\"bucket-page__author\">created by {{ bucket.authorName }} {{ bucket.createdAt | timeFromNowInWords }} ago</div>\n  </md-card-content>\n\n  <md-divider></md-divider>\n\n  <md-card-content class=\"bucket-page__description\">\n    <div layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.target > 0\">\n      <img ng-src=\"./img/blue_dollar.svg\" alt=\"blue dollar bill\" class=\"bucket-page__funding-target-icon\"/>\n      <span class=\"bucket-page__funding-target-text\">Funding Target : {{ bucket.target | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'funded'\" class=\"bucket-page-header-card__accepted-funding-container\">\n      <ng-md-icon icon=\"check_circle\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page-header-card__funded-icon\"\n      ></ng-md-icon>\n\n      <span class=\"bucket-page__accepted-funding-text\">Accepted Funding : {{ bucket.totalContributions | currency : group.currencySymbol : 0  }}</span>\n    </div>\n\n    <div class=\"bucket-page__description-text-container\">\n      <p class=\"bucket-page__description-text\" ng-bind-html=\"filteredBucketDescription()\"></p>\n    </div>\n  </md-card-content>\n</md-card>\n";
+},{}],69:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('bucketPageManageCard', function() {
+  return {
+    restrict: 'E',
+    template: require('./bucket-page-manage-card.html'),
+    replace: true,
+    controller: ["Dialog", "$scope", "$location", function(Dialog, $scope, $location) {
+      $scope.edit = function() {
+        return $location.path("/buckets/" + $scope.bucket.id + "/edit");
+      };
+      $scope.archive = function() {
+        var archiveBucketDialog;
+        archiveBucketDialog = require('./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee')({
+          scope: $scope
+        });
+        return Dialog.open(archiveBucketDialog);
+      };
+      $scope.finish = function() {
+        var finishBucketDialog;
+        finishBucketDialog = require('./../../components/finish-bucket-dialog/finish-bucket-dialog.coffee')({
+          scope: $scope
+        });
+        return Dialog.open(finishBucketDialog);
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee":9,"./../../components/finish-bucket-dialog/finish-bucket-dialog.coffee":25,"./bucket-page-manage-card.html":70}],70:[function(require,module,exports){
+module.exports = "<md-card class=\"bucket-page-manage-card\">\n  <md-card-content class=\"bucket-page-manage-card__content\">\n    <div class=\"bucket-page-manage-card__header\">Manage</div>\n    <div layout=\"row\" layout-align=\"start center\">\n      <md-button layout=\"column\" layout-align=\"center center\" class=\"bucket-page-manage-card__btn\" ng-click=\"edit()\">\n        <ng-md-icon icon=\"edit\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        Edit\n      </md-button>\n\n      <md-button layout=\"column\" layout-align=\"center center\" class=\"bucket-page-manage-card__btn\" ng-click=\"archive()\">\n        <ng-md-icon icon=\"archive\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        Archive\n      </md-button>\n\n      <md-button layout=\"column\" layout-align=\"center center\" class=\"bucket-page-manage-card__btn\" ng-click=\"finish()\" ng-if=\"bucket.status == 'live'\">\n        <ng-md-icon icon=\"check_circle\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        Finish\n      </md-button>\n    </div>\n  </md-card-content>\n</md-card>\n";
+},{}],71:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1534,12 +1664,9 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
     restrict: 'E',
     template: require('./bucket-page-progress-card.html'),
     replace: true,
-    controller: ["Dialog", "$scope", "$state", "Records", "Toast", function(Dialog, $scope, $state, Records, Toast) {
+    controller: ["Dialog", "$q", "Records", "$scope", "$state", "Toast", function(Dialog, $q, Records, $scope, $state, Toast) {
       var maxAllowableContribution;
       maxAllowableContribution = _.min([$scope.bucket.amountRemaining(), $scope.membership.balance]);
-      $scope.openFundForm = function() {
-        return $scope.fundFormOpened = true;
-      };
       $scope.percentContributed = function() {
         return ($scope.newContribution.amount || 0) / $scope.bucket.target * 100;
       };
@@ -1554,7 +1681,10 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
       $scope.submitContribution = function() {
         $scope.contributionSubmitted = true;
         return $scope.newContribution.save().then(function() {
-          return Records.memberships.findOrFetchById($scope.membership.id).then(function() {
+          var bucketPromise, membershipPromise;
+          membershipPromise = Records.memberships.remote.fetchById($scope.membership.id);
+          bucketPromise = Records.buckets.remote.fetchById($scope.bucket.id);
+          return $q.allSettled([membershipPromise, bucketPromise]).then(function() {
             $scope.newContribution = {};
             $state.reload();
             return Toast.show('You funded a bucket');
@@ -1570,47 +1700,9 @@ global.cobudgetApp.directive('bucketPageProgressCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-progress-card.html":63}],63:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__progress-card\">\n  <md-card-content class=\"bucket-page__progress-card-content\">\n    <span class=\"bucket-page__progress-header\">Progress</span>\n\n    <div class=\"bucket-page__progress-bar-container\">\n      <div class=\"bucket-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n      <div class=\"bucket-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n    </div>\n\n    <div layout=\"row\" class=\"bucket-page__progress-info\">\n      <div flex=\"25\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.numOfContributors }}</span>\n        <span class=\"bucket-page__progress-unit\">backers</span>\n      </div>\n\n      <div flex>\n        <span class=\"bucket-page__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n        <span class=\"bucket-page__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n      </div>\n\n      <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n        <span class=\"bucket-page__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n        <span class=\"bucket-page__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n      </div>\n    </div>\n\n    <form class=\"bucket-page__fund-form\" layout=\"row\" ng-if=\"membership.balance > 0\" name=\"fundForm\">\n      <md-input-container class=\"bucket-page__fund-form-input-container\" ng-if=\"fundFormOpened\">\n        <label>Amount</label>\n        <input class=\"bucket-page__fund-form-amount-input\"\n          type=\"number\"\n          name=\"amount\"\n          ng-required\n          min=\"1\"\n          pattern=\"[0-9]*\"\n          ng-model=\"newContribution.amount\"\n          ng-change=\"normalizeContributionAmount()\"\n          focus-if\n          only-digits\n        >\n      </md-input-container>\n\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='openFundForm()' ng-hide=\"fundFormOpened\">Fund</md-button>\n      <md-button class=\"md-raised md-primary bucket-page__fund-btn\" ng-click='submitContribution()' ng-if=\"fundFormOpened\" ng-autodisable>Submit</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
-},{}],64:[function(require,module,exports){
-(function (global){
-null;
-
-
-/* @ngInject */
-
-global.cobudgetApp.directive('bucketPageStatusCardFlagpoint', function() {
-  return {
-    scope: {
-      status: "@",
-      bucket: "="
-    },
-    restrict: 'E',
-    template: require('./bucket-page-status-card-flagpoint.html'),
-    replace: true,
-    controller: ["$scope", function($scope) {
-      $scope.flagpointText = function() {
-        switch ($scope.status) {
-          case 'draft':
-            return 'Idea';
-          case 'live':
-            return 'Funding';
-          case 'funded':
-            return 'Funded';
-          case 'done':
-            return 'Done';
-        }
-      };
-    }]
-  };
-});
-
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"./bucket-page-status-card-flagpoint.html":65}],65:[function(require,module,exports){
-module.exports = "<div class=\"bucket-page__status-flagpoint\">\n\n  <div layout=\"column\" layout-align=\"center center\" ng-show=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_on\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__{{status}}-icon\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-active\">{{ flagpointText() }}</span>\n  </div>\n\n  <div layout=\"column\" layout-align=\"center center\" ng-hide=\"bucket.status == status\">\n    <ng-md-icon icon=\"radio_button_off\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      class=\"bucket-page__status-icon-inactive\"\n    ></ng-md-icon>\n    <span class=\"bucket-page__status-flagpoint-text-inactive\">{{ flagpointText() }}</span>\n  </div>\n</div>";
-},{}],66:[function(require,module,exports){
+},{"./bucket-page-progress-card.html":72}],72:[function(require,module,exports){
+module.exports = "<md-card class=\"bucket-page-progress-card\">\n  <md-card-content class=\"bucket-page-progress-card__content\">\n    <div class=\"bucket-page-progress-card__top\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"bucket-page-progress-card__progress-header\">\n        <img ng-src=\"./img/blue_dollar.svg\" alt=\"blue dollar\" class=\"bucket-page-progress-card__dollar-icon\"/>\n        <span class=\"bucket-page-progress-card__progress-header-text\">Progress</span>\n      </div>\n\n      <div class=\"bucket-page-progress-card__progress-bar-container\">\n        <div class=\"bucket-page-progress-card__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n        <div class=\"bucket-page-progress-card__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) + bucket.percentContributedByUser(currentUser) + percentContributed() }}%\"></div>\n      </div>\n\n      <div layout=\"row\" class=\"bucket-page-progress-card__progress-info\">\n        <div flex=\"25\">\n          <span class=\"bucket-page-progress-card__progress-amount\">{{ bucket.numOfContributors }}</span>\n          <span class=\"bucket-page-progress-card__progress-unit\">backers</span>\n        </div>\n\n        <div flex>\n          <span class=\"bucket-page-progress-card__progress-amount\">{{ totalAmountFunded() | currency : group.currencySymbol : 0 }}</span>\n          <span class=\"bucket-page-progress-card__progress-unit\">pledged of {{ bucket.target | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <div flex=\"25\" ng-show=\"bucket.fundingClosesAt\">\n          <span class=\"bucket-page-progress-card__progress-amount\">{{ bucket.fundingClosesAt | timeToNowAmount }}</span>\n          <span class=\"bucket-page-progress-card__progress-unit\">{{ bucket.fundingClosesAt | timeToNowUnits }} left</span>\n        </div>\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n\n    <form novalidate class=\"bucket-page-progress-card__fund-form\" ng-if=\"membership.balance > 0\" name=\"fundForm\">\n      <div class=\"bucket-page-progress-card__input-container\">\n        <label class=\"bucket-page-progress-card__input-label\" for=\"amount\"><b>Your Contribution</b> (you have <b class=\"bucket-page-progress-card__personal-funds-left\">{{ membership.balance - newContribution.amount | currency : group.currencySymbol : 0 }}</b> left)</label>\n        <input class=\"bucket-page-progress-card__text-input\"\n          type=\"number\"\n          name=\"amount\"\n          required\n          min=\"1\"\n          pattern=\"[0-9]*\"\n          ng-model=\"newContribution.amount\"\n          ng-change=\"normalizeContributionAmount()\"\n          placeholder=\"5, 10, 15\"\n          only-digits\n        />\n      </div>\n\n      <md-button class=\"md-raised md-primary bucket-page-progress-card__fund-btn\" ng-click='submitContribution()' ng-disabled=\"fundForm.$pristine || fundForm.$invalid\" ng-autodisable>Contribute Now</md-button>\n    </form>\n  </md-card-content>\n</md-card>\n";
+},{}],73:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1623,9 +1715,6 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
     template: require('./bucket-page-status-card.html'),
     replace: true,
     controller: ["$scope", "Toast", "Dialog", function($scope, Toast, Dialog) {
-      $scope.userCanStartFunding = function() {
-        return $scope.membership.isAdmin || $scope.bucket.author().id === $scope.membership.member().id;
-      };
       return $scope.openForFunding = function() {
         if ($scope.bucket.target) {
           return $scope.bucket.openForFunding().then(function() {
@@ -1647,44 +1736,9 @@ global.cobudgetApp.directive('bucketPageStatusCard', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bucket-page-status-card.html":67}],67:[function(require,module,exports){
-module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div ng-if=\"bucket.status == 'funded' || !bucket.isArchived()\">\n      <div class=\"bucket-page__status-flagpoints\" layout=\"row\" layout-align=\"space-between center\">\n        <bucket-page-status-card-flagpoint status=\"draft\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"live\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n\n        <div class=\"bucket-page__status-flagpoint-divider\" flex></div>\n\n        <bucket-page-status-card-flagpoint status=\"funded\" bucket=\"bucket\"></bucket-page-status-card-flagpoint>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'draft'\">\n        <p><em>This bucket idea is still being discussed and designed</em></p>\n\n        <div ng-show='userCanStartFunding()'>\n          <p><em>As an administrator or creator, you can approve this bucket for funding when it is ready</em></p>\n          <md-button class=\"md-raised md-primary bucket-page__start-funding-btn\" ng-click='openForFunding()' ng-autodisable>Start Funding</md-button>\n        </div>\n      </div>\n\n      <div class=\"bucket-page__status-description\" ng-show=\"bucket.status == 'live'\">\n        <p><em>This bucket has been launched and can be funded.</em></p>\n      </div>\n    </div>\n\n    <div class=\"bucket-page__status-description\" ng-if=\"bucket.isArchived()\">\n      <p><em>This bucket was archived on {{ moment.bucket.archivedAt | exactDateWithTime }}</em></p>\n    </div>\n  </md-card-content>\n</md-card>\n";
-},{}],68:[function(require,module,exports){
-(function (global){
-null;
-
-
-/* @ngInject */
-
-global.cobudgetApp.directive('bucketPageToolbar', function() {
-  return {
-    restrict: 'E',
-    template: require('./bucket-page-toolbar.html'),
-    replace: true,
-    controller: ["Dialog", "LoadBar", "$location", "$scope", "Toast", function(Dialog, LoadBar, $location, $scope, Toast) {
-      $scope.edit = function() {
-        return $location.path("/buckets/" + $scope.bucket.id + "/edit");
-      };
-      $scope.userCanEditBucket = function() {
-        return $scope.bucket && !$scope.bucket.isArchived() && $scope.userCanStartFunding();
-      };
-      $scope.archive = function() {
-        var archiveBucketDialog;
-        archiveBucketDialog = require('./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee')({
-          scope: $scope
-        });
-        return Dialog.open(archiveBucketDialog);
-      };
-    }]
-  };
-});
-
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"./../../components/archive-bucket-dialog/archive-bucket-dialog.coffee":7,"./bucket-page-toolbar.html":69}],69:[function(require,module,exports){
-module.exports = "<md-toolbar class=\"bucket-page__toolbar\">\n  <div class=\"md-toolbar-tools bucket-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"back()\">\n      <ng-md-icon icon=\"arrow_back\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n      ></ng-md-icon>\n    </md-button>\n\n    <span class=\"bucket-page__personal-funds\" layout=\"row\" layout-align=\"start center\" ng-if=\"bucket.status == 'live'\">\n      <ng-md-icon icon=\"person\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__funds-icon\"\n      ></ng-md-icon>\n      <div layout=\"column\" layout-align=\"center center\">\n        <span class=\"bucket-page__funds-overview-header\">Your funds</span>\n        <span class=\"bucket-page__funds-overview-amount\">{{ membership.balance - newContribution.amount | currency : group.currencySymbol : 0 }}</span>\n      </div>\n    </span>\n\n    <span flex></span>\n\n    <span ng-show=\"userCanEditBucket()\">\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"archive\" ng-click=\"archive()\" ng-if=\"!bucket.isArchived()\">\n        <md-tooltip>Archive</md-tooltip>\n        <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n\n      <md-button class=\"md-icon-button bucket-page__bucket-modifier-btn\" aria-label=\"edit\" ng-click=\"edit()\">\n        <md-tooltip>Edit</md-tooltip>\n        <ng-md-icon icon=\"edit\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          class=\"bucket-page__menu-icon\"\n        ></ng-md-icon>\n      </md-button>\n    </span>\n  </div>\n</md-toolbar>\n";
-},{}],70:[function(require,module,exports){
+},{"./bucket-page-status-card.html":74}],74:[function(require,module,exports){
+module.exports = "<md-card class=\"bucket-page__status-card\">\n  <md-card-content class=\"bucket-page__status-card-content\">\n    <div class=\"bucket-page__status-header\">Status</div>\n\n    <div ng-if=\"!bucket.isArchived()\">\n      <div ng-if=\"bucket.status == 'draft'\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <img ng-src=\"./img/lightbulb.svg\" alt=\"lightbulb\" class=\"bucket-page__idea-icon\"/>\n          <div>\n            <h3 class=\"bucket-page__status\">Idea</h3>\n            <p class=\"bucket-page__status-description\"><em>This bucket idea is still being discussed and designed</em></p>\n          </div>\n        </div>\n\n        <md-button\n          class=\"md-raised md-primary bucket-page__start-funding-btn\"\n          ng-click='openForFunding()'\n          ng-autodisable\n          ng-show='userCanManageBucket()'\n        >\n          Start Funding\n        </md-button>\n      </div>\n\n      <div ng-if=\"bucket.status == 'funded'\">\n        <div layout=\"row\" layout-align=\"start center\" class=\"bucket-page-status-card__funded-status-container\">\n          <ng-md-icon icon=\"check_circle\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            size=\"35\"\n            class=\"bucket-page-status-card__funded-icon\"\n          ></ng-md-icon>\n\n          <div>\n            <h3 class=\"bucket-page__status\">Funded</h3>\n            <p class=\"bucket-page__status-description\"><em>This bucket was funded {{ bucket.target | currency : group.currencySymbol : 0 }} on {{ moment(bucket.fundedAt) | exactDateWithTime }}</em></p>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div ng-if=\"bucket.isArchived()\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"bucket-page-status-card__archived-status-container\">\n        <ng-md-icon icon=\"archive\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          size=\"35\"\n          class=\"bucket-page-status-card__archived-icon\"\n        ></ng-md-icon>\n\n        <div>\n          <h3 class=\"bucket-page__status\">Archived</h3>\n          <p class=\"bucket-page__status-description\"><em>This bucket was archived on {{ moment.bucket.archivedAt | exactDateWithTime }}</em></p>\n        </div>\n      </div>\n    </div>\n  </md-card-content>\n</md-card>\n";
+},{}],75:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1712,9 +1766,9 @@ global.cobudgetApp.directive('errorPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./error-page.html":71}],71:[function(require,module,exports){
+},{"./error-page.html":76}],76:[function(require,module,exports){
 module.exports = "<div class=\"error-page\" ng-show=\"error\">\n  <div class=\"error-page__shrug\">¯\\_(ツ)_/¯</div>\n  <div class=\"error-page__message\">{{ error }}</div>\n</div>\n";
-},{}],72:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1730,8 +1784,11 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
       $scope.showBucket = function(bucketId) {
         return $location.path("/buckets/" + bucketId);
       };
-      $scope.toggleArchivedBuckets = function() {
-        return $scope.showArchivedBuckets = !$scope.showArchivedBuckets;
+      $scope.showArchivedBuckets = function() {
+        return $scope.archivedBucketsShown = true;
+      };
+      $scope.hideArchivedBuckets = function() {
+        return $scope.archivedBucketsShown = false;
       };
     }]
   };
@@ -1740,9 +1797,9 @@ global.cobudgetApp.directive('groupPageBuckets', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./group-page-buckets.html":73}],73:[function(require,module,exports){
-module.exports = "<div class=\"group-page__buckets-content\">\n  <md-list class=\"group-page__live-buckets\" ng-if=\"group.liveBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDING NOW</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"liveBucket in group.liveBuckets()\">\n      <div layout=\"column\" flex class=\"group-page__live-bucket-container\" ng-click=\"showBucket(liveBucket.id)\">\n        <span class=\"group-page__live-bucket-title\">{{ liveBucket.name }}</span>\n\n        <div layout=\"row\" layout-align=\"space-between center\">\n          <span class=\"group-page__live-bucket-funding\">{{ liveBucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</span>\n\n          <span ng-show=\"liveBucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n            You gave {{ liveBucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}\n          </span>\n        </div>\n\n        <div class=\"group-page__progress-bar-container\">\n          <div class=\"group-page__progress-bar-primary\" style=\"width: {{ liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n          <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ liveBucket.percentContributedByUser(currentUser) + liveBucket.percentContributedByOthers(currentUser) }}%\"></div>\n        </div>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__drafts\" ng-if=\"group.draftBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">IDEAS</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"draftBucket in group.draftBuckets()\" ng-click=\"showBucket(draftBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__draft-container\">\n        <span class=\"group-page__draft-title\">{{ draftBucket.name }}</span>\n        <span class=\"group-page__draft-author\">created by {{ draftBucket.authorName }} {{ draftBucket.createdAt | timeFromNowInWords }} ago</span>\n\n        <div class=\"group-page__comment-count-container\">\n          <ng-md-icon\n            icon=\"messenger\"\n            layout=\"column\"\n            layout-align=\"center center\"\n            ng-class=\"draftBucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n          ></ng-md-icon>\n\n          <div class=\"group-page__comment-count\" ng-if=\"draftBucket.hasComments()\">\n            {{ draftBucket.numOfComments }}\n          </div>\n        </div>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page__funded-buckets\" ng-if=\"group.fundedBuckets().length > 0\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">FUNDED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"fundedBucket in group.fundedBuckets()\" ng-click=\"showBucket(fundedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ fundedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ fundedBucket.authorName }} {{ fundedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <md-list class=\"group-page-buckets__archived-buckets\" ng-if=\"group.archivedBuckets().length > 0 && showArchivedBuckets\">\n    <div layout=\"row\" layout-align=\"center center\">\n      <md-subheader class=\"group-page__subheader-title\">ARCHIVED</md-subheader>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"archivedBucket in group.archivedBuckets()\" ng-click=\"showBucket(archivedBucket.id)\">\n      <div layout=\"column\" flex class=\"group-page__funded-bucket-container\">\n        <span class=\"group-page__funded-bucket-title\">{{ archivedBucket.name }}</span>\n        <span class=\"group-page__funded-bucket-author\">created by {{ archivedBucket.authorName }} {{ archivedBucket.createdAt | timeFromNowInWords }} ago</span>\n      </div>\n    </md-list-item>\n  </md-list>\n\n  <div class=\"group-page-buckets__archived-buckets-btn-container\" layout=\"row\" ng-if=\"group.archivedBuckets().length > 0\">\n    <div class=\"group-page-buckets__archived-buckets-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"toggleArchivedBuckets()\">\n      <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page-buckets__archived-buckets-btn-icon\"\n      ></ng-md-icon>\n\n      <div class=\"group-page-buckets__archived-buckets-btn-label\">\n        {{ showArchivedBuckets ? 'Hide' : 'Show' }} Archived Buckets\n      </div>\n    </div>\n  </div>\n</div>\n";
-},{}],74:[function(require,module,exports){
+},{"./group-page-buckets.html":78}],78:[function(require,module,exports){
+module.exports = "<div class=\"group-page__buckets-content\">\n  <md-card class=\"group-page__buckets-card\">\n    <md-list class=\"group-page__buckets-list\" ng-if=\"group.liveBuckets().length > 0\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"group-page__buckets-list-header-container\">\n        <img ng-src=\"./img/blue_dollar.svg\" alt=\"blue dollar bill\" class=\"group-page__bucket-list-icon\"/>\n        <md-subheader class=\"group-page__subheader-title\">Funding Now</md-subheader>\n      </div>\n\n      <md-divider class=\"group-page__buckets-divider\"></md-divider>\n\n      <md-list-item md-no-ink ng-repeat=\"bucket in group.liveBuckets()\" ng-click=\"showBucket(bucket.id)\" class=\"group-page__buckets-list-item\">\n        <div layout=\"column\" flex class=\"group-page__bucket-container\">\n          <div layout=\"row\" layout-align=\"start center\" class=\"group-page__bucket-header-container\">\n            <span class=\"group-page__bucket-title\">{{ bucket.name }}</span>\n\n            <span flex class=\"group-page__bucket-comment-buffer\"></span>\n\n            <div class=\"group-page__comment-count-container\">\n              <ng-md-icon\n                size=\"22\"\n                icon=\"messenger\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                ng-class=\"bucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n              ></ng-md-icon>\n\n              <div class=\"group-page__comment-count\" ng-if=\"bucket.hasComments()\">\n                {{ bucket.numOfComments }}\n              </div>\n            </div>\n          </div>\n\n          <div layout=\"row\" layout-align=\"space-between center\">\n            <span class=\"group-page__bucket-subheader\">{{ bucket.totalContributions | currency : group.currencySymbol : 0 }} funded - <b>{{ bucket.amountRemaining() | currency : group.currencySymbol : 0  }} to go</b></span>\n\n            <span ng-show=\"bucket.amountContributedByUser(currentUser) > 0\" class=\"group-page__live-bucket-personal-contribution\">\n              You gave {{ bucket.amountContributedByUser(currentUser) | currency : group.currencySymbol : 0 }}\n            </span>\n          </div>\n\n          <div class=\"group-page__progress-bar-container\">\n            <div class=\"group-page__progress-bar-primary\" style=\"width: {{ bucket.percentContributedByOthers(currentUser) }}%\"></div>\n            <div class=\"group-page__progress-bar-secondary\" style=\"width: {{ bucket.percentContributedByUser(currentUser) + bucket.percentContributedByOthers(currentUser) }}%\"></div>\n          </div>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"group-page__buckets-card\">\n    <md-list class=\"group-page__buckets-list\" ng-if=\"group.draftBuckets().length > 0\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"group-page__buckets-list-header-container\">\n        <img ng-src=\"./img/lightbulb.svg\" alt=\"lightbulb\" class=\"group-page__bucket-list-icon\"/>\n        <md-subheader class=\"group-page__subheader-title\">Ideas</md-subheader>\n      </div>\n\n      <md-divider class=\"group-page__buckets-divider\"></md-divider>\n\n      <md-list-item md-no-ink ng-repeat=\"bucket in group.draftBuckets()\" ng-click=\"showBucket(bucket.id)\" class=\"group-page__buckets-list-item\">\n        <div layout=\"column\" flex class=\"group-page__bucket-container\">\n          <div layout=\"row\" layout-align=\"start center\" class=\"group-page__bucket-header-container\">\n            <span class=\"group-page__bucket-title\">{{ bucket.name }}</span>\n\n            <span flex class=\"group-page__bucket-comment-buffer\"></span>\n\n            <div class=\"group-page__comment-count-container\">\n              <ng-md-icon\n                size=\"22\"\n                icon=\"messenger\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                ng-class=\"bucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n              ></ng-md-icon>\n\n              <div class=\"group-page__comment-count\" ng-if=\"bucket.hasComments()\">\n                {{ bucket.numOfComments }}\n              </div>\n            </div>\n          </div>\n\n          <span class=\"group-page__bucket-subheader\">{{ bucket.authorName }} - {{ bucket.createdAt | timeFromNowInWords }} ago</span>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"group-page__buckets-card\">\n    <md-list class=\"group-page__buckets-list\" ng-if=\"group.fundedBuckets().length > 0\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"group-page__buckets-list-header-container\">\n        <ng-md-icon icon=\"check_circle\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          size=\"27\"\n          class=\"group-page__bucket-list-icon group-page__bucket-list-funded-icon\"\n        ></ng-md-icon>\n        <md-subheader class=\"group-page__subheader-title\">Funded</md-subheader>\n      </div>\n\n      <md-divider class=\"group-page__buckets-divider\"></md-divider>\n\n      <md-list-item md-no-ink ng-repeat=\"bucket in group.fundedBuckets()\" ng-click=\"showBucket(bucket.id)\" class=\"group-page__buckets-list-item\">\n        <div layout=\"column\" flex class=\"group-page__bucket-container\">\n          <div layout=\"row\" layout-align=\"start center\" class=\"group-page__bucket-header-container\">\n            <span class=\"group-page__bucket-title\">{{ bucket.name }}</span>\n\n            <span flex class=\"group-page__bucket-comment-buffer\"></span>\n\n            <div class=\"group-page__comment-count-container\">\n              <ng-md-icon\n                size=\"22\"\n                icon=\"messenger\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                ng-class=\"bucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n              ></ng-md-icon>\n\n              <div class=\"group-page__comment-count\" ng-if=\"bucket.hasComments()\">\n                {{ bucket.numOfComments }}\n              </div>\n            </div>\n          </div>\n\n          <span class=\"group-page__bucket-subheader\">{{ bucket.authorName }} - {{ bucket.totalContributions | currency : group.currencySymbol : 0 }}</span>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card class=\"group-page__buckets-card\">\n    <md-list class=\"group-page__buckets-list\" ng-if=\"group.archivedBuckets().length > 0 && archivedBucketsShown\">\n      <div layout=\"row\" layout-align=\"start center\" class=\"group-page__buckets-list-header-container\">\n        <ng-md-icon icon=\"archive\"\n          layout=\"column\"\n          layout-align=\"center center\"\n          size=\"27\"\n          class=\"group-page__bucket-list-icon group-page__bucket-list-archived-icon\"\n        ></ng-md-icon>\n\n        <md-subheader class=\"group-page__subheader-title\">Archived</md-subheader>\n\n        <span flex></span>\n\n        <md-button class=\"group-page-buckets__hide-archived-buckets-btn\" ng-click=\"hideArchivedBuckets()\">Hide</md-button>\n      </div>\n\n      <md-divider class=\"group-page__buckets-divider\"></md-divider>\n\n      <md-list-item md-no-ink ng-repeat=\"bucket in group.archivedBuckets()\" ng-click=\"showBucket(bucket.id)\" class=\"group-page__buckets-list-item\">\n        <div layout=\"column\" flex class=\"group-page__bucket-container\">\n          <div layout=\"row\" layout-align=\"start center\" class=\"group-page__bucket-header-container\">\n            <span class=\"group-page__bucket-title\">{{ bucket.name }}</span>\n\n            <span flex class=\"group-page__bucket-comment-buffer\"></span>\n\n            <div class=\"group-page__comment-count-container\">\n              <ng-md-icon\n                size=\"22\"\n                icon=\"messenger\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                ng-class=\"bucket.hasComments() ? 'group-page__comment-icon-active' : 'group-page__comment-icon-inactive'\"\n              ></ng-md-icon>\n\n              <div class=\"group-page__comment-count\" ng-if=\"bucket.hasComments()\">\n                {{ bucket.numOfComments }}\n              </div>\n            </div>\n          </div>\n\n          <span class=\"group-page__bucket-subheader\">\n            {{ bucket.authorName }} - {{ bucket.createdAt | timeFromNowInWords }} ago\n            <span ng-if=\"bucket.status == 'funded'\">- <b>funded</b></span>\n          </span>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <div class=\"group-page-buckets__show-archived-buckets-btn-container\" layout=\"row\" ng-if=\"group.archivedBuckets().length > 0\">\n    <div class=\"group-page-buckets__show-archived-buckets-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"showArchivedBuckets()\"  ng-if=\"!archivedBucketsShown\">\n      <ng-md-icon icon=\"archive\"\n        layout=\"column\"\n        layout-align=\"center center\"\n        class=\"group-page-buckets__show-archived-buckets-btn-icon\"\n      ></ng-md-icon>\n\n      <div class=\"group-page-buckets__show-archived-buckets-btn-label\">\n        Show Archived Buckets\n      </div>\n    </div>\n  </div>\n</div>\n";
+},{}],79:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1754,10 +1811,48 @@ global.cobudgetApp.directive('groupPageFunders', function() {
     restrict: 'E',
     template: require('./group-page-funders.html'),
     replace: true,
-    controller: ["Dialog", "LoadBar", "Records", "$scope", "Toast", "$window", function(Dialog, LoadBar, Records, $scope, Toast, $window) {
+    controller: ["config", "Dialog", "DownloadCSV", "LoadBar", "$q", "Records", "$scope", "Toast", "$window", function(config, Dialog, DownloadCSV, LoadBar, $q, Records, $scope, Toast, $window) {
       $scope.toggleMemberAdmin = function(membership) {
         membership.isAdmin = !membership.isAdmin;
         return membership.save();
+      };
+      $scope.downloadCSV = function() {
+        var filename, params, timestamp;
+        timestamp = moment().format('YYYY-MM-DD-HH-mm-ss');
+        filename = $scope.group.name + "-member-data-" + timestamp;
+        params = {
+          url: config.apiPrefix + "/memberships.csv?group_id=" + $scope.group.id,
+          filename: filename
+        };
+        return DownloadCSV(params);
+      };
+      $scope.openResendInvitesDialog = function() {
+        return Dialog.confirm({
+          content: "Resend invitations to " + ($scope.group.pendingMemberships().length) + " people?"
+        }).then(function() {
+          return $scope.resendInvites();
+        });
+      };
+      $scope.resendInvites = function() {
+        var invitesSent, promises;
+        invitesSent = 0;
+        LoadBar.start({
+          msg: "Resending invites (0 / " + ($scope.group.pendingMemberships().length) + ")"
+        });
+        promises = [];
+        _.each($scope.group.pendingMemberships(), function(membership) {
+          var promise;
+          promise = Records.memberships.invite(membership);
+          promise["finally"](function() {
+            invitesSent = invitesSent + 1;
+            return LoadBar.updateMsg("Resending invites (" + invitesSent + " / " + ($scope.group.pendingMemberships().length) + ")");
+          });
+          return promises.push(promise);
+        });
+        return $q.allSettled(promises)["finally"](function() {
+          Toast.show(promises.length + " invitations sent!");
+          return LoadBar.stop();
+        });
       };
       $scope.inviteAgain = function(membership) {
         return Dialog.custom({
@@ -1856,68 +1951,27 @@ global.cobudgetApp.directive('groupPageFunders', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./../../components/remove-membership-dialog/remove-membership-dialog.coffee":40,"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":76,"./group-page-funders.html":75,"./reinvite-user-dialog.tmpl.html":77}],75:[function(require,module,exports){
-module.exports = "<div class=\"group-page__funders-content\">\n  <md-list class=\"group-page__funders\">\n    <md-list-item ng-repeat=\"funderMembership in group.memberships()\">\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funder-container\">\n        <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n          <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funder-name-container\" flex>\n          <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"!funderMembership.isPending() && funderMembership.isAdmin\">(admin)</span>\n          <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isPending()\">\n            <ng-md-icon icon=\"mail\" size=\"17\" class=\"group-page__funder-invited-icon\"></ng-md-icon>\n            <span class=\"group-page__funder-invited-label\">Invited</span>\n          </span>\n        </div>\n\n        <div layout=\"column\" layout-align=\"center end\" class=\"group-page__funder-balance-container\">\n          <span class=\"group-page__funder-balance\">{{ funderMembership.balance | currency : group.currencySymbol : 0 }}</span>\n        </div>\n\n        <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n          <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n            <ng-md-icon\n              icon=\"more_vert\"\n              layout=\"column\"\n              layout-align=\"center center\"\n              class=\"group-page__funder-more-button-icon\"\n            ></ng-md-icon>\n          </md-button>\n\n          <md-menu-content width=\"3\">\n            <md-menu-item>\n              <md-button ng-click=\"openManageFundsDialog(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <div layout=\"column\" layout-align=\"center center\" class=\"group-page__manage-funds-icon-container\">\n                    <div class=\"group-page__manage-funds-icon\">{{ group.currencySymbol }}</div>\n                  </div>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Manage Funds</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"toggleMemberAdmin(funderMembership)\" ng-autodisable>\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"portrait\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} Admin</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item>\n              <md-button ng-click=\"inviteAgain(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"mail\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Invite Again</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n\n            <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n              <md-button ng-click=\"removeMembership(funderMembership)\">\n                <div layout=\"row\" layout-align=\"start center\">\n                  <ng-md-icon\n                    icon=\"cancel\"\n                    layout=\"column\"\n                    layout-align=\"center center\"\n                    class=\"group-page__funder-more-menu-item-icon\"\n                  ></ng-md-icon>\n                  <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Remove User</span>\n                </div>\n              </md-button>\n            </md-menu-item>\n          </md-menu-content>\n        </md-menu>\n      </div>\n    </md-list-item>\n  </md-list>\n</div>\n";
-},{}],76:[function(require,module,exports){
-module.exports = "<md-dialog class=\"group-page__manage-funds-dialog\" aria-label=\"manage funds dialog\">\n  <md-dialog-content class=\"sticky-container group-page__manage-funds-dialog-content\">\n    <div class=\"group-page__manage-funds-dialog-header\" layout=\"column\" layout-align=\"space-between center\">\n      <div class=\"group-page__manage-funds-dialog-header-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ managedMember.name[0] | uppercase }}</div>\n      </div>\n\n      <div class=\"group-page__manage-funds-dialog-header-title\">\n        Manage {{ managedMember.name }}'s funds\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__manage-funds-options\" layout=\"row\" layout-align=\"space-around center\">\n      <div ng-class=\"mode == 'add' ? 'group-page__manage-funds-option-container-add' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('add')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"add\" class=\"group-page__manage-funds-option-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Add</div>\n      </div>\n\n      <div ng-class=\"mode == 'change' ? 'group-page__manage-funds-option-container-change' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('change')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"edit\" class=\"group-page__manage-funds-option-icon group-page__manage-funds-change-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Change</div>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'add'\">\n      <div>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2 }}</span>\n        <span class=\"group-page__manage-funds-operator\">+</span>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input group-page__manage-funds-input-add\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.allocationAmount\"\n            ng-change=\"normalizeAllocationAmount()\"\n            ng-keypress=\"normalizeAllocationAmount()\"\n          >\n        </md-input-container>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <span class=\"group-page__manage-funds-operator\">=</span>\n        <span class=\"group-page__manage-funds-total-amount\">\n          {{ (formData.allocationAmount || 0) + managedMembership.balance | currency : group.currencySymbol : 2}}\n        </span>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'change'\">\n      <div>\n        <span class=\"group-page__manage-funds-filler-text\">Change from</span>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2}}</span>\n        <span class=\"group-page__manage-funds-filler-text\">to</span>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.newBalance\"\n            ng-change=\"normalizeNewBalance()\"\n            ng-keypress=\"normalizeNewBalance()\"\n          >\n        </md-input-container>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"group-page__manage-funds-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised md-primary group-page__manage-funds-dialog-done-btn\" ng-disabled=\"!isValidForm()\" ng-click=\"createAllocation()\" ng-autodisable>done</md-button>\n  </div>\n</md-dialog>\n";
-},{}],77:[function(require,module,exports){
-module.exports = "<md-dialog aria-label=\"reinvite user dialog\">\n  <md-dialog-content class=\"sticky-container group-page__reinvite-user-dialog-content\">\n    This will send another invitation to <b>{{member.name}}</b> at <b>{{member.email}}</b>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">cancel</md-button>\n    <md-button ng-click=\"proceed()\" ng-autodisable>send</md-button>\n  </div>\n</md-dialog>\n";
-},{}],78:[function(require,module,exports){
-(function (global){
-null;
-
-
-/* @ngInject */
-
-global.cobudgetApp.directive('groupPageSidenav', function() {
-  return {
-    restrict: 'E',
-    template: require('./group-page-sidenav.html'),
-    replace: true,
-    controller: ["$scope", "CurrentUser", "$mdSidenav", "$location", "Toast", function($scope, CurrentUser, $mdSidenav, $location, Toast) {
-      $scope.$on('open sidenav', function() {
-        return $mdSidenav('left').open();
-      });
-      $scope.accessibleGroups = function() {
-        return CurrentUser() && CurrentUser().groups();
-      };
-      $scope.redirectToGroupPage = function(groupId) {
-        if ($scope.group.id === parseInt(groupId)) {
-          return $mdSidenav('left').close();
-        } else {
-          return $location.path("/groups/" + groupId);
-        }
-      };
-      $scope.redirectToGroupSetupPage = function() {
-        return $location.path("/setup_group");
-      };
-    }]
-  };
-});
-
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"./group-page-sidenav.html":79}],79:[function(require,module,exports){
-module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\"\n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n      </div>\n    </md-list-item>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-click=\"redirectToGroupSetupPage()\">\n      <div layout=\"row\" layout-align=\"center center\">\n        <ng-md-icon icon=\"person_add\"\n          class=\"group-page__sidenav-create-group-btn-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n\n        <div class=\"group-page__sidenav-create-group-btn-text\">Create new group</div>\n      </div>\n    </md-list-item>\n  </md-content>\n</md-sidenav>\n";
-},{}],80:[function(require,module,exports){
-module.exports = "<md-bottom-sheet class=\"group-page__bottom-sheet md-list\">\n  <md-list>\n    <md-list-item ng-repeat=\"action in adminActions\" ng-click=\"action.onClick()\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <ng-md-icon icon=\"{{ action.icon }}\"\n          class=\"group-page__bottom-sheet-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <span md-menu-align-target>{{ action.label }}</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</md-bottom-sheet>\n";
+},{"./../../components/remove-membership-dialog/remove-membership-dialog.coffee":45,"./../../directives/group-page-funders/manage-funds-dialog.tmpl.html":81,"./group-page-funders.html":80,"./reinvite-user-dialog.tmpl.html":82}],80:[function(require,module,exports){
+module.exports = "<div class=\"group-page__funders\">\n  <md-card ng-if=\"group.settledMemberships().length > 0\" class=\"group-page__funders-card\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__funders-subheader-container\">\n      <h2 class=\"group-page__funders-subheader\">Members</h2>\n\n      <span flex></span>\n\n      <div class=\"group-page__funders-admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"downloadCSV()\" ng-if=\"membership.isAdmin\">\n        <div class=\"group-page__funders-admin-btn-label\">Download as CSV</div>\n      </div>\n    </div>\n\n    <md-divider class=\"group-page__funders-subheader-divider\"></md-divider>\n\n    <md-list class=\"group-page__funders-list\">\n      <md-list-item ng-repeat=\"funderMembership in group.settledMemberships()\">\n        <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funder-container\">\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n\n          <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funder-name-container\" flex>\n            <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n\n            <span class=\"group-page__funder-email\" ng-if=\"membership.isAdmin\">{{ funderMembership.member().email }}</span>\n\n            <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n          </div>\n\n          <div layout=\"column\" layout-align=\"center end\" class=\"group-page__funder-balance-container\">\n            <span class=\"group-page__funder-balance\"\n              ng-class=\"{'group-page__funder-balance-btn' : membership.isAdmin, 'group-page__funder-balance-personal' : funderMembership.id == membership.id, 'group-page__funder-balance-other' : funderMembership.id != membership.id}\"\n              ng-click=\"membership.isAdmin && openManageFundsDialog(funderMembership)\"\n            >\n              {{ funderMembership.balance | currency : group.currencySymbol : 0 }}\n            </span>\n          </div>\n\n          <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n            <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n              <ng-md-icon\n                icon=\"more_vert\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"group-page__funder-more-button-icon\"\n              ></ng-md-icon>\n            </md-button>\n\n            <md-menu-content width=\"3\">\n              <md-menu-item>\n                <md-button ng-click=\"toggleMemberAdmin(funderMembership)\" ng-autodisable>\n                  <div layout=\"row\" layout-align=\"start center\">\n                    <ng-md-icon\n                      icon=\"portrait\"\n                      layout=\"column\"\n                      layout-align=\"center center\"\n                      class=\"group-page__funder-more-menu-item-icon\"\n                    ></ng-md-icon>\n                    <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} Admin</span>\n                  </div>\n                </md-button>\n              </md-menu-item>\n\n              <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n                <md-button ng-click=\"removeMembership(funderMembership)\">\n                  <div layout=\"row\" layout-align=\"start center\">\n                    <ng-md-icon\n                      icon=\"cancel\"\n                      layout=\"column\"\n                      layout-align=\"center center\"\n                      class=\"group-page__funder-more-menu-item-icon\"\n                    ></ng-md-icon>\n                    <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Remove User</span>\n                  </div>\n                </md-button>\n              </md-menu-item>\n            </md-menu-content>\n          </md-menu>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n\n  <md-card ng-if=\"group.pendingMemberships().length > 0\" class=\"group-page__funders-card\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__funders-subheader-container\">\n      <h2 class=\"group-page__funders-subheader\">Pending Invites</h2>\n\n      <span flex></span>\n\n      <div class=\"group-page__funders-admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openResendInvitesDialog()\" ng-if=\"membership.isAdmin\">\n        <div class=\"group-page__funders-admin-btn-label\">Resend Invites</div>\n      </div>\n    </div>\n\n    <md-divider class=\"group-page__funders-subheader-divider\"></md-divider>\n\n    <md-list class=\"group-page__funders-list\">\n      <md-list-item ng-repeat=\"funderMembership in group.pendingMemberships()\">\n        <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funder-container\">\n          <div class=\"group-page__funder-avatar\" layout=\"column\" layout-align=\"center center\">\n            <div>{{ funderMembership.member().name[0] | uppercase }}</div>\n          </div>\n\n          <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funder-name-container\" flex>\n            <span class=\"group-page__funder-name\">{{ funderMembership.member().name }}</span>\n\n            <span class=\"group-page__funder-email\" ng-if=\"membership.isAdmin\">{{ funderMembership.member().email }}</span>\n\n            <span class=\"group-page__funder-admin-label\" ng-if=\"funderMembership.isAdmin\">(admin)</span>\n          </div>\n\n          <div layout=\"column\" layout-align=\"center end\" class=\"group-page__funder-balance-container\">\n            <span class=\"group-page__funder-balance group-page__funder-balance-pending\"\n              ng-class=\"membership.isAdmin ? 'group-page__funder-balance-btn' : 'group-page__funder-balance'\"\n              ng-click=\"membership.isAdmin && openManageFundsDialog(funderMembership)\"\n            >\n              {{ funderMembership.balance | currency : group.currencySymbol : 0 }}\n            </span>\n          </div>\n\n          <md-menu md-offset=\"0 -7\" class=\"group-page__funder-more-menu\" ng-if=\"membership.isAdmin\">\n            <md-button class=\"md-icon-button group-page__funder-more-button\" aria-label=\"More\" ng-click=\"$mdOpenMenu($event)\">\n              <ng-md-icon\n                icon=\"more_vert\"\n                layout=\"column\"\n                layout-align=\"center center\"\n                class=\"group-page__funder-more-button-icon\"\n              ></ng-md-icon>\n            </md-button>\n\n            <md-menu-content width=\"3\">\n              <md-menu-item>\n                <md-button ng-click=\"toggleMemberAdmin(funderMembership)\" ng-autodisable>\n                  <div layout=\"row\" layout-align=\"start center\">\n                    <ng-md-icon\n                      icon=\"portrait\"\n                      layout=\"column\"\n                      layout-align=\"center center\"\n                      class=\"group-page__funder-more-menu-item-icon\"\n                    ></ng-md-icon>\n                    <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">{{ funderMembership.isAdmin ? \"Undo\" : \"Make\" }} Admin</span>\n                  </div>\n                </md-button>\n              </md-menu-item>\n\n              <md-menu-item>\n                <md-button ng-click=\"inviteAgain(funderMembership)\">\n                  <div layout=\"row\" layout-align=\"start center\">\n                    <ng-md-icon\n                      icon=\"mail\"\n                      layout=\"column\"\n                      layout-align=\"center center\"\n                      class=\"group-page__funder-more-menu-item-icon\"\n                    ></ng-md-icon>\n                    <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Invite Again</span>\n                  </div>\n                </md-button>\n              </md-menu-item>\n\n              <md-menu-item ng-if=\"funderMembership.id != membership.id\">\n                <md-button ng-click=\"removeMembership(funderMembership)\">\n                  <div layout=\"row\" layout-align=\"start center\">\n                    <ng-md-icon\n                      icon=\"cancel\"\n                      layout=\"column\"\n                      layout-align=\"center center\"\n                      class=\"group-page__funder-more-menu-item-icon\"\n                    ></ng-md-icon>\n                    <span md-menu-align-target class=\"group-page__funder-more-menu-item-label\">Remove User</span>\n                  </div>\n                </md-button>\n              </md-menu-item>\n            </md-menu-content>\n          </md-menu>\n        </div>\n      </md-list-item>\n    </md-list>\n  </md-card>\n</div>\n";
 },{}],81:[function(require,module,exports){
+module.exports = "<md-dialog class=\"group-page__manage-funds-dialog\" aria-label=\"manage funds dialog\">\n  <md-dialog-content class=\"sticky-container group-page__manage-funds-dialog-content\">\n    <div class=\"group-page__manage-funds-dialog-header\" layout=\"column\" layout-align=\"space-between center\">\n      <div class=\"group-page__manage-funds-dialog-header-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ managedMember.name[0] | uppercase }}</div>\n      </div>\n\n      <div class=\"group-page__manage-funds-dialog-header-title\">\n        Manage {{ managedMember.name }}'s funds\n      </div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <div class=\"group-page__manage-funds-options\" layout=\"row\" layout-align=\"space-around center\">\n      <div ng-class=\"mode == 'add' ? 'group-page__manage-funds-option-container-add' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('add')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"add\" class=\"group-page__manage-funds-option-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Add</div>\n      </div>\n\n      <div ng-class=\"mode == 'change' ? 'group-page__manage-funds-option-container-change' : 'group-page__manage-funds-option-container-disabled'\"\n        layout=\"column\"\n        layout-align=\"space-around center\"\n        ng-click=\"setMode('change')\"\n      >\n        <div class=\"group-page__manage-funds-option-icon-container\">\n          <ng-md-icon icon=\"edit\" class=\"group-page__manage-funds-option-icon group-page__manage-funds-change-icon\"></ng-md-icon>\n        </div>\n        <div class=\"group-page__manage-funds-option-label\">Change</div>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'add'\">\n      <div>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2 }}</span>\n        <span class=\"group-page__manage-funds-operator\">+</span>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input group-page__manage-funds-input-add\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.allocationAmount\"\n            ng-change=\"normalizeAllocationAmount()\"\n            ng-keypress=\"normalizeAllocationAmount()\"\n          >\n        </md-input-container>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <span class=\"group-page__manage-funds-operator\">=</span>\n        <span class=\"group-page__manage-funds-total-amount\">\n          {{ (formData.allocationAmount || 0) + managedMembership.balance | currency : group.currencySymbol : 2}}\n        </span>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n    <div class=\"group-page__manage-funds-calculation\" ng-if=\"mode == 'change'\">\n      <div>\n        <span class=\"group-page__manage-funds-filler-text\">Change from</span>\n        <span class=\"group-page__manage-funds-current-amount\">{{ managedMembership.balance | currency : group.currencySymbol : 2}}</span>\n        <span class=\"group-page__manage-funds-filler-text\">to</span>\n      </div>\n      <div class=\"group-page__manage-funds-calculation-newline\"></div>\n      <div>\n        <md-input-container class=\"group-page__manage-funds-input-container\" md-no-float>\n          <input placeholder=\"XX.XX\"\n            class=\"group-page__manage-funds-input\"\n            type=\"number\"\n            step=\"any\"\n            ng-model=\"formData.newBalance\"\n            ng-change=\"normalizeNewBalance()\"\n            ng-keypress=\"normalizeNewBalance()\"\n          >\n        </md-input-container>\n        <span class=\"group-page__manage-funds-total-label\">total</span>\n      </div>\n    </div>\n\n  </md-dialog-content>\n\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button class=\"group-page__manage-funds-dialog-cancel-btn\" ng-click=\"cancel()\">cancel</md-button>\n    <md-button class=\"md-raised md-primary group-page__manage-funds-dialog-done-btn\" ng-disabled=\"!isValidForm()\" ng-click=\"createAllocation()\" ng-autodisable>done</md-button>\n  </div>\n</md-dialog>\n";
+},{}],82:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"reinvite user dialog\">\n  <md-dialog-content class=\"sticky-container group-page__reinvite-user-dialog-content\">\n    This will send another invitation to <b>{{member.name}}</b> at <b>{{member.email}}</b>\n  </md-dialog-content>\n  <div class=\"md-actions\" layout=\"row\">\n    <md-button ng-click=\"cancel()\">cancel</md-button>\n    <md-button ng-click=\"proceed()\" ng-autodisable>send</md-button>\n  </div>\n</md-dialog>\n";
+},{}],83:[function(require,module,exports){
+module.exports = "<md-bottom-sheet class=\"group-page-header__bottom-sheet md-list\">\n  <md-list>\n    <md-list-item ng-repeat=\"action in adminActions\" ng-click=\"action.onClick()\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <ng-md-icon icon=\"{{ action.icon }}\"\n          class=\"group-page-header__bottom-sheet-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <span md-menu-align-target>{{ action.label }}</span>\n      </div>\n    </md-list-item>\n  </md-list>\n</md-bottom-sheet>\n";
+},{}],84:[function(require,module,exports){
 (function (global){
 null;
 
 
 /* @ngInject */
 
-global.cobudgetApp.directive('groupPageToolbar', function() {
+global.cobudgetApp.directive('groupPageHeader', function() {
   return {
     restrict: 'E',
-    template: require('./group-page-toolbar.html'),
+    template: require('./group-page-header.html'),
     replace: true,
-    controller: ["$location", "$mdBottomSheet", "$rootScope", "$scope", function($location, $mdBottomSheet, $rootScope, $scope) {
-      $scope.openSidenav = function() {
-        return $rootScope.$broadcast('open sidenav');
-      };
+    controller: ["$location", "$mdBottomSheet", "$scope", function($location, $mdBottomSheet, $scope) {
       $scope.createBucket = function() {
         return $location.path('/buckets/new').search('group_id', $scope.group.id);
       };
@@ -1963,9 +2017,135 @@ global.cobudgetApp.directive('groupPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./bottom-sheet.tmpl.html":80,"./group-page-toolbar.html":82}],82:[function(require,module,exports){
-module.exports = "<md-toolbar class=\"group-page__toolbar\">\n  <div class=\"md-toolbar-tools group-page__menu-bar\">\n    <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n      <ng-md-icon icon=\"menu\"\n        class=\"group-page__menu-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n    <span flex class=\"group-page__group-name\">{{ group.name }}</span>\n\n    <toolbar-dropdown-menu></toolbar-dropdown-menu>\n  </div>\n\n  <div class=\"group-page__funds-bar\" layout=\"row\" layout-align=\"center end\">\n    <div layout=\"column\" layout-align=\"center start\" class=\"group-page__funds-overview-container\">\n      <div class=\"group-page__funds-overview-header\">Funds left</div>\n      <div layout=\"row\" layout-align=\"center center\" class=\"group-page__funds-overview-content\" >\n        <div layout=\"row\" class=\"group-page__personal-funds-container\">\n          <ng-md-icon icon=\"person\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ membership.balance | currency : group.currencySymbol : 0 }}</span>\n          </div>\n        </div>\n\n        <div layout=\"row\" class=\"group-page__group-funds-container\">\n          <ng-md-icon icon=\"group\"\n            class=\"group-page__funds-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <div layout=\"column\" layout-align=\"center center\">\n            <span class=\"group-page__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <div flex></div>\n\n    <div layout=\"row\" layout-align=\"center center\" ng-if=\"currentUser.isAdminOf(group)\">\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openInvitePeople()\">\n        <ng-md-icon icon=\"person_add\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__invite-people-btn-label\">Invite People</div>\n      </div>\n\n      <div class=\"group-page__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openManageFunds()\">\n        <ng-md-icon icon=\"attach_money\"\n          size=\"20\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n        <div class=\"group-page__manage-funds-btn-label\">Manage Funds</div>\n      </div>\n\n      <div class=\"group-page__admin-more-btn\" ng-click=\"openBottomSheet()\">\n        <ng-md-icon icon=\"more_vert\"\n          size=\"27\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </div>\n    </div>\n\n  </div>\n\n  <md-tabs class=\"group-page__tabs\" md-stretch-tabs=\"never\" md-dynamic-height md-selected=\"tabSelected\">\n    <md-tab md-on-select=\"selectTab(0)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">All Buckets</span>\n      </md-tab-label>\n    </md-tab>\n    <md-tab md-on-select=\"selectTab(1)\">\n      <md-tab-label>\n        <span class=\"group-page__tab-label\">Members</span>\n      </md-tab-label>\n    </md-tab>\n  </md-tabs>\n\n  <md-button class=\"md-fab group-page__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n    <ng-md-icon icon=\"add\"\n      class=\"group-page__create-bucket-fab-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </md-button>\n</md-toolbar>\n";
-},{}],83:[function(require,module,exports){
+},{"./bottom-sheet.tmpl.html":83,"./group-page-header.html":85}],85:[function(require,module,exports){
+module.exports = "<div class=\"group-page-header\">\n  <md-button class=\"group-page-header__free-trial-btn\">Free Trial</md-button>\n\n  <md-card class=\"group-page-header-card\">\n    <div class=\"group-page-header__content\" layout=\"column\">\n      <div class=\"group-page-header__first-row\" layout=\"row\" layout-align=\"start center\">\n        <h1 class=\"group-page-header__group-name\">\n          {{ group.name }}\n        </h1>\n\n        <span flex></span>\n\n        <div class=\"group-page-header__settings-btn\">\n        </div>\n      </div>\n\n      <div class=\"group-page-header__second-row\" layout=\"row\" layout-align=\"center end\">\n        <div layout=\"column\" layout-align=\"center start\" class=\"group-page-header__funds-overview-container\">\n          <div class=\"group-page-header__funds-overview-header\">Available Funds</div>\n          <div layout=\"row\" layout-align=\"center center\" class=\"group-page-header__funds-overview-content\" >\n            <div layout=\"row\" class=\"group-page-header__personal-funds-container\">\n              <ng-md-icon icon=\"person\"\n                class=\"group-page-header__funds-icon\"\n                layout=\"column\"\n                layout-align=\"center center\"\n              ></ng-md-icon>\n              <div layout=\"column\" layout-align=\"center center\">\n                <span class=\"group-page-header__funds-overview-amount\">{{ membership.balance | currency : group.currencySymbol : 0 }}</span>\n              </div>\n            </div>\n\n            <div layout=\"row\" class=\"group-page-header__group-funds-container\">\n              <ng-md-icon icon=\"group\"\n                class=\"group-page-header__funds-icon\"\n                layout=\"column\"\n                layout-align=\"center center\"\n              ></ng-md-icon>\n              <div layout=\"column\" layout-align=\"center center\">\n                <span class=\"group-page-header__funds-overview-amount\">{{ group.balance | currency : group.currencySymbol : 0  }}</span>\n              </div>\n            </div>\n          </div>\n        </div>\n\n        <div flex></div>\n\n        <div layout=\"row\" layout-align=\"center center\" ng-if=\"currentUser.isAdminOf(group)\">\n          <div class=\"group-page-header__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openInvitePeople()\">\n            <ng-md-icon icon=\"person_add\"\n              size=\"19\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div class=\"group-page-header__invite-people-btn-label\">Invite People</div>\n          </div>\n\n          <div class=\"group-page-header__admin-btn\" layout=\"row\" layout-align=\"center center\" ng-click=\"openManageFunds()\">\n            <ng-md-icon icon=\"attach_money\"\n              size=\"19\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n            <div class=\"group-page-header__manage-funds-btn-label\">Manage Funds</div>\n          </div>\n\n          <div class=\"group-page-header__admin-more-btn\" ng-click=\"openBottomSheet()\">\n            <ng-md-icon icon=\"more_vert\"\n              size=\"27\"\n              layout=\"column\"\n              layout-align=\"center center\"\n            ></ng-md-icon>\n          </div>\n        </div>\n      </div>\n    </div>\n\n    <md-divider class=\"group-page-header__horizontal-divider\"></md-divider>\n\n    <md-tabs class=\"group-page-header__tabs\" md-stretch-tabs=\"never\" md-dynamic-height md-selected=\"tabSelected\">\n      <md-tab md-on-select=\"selectTab(0)\">\n        <md-tab-label>\n          <span class=\"group-page-header__tab-label\">All Buckets</span>\n        </md-tab-label>\n      </md-tab>\n      <md-tab md-on-select=\"selectTab(1)\">\n        <md-tab-label>\n          <span class=\"group-page-header__tab-label\">Funders</span>\n        </md-tab-label>\n      </md-tab>\n    </md-tabs>\n\n    <md-button class=\"md-fab group-page-header__create-bucket-fab\" aria-label= \"create\" ng-click=\"createBucket()\">\n      <ng-md-icon icon=\"add\"\n        size=\"27\"\n        class=\"group-page-header__create-bucket-fab-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </md-button>\n  </md-card>\n</div>\n";
+},{}],86:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('groupPageHelp', function() {
+  return {
+    restrict: 'E',
+    template: require('./group-page-help.html'),
+    replace: true,
+    controller: ["Dialog", "$location", "$scope", "$stateParams", function(Dialog, $location, $scope, $stateParams) {
+      $scope.firstTimeSeeingGroup = $stateParams.firstTimeSeeingGroup;
+      $scope.welcomeCardClosed = false;
+      $scope.adminWelcomeCardDisplayed = function() {
+        return $scope.firstTimeSeeingGroup && $scope.membership.isAdmin && !$scope.membership.closedAdminHelpCardAt && !$scope.welcomeCardClosed;
+      };
+      $scope.adminLaunchCardDisplayed = function() {
+        return !$scope.adminWelcomeCardDisplayed() && !$scope.group.isLaunched && !$scope.membership.closedAdminHelpCardAt && $scope.membership.isAdmin;
+      };
+      $scope.memberWelcomeCardDisplayed = function() {
+        return !$scope.membership.isAdmin && !$scope.membership.closedMemberHelpCardAt;
+      };
+      $scope.placeholderAdminWelcomeCardDisplayed = function() {
+        return $scope.membership.isAdmin && $scope.group.buckets().length === 0 && !$scope.adminWelcomeCardDisplayed() && !$scope.adminLaunchCardDisplayed();
+      };
+      $scope.closeAdminWelcomeCard = function() {
+        return $scope.welcomeCardClosed = true;
+      };
+      $scope.closeLaunchCard = function() {
+        return $scope.membership.remote.update($scope.membership.id, {
+          membership: {
+            closed_admin_help_card_at: moment()
+          }
+        });
+      };
+      $scope.closeMemberWelcomeCard = function() {
+        return $scope.membership.remote.update($scope.membership.id, {
+          membership: {
+            closed_member_help_card_at: moment()
+          }
+        });
+      };
+      $scope.openSetupTourDialog = function() {
+        return Dialog.custom({
+          template: require('./setup-tour-dialog.tmpl.html')
+        });
+      };
+      $scope.redirectToCreateBucketPage = function() {
+        return $location.path('/buckets/new').search('group_id', $scope.group.id);
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./group-page-help.html":87,"./setup-tour-dialog.tmpl.html":88}],87:[function(require,module,exports){
+module.exports = "<div class=\"group-page-help\">\n  <md-card class=\"group-page-help__card\" ng-if=\"adminWelcomeCardDisplayed()\">\n    <div layout=\"row\" class=\"group-page-help__card-container\">\n      <img src=\"./img/idea_money.svg\" class=\"group-page-help__card-image\" />\n      <div layout=\"column\" class=\"group-page-help__card-content\">\n        <h2 class=\"group-page-help__card-header\">Welcome!</h2>\n\n        <div class=\"group-page-help__card-close-btn\" ng-click=\"closeAdminWelcomeCard()\">&times;</div>\n\n        <p class=\"group-page-help__card-description\">\n          This is your new group. Here, people can propose and discuss ideas for funding, and fund them once they're approved.\n        </p>\n\n        <div flex></div>\n\n        <div class=\"group-page-help__card-btns\" layout=\"row\" layout-align=\"center center\">\n          <span class=\"group-page-help__card-steps\">1/2</span>\n          <span flex></span>\n          <md-button class=\"group-page-help__card-btn\" href=\"https://medium.com/@Cobudget/getting-started-with-collaborative-funding-265dabef30e3#.st6w3ssjj\" target=\"_blank\">read more</md-button>\n          <md-button class=\"group-page-help__card-btn\" ng-click=\"closeAdminWelcomeCard()\">next</md-button>\n        </div>\n      </div>\n    </div>\n  </md-card>\n\n  <md-card class=\"group-page-help__card\" ng-if=\"placeholderAdminWelcomeCardDisplayed()\">\n    <div layout=\"row\" class=\"group-page-help__card-container\">\n      <img src=\"./img/idea_money.svg\" class=\"group-page-help__card-image\" />\n      <div layout=\"column\" class=\"group-page-help__card-content\">\n        <h2 class=\"group-page-help__card-header\">Welcome!</h2>\n\n        <p class=\"group-page-help__card-description\">\n          This is your new group. Here, people can propose and discuss ideas for funding, and fund them once they're approved.\n        </p>\n\n        <div flex></div>\n\n        <div class=\"group-page-help__card-btns\" layout=\"row\" layout-align=\"center center\">\n          <span flex></span>\n          <md-button class=\"group-page-help__card-btn\" href=\"https://medium.com/@Cobudget/getting-started-with-collaborative-funding-265dabef30e3#.st6w3ssjj\" target=\"_blank\">read more</md-button>\n        </div>\n      </div>\n    </div>\n  </md-card>\n\n  <md-card class=\"group-page-help__card\" ng-if=\"adminLaunchCardDisplayed()\">\n    <div layout=\"row\" class=\"group-page-help__card-container\">\n      <img src=\"./img/rocket.svg\" class=\"group-page-help__card-image\" />\n      <div layout=\"column\" class=\"group-page-help__card-content\">\n        <h2 class=\"group-page-help__card-header\">Get ready to launch!</h2>\n\n        <div class=\"group-page-help__card-close-btn\" ng-click=\"closeLaunchCard()\">&times;</div>\n\n        <p class=\"group-page-help__card-description\">\n          Need some help getting things setup here? Check out our getting started guide or video (60 seconds) for a step-by-step tour.\n        </p>\n\n        <div flex></div>\n\n        <div class=\"group-page-help__card-btns\" layout=\"row\" layout-align=\"center center\">\n          <span class=\"group-page-help__card-steps\">2/2</span>\n          <span flex></span>\n          <md-button class=\"group-page-help__card-btn\" href=\"https://medium.com/@Cobudget/getting-started-with-collaborative-funding-265dabef30e3#.st6w3ssjj\" target=\"_blank\">read more</md-button>\n          <md-button class=\"group-page-help__card-btn\" ng-click=\"openSetupTourDialog()\">watch the setup tour</md-button>\n        </div>\n      </div>\n    </div>\n  </md-card>\n\n  <md-card class=\"group-page-help__card\" ng-if=\"memberWelcomeCardDisplayed()\">\n    <div layout=\"row\" class=\"group-page-help__card-container\">\n      <img src=\"./img/idea_money.svg\" class=\"group-page-help__card-image\" />\n      <div layout=\"column\" class=\"group-page-help__card-content\">\n        <h2 class=\"group-page-help__card-header\">Welcome to {{ group.name }}!</h2>\n\n        <div class=\"group-page-help__card-close-btn\" ng-click=\"closeMemberWelcomeCard()\" ng-if=\"group.buckets().length > 0\">&times;</div>\n\n        <p class=\"group-page-help__card-description\">\n          Do you have an idea for a project you want to see happen? Add it and see what other's think!\n        </p>\n\n        <div flex></div>\n\n        <div class=\"group-page-help__card-btns\" layout=\"row\" layout-align=\"center center\">\n          <span flex></span>\n          <md-button class=\"group-page-help__card-btn\" ng-click=\"redirectToCreateBucketPage()\">I've got an idea!</md-button>\n        </div>\n      </div>\n    </div>\n  </md-card>\n</div>\n";
+},{}],88:[function(require,module,exports){
+module.exports = "<md-dialog aria-label=\"setup tour dialog\" class=\"group-page-help__setup-tour-dialog\">\n  <div class=\"group-page-help__video-wrapper\">\n    <iframe width=\"420\" height=\"315\" src=\"https://www.youtube.com/embed/Nw2GKV2TM6s\" frameborder=\"0\" allowfullscreen></iframe>\n  </div>\n</md-dialog>\n";
+},{}],89:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('groupPageSidenav', function() {
+  return {
+    restrict: 'E',
+    template: require('./group-page-sidenav.html'),
+    replace: true,
+    controller: ["$scope", "$state", "CurrentUser", "$mdSidenav", "$location", "Toast", function($scope, $state, CurrentUser, $mdSidenav, $location, Toast) {
+      $scope.$on('open sidenav', function() {
+        return $mdSidenav('left').open();
+      });
+      $scope.accessibleGroups = function() {
+        return CurrentUser() && CurrentUser().groups();
+      };
+      $scope.redirectToGroupPage = function(groupId) {
+        if ($state.current.name === 'group' && $scope.group.id === parseInt(groupId)) {
+          return $mdSidenav('left').close();
+        } else {
+          return $location.path("/groups/" + groupId);
+        }
+      };
+      $scope.redirectToGroupSetupPage = function() {
+        return $location.path('/setup_group');
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./group-page-sidenav.html":90}],90:[function(require,module,exports){
+module.exports = "<md-sidenav class=\"md-sidenav-left md-whiteframe-z2 group-page__sidenav\" md-component-id=\"left\">\n  <md-toolbar class=\"group-page__sidenav-toolbar\">\n    <div layout=\"column\" layout-align=\"space-between start\" class=\"group-page__user-avatar-container\">\n      <div class=\"group-page__user-avatar\" layout=\"column\" layout-align=\"center center\">\n        <div>{{ currentUser.name[0] | uppercase }}</div>\n      </div>\n\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__user-email\">\n          {{ currentUser.email }}\n        </div>\n      </div>\n    </div>\n  </md-toolbar>\n\n  <md-content class=\"group-page__sidenav-content\">\n    <div layout=\"row\" layout-align=\"start center\" class=\"group-page__sidenav-option\">\n      <ng-md-icon icon=\"group\"\n        class=\"group-page__sidenav-option-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n\n      <div class=\"group-page__sidenav-option-subheader\">My Groups</div>\n    </div>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-repeat=\"group in accessibleGroups()\" ng-click=\"redirectToGroupPage(group.id)\">\n      <div layout=\"row\" layout-align=\"start center\">\n        <div class=\"group-page__sidenav-group-name\">{{ group.name | characters:25:false }}</div>\n      </div>\n    </md-list-item>\n\n    <md-divider></md-divider>\n\n    <md-list-item ng-click=\"redirectToGroupSetupPage()\">\n      <div layout=\"row\" layout-align=\"center center\">\n        <ng-md-icon icon=\"person_add\"\n          class=\"group-page__sidenav-create-group-btn-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n\n        <div class=\"group-page__sidenav-create-group-btn-text\">Create new group</div>\n      </div>\n    </md-list-item>\n  </md-content>\n</md-sidenav>\n";
+},{}],91:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('groupPageToolbar', function() {
+  return {
+    restrict: 'E',
+    template: require('./group-page-toolbar.html'),
+    replace: true,
+    controller: ["$rootScope", "$scope", function($rootScope, $scope) {
+      $scope.openSidenav = function() {
+        return $rootScope.$broadcast('open sidenav');
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./group-page-toolbar.html":92}],92:[function(require,module,exports){
+module.exports = "<div class=\"group-page-toolbar__container\">\n  <md-toolbar class=\"group-page-toolbar\">\n    <div class=\"md-toolbar-tools\">\n      <md-button class=\"md-icon-button\" aria-label=\"Settings\" ng-click=\"openSidenav()\">\n        <ng-md-icon icon=\"menu\"\n          class=\"group-page-toolbar__menu-icon\"\n          layout=\"column\"\n          layout-align=\"center center\"\n        ></ng-md-icon>\n      </md-button>\n\n      <toolbar-dropdown-menu></toolbar-dropdown-menu>\n    </div>\n  </md-toolbar>\n\n  <group-page-sidenav></group-page-sidenav>\n</div>\n";
+},{}],93:[function(require,module,exports){
 (function (global){
 null;
 
@@ -1977,10 +2157,15 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
     restrict: 'E',
     template: require('./landing-page-toolbar.html'),
     replace: true,
-    controller: ["CurrentUser", "$location", "$scope", function(CurrentUser, $location, $scope) {
-      $scope.currentUser = CurrentUser();
+    controller: ["$location", "$scope", function($location, $scope) {
       $scope.redirectToLoginPage = function() {
         return $location.path('/login');
+      };
+      $scope.redirectToResourcesPage = function() {
+        return $location.path('/resources');
+      };
+      $scope.redirectToAboutPage = function() {
+        return $location.path('/about');
       };
     }]
   };
@@ -1989,9 +2174,9 @@ global.cobudgetApp.directive('landingPageToolbar', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./landing-page-toolbar.html":84}],84:[function(require,module,exports){
-module.exports = "<div class=\"landing-page__toolbar\" layout=\"row\" layout-align=\"center center\">\n  <span flex></span>\n  <div class=\"landing-page__login-btn\" aria-label=\"login\" ng-if=\"!currentUser\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"landing-page__login-btn-label\">Log in</span>\n    <div class=\"landing-page__toolbar-person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"landing-page__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
-},{}],85:[function(require,module,exports){
+},{"./landing-page-toolbar.html":94}],94:[function(require,module,exports){
+module.exports = "<div class=\"landing-page-toolbar\" layout=\"row\" layout-align=\"end center\">\n  <div class=\"landing-page-toolbar__header-btns\">\n    <md-button class=\"landing-page-toolbar__header-btn\" ng-click=\"redirectToAboutPage()\">About</md-button>\n    <md-button class=\"landing-page-toolbar__header-btn\" ng-click=\"redirectToResourcesPage()\">Resources</md-button>\n  </div>\n\n  <md-menu class=\"landing-page-toolbar__menu\">\n    <div layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\" class=\"landing-page-toolbar__menu-icon-container\">\n      <ng-md-icon icon=\"menu\"\n      class=\"landing-page-toolbar__menu-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n\n    <md-menu-content>\n      <md-menu-item>\n        <md-button aria-label=\"about\" ng-click=\"redirectToAboutPage()\">About</md-button>\n      </md-menu-item>\n\n      <md-menu-item>\n        <md-button aria-label=\"resources\" ng-click=\"redirectToResourcesPage()\">Resources</md-button>\n      </md-menu-item>\n    </md-menu-content>\n  </md-menu>\n\n  <span flex class=\"landing-page-toolbar__header-separator\"></span>\n\n  <div class=\"landing-page-toolbar__login-btn\" aria-label=\"login\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <div class=\"landing-page-toolbar__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"20\"\n        class=\"landing-page-toolbar__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n    <span class=\"landing-page-toolbar__login-btn-label\">Log in</span>\n  </div>\n</div>\n";
+},{}],95:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2019,9 +2204,9 @@ global.cobudgetApp.directive('loadingPage', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loading-page.html":86}],86:[function(require,module,exports){
-module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
-},{}],87:[function(require,module,exports){
+},{"./loading-page.html":96}],96:[function(require,module,exports){
+module.exports = "<div class=\"loading-page\" ng-if=\"loading\">\n  <div class=\"loading-page__load-bar\" layout=\"column\" layout-align=\"center center\">\n    <div class=\"loading-page__msg\">{{ loadingScreenMsg }}</div>\n    <md-progress-circular md-mode=\"indeterminate\"></md-progress-circular>\n  </div>\n</div>\n";
+},{}],97:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2046,7 +2231,33 @@ global.cobudgetApp.directive('onlyDigits', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],88:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
+(function (global){
+null;
+
+
+/* @ngInject */
+
+global.cobudgetApp.directive('setupToolbar', function() {
+  return {
+    restrict: 'E',
+    template: require('./setup-toolbar.html'),
+    replace: true,
+    controller: ["CurrentUser", "$location", "$scope", function(CurrentUser, $location, $scope) {
+      $scope.currentUser = CurrentUser();
+      $scope.redirectToLoginPage = function() {
+        return $location.path('/login');
+      };
+    }]
+  };
+});
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{"./setup-toolbar.html":99}],99:[function(require,module,exports){
+module.exports = "<div class=\"setup-toolbar\" layout=\"row\" layout-align=\"center center\">\n  <span flex></span>\n  <div class=\"setup-toolbar__login-btn\" aria-label=\"login\" ng-if=\"!currentUser\" ng-click=\"redirectToLoginPage()\" layout=\"row\" layout-align=\"center center\">\n    <span class=\"setup-toolbar__login-btn-label\">Log in</span>\n    <div class=\"setup-toolbar__person-icon-container\" layout=\"column\" layout-align=\"center center\">\n      <ng-md-icon icon=\"person\"\n        size=\"21\"\n        class=\"setup-toolbar__person-icon\"\n        layout=\"column\"\n        layout-align=\"center center\"\n      ></ng-md-icon>\n    </div>\n  </div>\n</div>\n";
+},{}],100:[function(require,module,exports){
 (function (global){
 null;
 
@@ -2113,9 +2324,9 @@ global.cobudgetApp.directive('toolbarDropdownMenu', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./toolbar-dropdown-menu.html":89}],89:[function(require,module,exports){
+},{"./toolbar-dropdown-menu.html":101}],101:[function(require,module,exports){
 module.exports = "<md-menu class=\"toolbar-dropdown-menu\">\n  <div class=\"toolbar-dropdown-menu__btn\" layout=\"column\" layout-align=\"center center\" ng-click=\"$mdOpenMenu($event)\">\n    <ng-md-icon icon=\"person\"\n      class=\"toolbar-dropdown-menu__btn-icon\"\n      layout=\"column\"\n      layout-align=\"center center\"\n    ></ng-md-icon>\n  </div>\n\n  <md-menu-content class=\"toolbar-dropdown-menu__content\" width=\"3\">\n    <md-menu-item ng-repeat=\"menuItem in accessibleMenuItems()\">\n      <md-button aria-label=\"{{ menuItem.label }}\" ng-click=\"menuItem.onClick()\">\n        <div layout=\"row\" layout-align=\"start center\">\n          <ng-md-icon icon=\"{{ menuItem.icon }}\"\n            class=\"toolbar-dropdown-menu__item-icon\"\n            layout=\"column\"\n            layout-align=\"center center\"\n          ></ng-md-icon>\n          <span md-menu-align-target>{{ menuItem.label }}</span>\n        </div>\n      </md-button>\n    </md-menu-item>\n  </md-menu-content>\n</md-menu>\n";
-},{}],90:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 global.cobudgetApp.filter('timeFromNowInWords', function() {
   return function(date) {
@@ -2156,7 +2367,7 @@ global.cobudgetApp.filter('exactDateWithTime', function() {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],91:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -2190,7 +2401,7 @@ require("ng-download-csv");
 require("angular-chart.js");
 require("angular-autodisable/angular-autodisable");
 
-if ("production" != "production") {
+if ("staging" != "production") {
   global.localStorage.debug = "*";
 }
 
@@ -2209,13 +2420,13 @@ require('./records-interfaces/allocation-records-interface.coffee');require('./r
 require('./models/allocation-model.coffee');require('./models/bucket-model.coffee');require('./models/comment-model.coffee');require('./models/contribution-model.coffee');require('./models/group-model.coffee');require('./models/membership-model.coffee');require('./models/subscription-tracker-model.coffee');require('./models/user-model.coffee');;
 require('./filters/date-filter.coffee');;
 require('./services/current-user.coffee');require('./services/dialog.coffee');require('./services/error.coffee');require('./services/load-bar.coffee');require('./services/session.coffee');require('./services/toast.coffee');require('./services/user-can.coffee');require('./services/validate-and-redirect-logged-in-user.coffee');;
-require('./directives/admin-toolbar/admin-toolbar.coffee');require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-backers-card/bucket-page-backers-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/bucket-page-toolbar/bucket-page-toolbar.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');require('./directives/only-digits.coffee');require('./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee');;
+require('./directives/admin-toolbar/admin-toolbar.coffee');require('./directives/bucket-page-activity-card/bucket-page-activity-card.coffee');require('./directives/bucket-page-backers-card/bucket-page-backers-card.coffee');require('./directives/bucket-page-header-card/bucket-page-header-card.coffee');require('./directives/bucket-page-manage-card/bucket-page-manage-card.coffee');require('./directives/bucket-page-progress-card/bucket-page-progress-card.coffee');require('./directives/bucket-page-status-card/bucket-page-status-card.coffee');require('./directives/error-page/error-page.coffee');require('./directives/group-page-buckets/group-page-buckets.coffee');require('./directives/group-page-funders/group-page-funders.coffee');require('./directives/group-page-header/group-page-header.coffee');require('./directives/group-page-help/group-page-help.coffee');require('./directives/group-page-sidenav/group-page-sidenav.coffee');require('./directives/group-page-toolbar/group-page-toolbar.coffee');require('./directives/landing-page-toolbar/landing-page-toolbar.coffee');require('./directives/loading-page/loading-page.coffee');require('./directives/only-digits.coffee');require('./directives/setup-toolbar/setup-toolbar.coffee');require('./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee');;
 
 require("app/boot.coffee");
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./controllers/application-controller.coffee":53,"./directives/admin-toolbar/admin-toolbar.coffee":54,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":56,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":58,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":60,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":62,"./directives/bucket-page-status-card-flagpoint/bucket-page-status-card-flagpoint.coffee":64,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":66,"./directives/bucket-page-toolbar/bucket-page-toolbar.coffee":68,"./directives/error-page/error-page.coffee":70,"./directives/group-page-buckets/group-page-buckets.coffee":72,"./directives/group-page-funders/group-page-funders.coffee":74,"./directives/group-page-sidenav/group-page-sidenav.coffee":78,"./directives/group-page-toolbar/group-page-toolbar.coffee":81,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":83,"./directives/loading-page/loading-page.coffee":85,"./directives/only-digits.coffee":87,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":88,"./filters/date-filter.coffee":90,"./models/allocation-model.coffee":92,"./models/bucket-model.coffee":93,"./models/comment-model.coffee":94,"./models/contribution-model.coffee":95,"./models/group-model.coffee":96,"./models/membership-model.coffee":97,"./models/subscription-tracker-model.coffee":98,"./models/user-model.coffee":99,"./records-interfaces/allocation-records-interface.coffee":100,"./records-interfaces/bucket-records-interface.coffee":101,"./records-interfaces/comment-records-interface.coffee":102,"./records-interfaces/contribution-records-interface.coffee":103,"./records-interfaces/group-records-interface.coffee":104,"./records-interfaces/membership-records-interface.coffee":105,"./records-interfaces/subscription-tracker-records-interface.coffee":106,"./records-interfaces/user-records-interface.coffee":107,"./services/current-user.coffee":109,"./services/dialog.coffee":110,"./services/error.coffee":111,"./services/load-bar.coffee":112,"./services/session.coffee":113,"./services/toast.coffee":114,"./services/user-can.coffee":115,"./services/validate-and-redirect-logged-in-user.coffee":116,"angular":136,"angular-animate":118,"angular-aria":120,"angular-autodisable/angular-autodisable":121,"angular-chart.js":122,"angular-cookie":123,"angular-marked":124,"angular-material":128,"angular-material-icons":126,"angular-messages":130,"angular-sanitize/angular-sanitize":131,"angular-truncate-2":132,"angular-ui-router":133,"angular-upload":134,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":50,"app/configs/auth.coffee":51,"app/configs/chart-js.coffee":52,"app/routes.coffee":108,"bowser":143,"camelize":145,"is-empty-object":186,"jquery":187,"listify":188,"lodash":189,"moment":193,"morph":194,"ng-csv":195,"ng-download-csv":196,"ng-focus-if":197,"ng-q-all-settled":198,"ng-sanitize":199,"ng-token-auth":200}],92:[function(require,module,exports){
+},{"./controllers/application-controller.coffee":60,"./directives/admin-toolbar/admin-toolbar.coffee":61,"./directives/bucket-page-activity-card/bucket-page-activity-card.coffee":63,"./directives/bucket-page-backers-card/bucket-page-backers-card.coffee":65,"./directives/bucket-page-header-card/bucket-page-header-card.coffee":67,"./directives/bucket-page-manage-card/bucket-page-manage-card.coffee":69,"./directives/bucket-page-progress-card/bucket-page-progress-card.coffee":71,"./directives/bucket-page-status-card/bucket-page-status-card.coffee":73,"./directives/error-page/error-page.coffee":75,"./directives/group-page-buckets/group-page-buckets.coffee":77,"./directives/group-page-funders/group-page-funders.coffee":79,"./directives/group-page-header/group-page-header.coffee":84,"./directives/group-page-help/group-page-help.coffee":86,"./directives/group-page-sidenav/group-page-sidenav.coffee":89,"./directives/group-page-toolbar/group-page-toolbar.coffee":91,"./directives/landing-page-toolbar/landing-page-toolbar.coffee":93,"./directives/loading-page/loading-page.coffee":95,"./directives/only-digits.coffee":97,"./directives/setup-toolbar/setup-toolbar.coffee":98,"./directives/toolbar-dropdown-menu/toolbar-dropdown-menu.coffee":100,"./filters/date-filter.coffee":102,"./models/allocation-model.coffee":104,"./models/bucket-model.coffee":105,"./models/comment-model.coffee":106,"./models/contribution-model.coffee":107,"./models/group-model.coffee":108,"./models/membership-model.coffee":109,"./models/subscription-tracker-model.coffee":110,"./models/user-model.coffee":111,"./records-interfaces/allocation-records-interface.coffee":112,"./records-interfaces/bucket-records-interface.coffee":113,"./records-interfaces/comment-records-interface.coffee":114,"./records-interfaces/contribution-records-interface.coffee":115,"./records-interfaces/group-records-interface.coffee":116,"./records-interfaces/membership-records-interface.coffee":117,"./records-interfaces/subscription-tracker-records-interface.coffee":118,"./records-interfaces/user-records-interface.coffee":119,"./services/current-user.coffee":121,"./services/dialog.coffee":122,"./services/error.coffee":123,"./services/load-bar.coffee":124,"./services/session.coffee":125,"./services/toast.coffee":126,"./services/user-can.coffee":127,"./services/validate-and-redirect-logged-in-user.coffee":128,"angular":148,"angular-animate":130,"angular-aria":132,"angular-autodisable/angular-autodisable":133,"angular-chart.js":134,"angular-cookie":135,"angular-marked":136,"angular-material":140,"angular-material-icons":138,"angular-messages":142,"angular-sanitize/angular-sanitize":143,"angular-truncate-2":144,"angular-ui-router":145,"angular-upload":146,"app/angular-record-store.coffee":1,"app/boot.coffee":2,"app/configs/app":57,"app/configs/auth.coffee":58,"app/configs/chart-js.coffee":59,"app/routes.coffee":120,"bowser":155,"camelize":157,"is-empty-object":198,"jquery":199,"listify":200,"lodash":201,"moment":205,"morph":206,"ng-csv":207,"ng-download-csv":208,"ng-focus-if":209,"ng-q-all-settled":210,"ng-sanitize":211,"ng-token-auth":212}],104:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2255,7 +2466,7 @@ global.cobudgetApp.factory('AllocationModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],93:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2355,7 +2566,7 @@ global.cobudgetApp.factory('BucketModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],94:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2398,7 +2609,7 @@ global.cobudgetApp.factory('CommentModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],95:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2438,7 +2649,7 @@ global.cobudgetApp.factory('ContributionModel', ["BaseModel", function(BaseModel
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],96:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2494,6 +2705,18 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
       return sortedBuckets.reverse();
     };
 
+    GroupModel.prototype.pendingMemberships = function() {
+      return _.filter(this.memberships(), function(membership) {
+        return membership.isPending();
+      });
+    };
+
+    GroupModel.prototype.settledMemberships = function() {
+      return _.filter(this.memberships(), function(membership) {
+        return !membership.isPending();
+      });
+    };
+
     GroupModel.prototype.members = function() {
       return _.map(this.memberships(), function(membership) {
         return membership.member();
@@ -2528,7 +2751,7 @@ global.cobudgetApp.factory('GroupModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],97:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2553,7 +2776,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
     MembershipModel.indices = ['groupId', 'memberId'];
 
-    MembershipModel.serializableAttributes = ['isAdmin'];
+    MembershipModel.serializableAttributes = ['isAdmin', 'closedAdminHelpCardAt', 'closedMemberHelpCardAt'];
 
     MembershipModel.prototype.relationships = function() {
       this.belongsTo('member', {
@@ -2578,7 +2801,7 @@ global.cobudgetApp.factory('MembershipModel', ["BaseModel", function(BaseModel) 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],98:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2615,7 +2838,7 @@ global.cobudgetApp.factory('SubscriptionTrackerModel', ["BaseModel", function(Ba
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],99:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2703,7 +2926,7 @@ global.cobudgetApp.factory('UserModel', ["BaseModel", function(BaseModel) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],100:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2741,7 +2964,7 @@ global.cobudgetApp.factory('AllocationRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],101:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2779,7 +3002,7 @@ global.cobudgetApp.factory('BucketRecordsInterface', ["config", "BaseRecordsInte
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],102:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2817,7 +3040,7 @@ global.cobudgetApp.factory('CommentRecordsInterface', ["config", "BaseRecordsInt
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],103:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2863,7 +3086,7 @@ global.cobudgetApp.factory('ContributionRecordsInterface', ["config", "BaseRecor
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],104:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2899,7 +3122,7 @@ global.cobudgetApp.factory('GroupRecordsInterface', ["config", "BaseRecordsInter
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],105:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2947,7 +3170,7 @@ global.cobudgetApp.factory('MembershipRecordsInterface', ["config", "BaseRecords
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],106:[function(require,module,exports){
+},{}],118:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -2980,7 +3203,7 @@ global.cobudgetApp.factory('SubscriptionTrackerRecordsInterface', ["config", "Ba
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],107:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 (function (global){
 var extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
@@ -3049,19 +3272,19 @@ global.cobudgetApp.factory('UserRecordsInterface', ["config", "BaseRecordsInterf
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],108:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 (function (global){
 
 /* @ngInject */
 global.cobudgetApp.config(["$stateProvider", "$urlRouterProvider", function($stateProvider, $urlRouterProvider) {
   $urlRouterProvider.otherwise('/');
-  return $stateProvider.state('landing', require('app/components/landing-page/landing-page.coffee')).state('group', require('app/components/group-page/group-page.coffee')).state('login', require('app/components/login-page/login-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee')).state('manage-group-funds', require('app/components/manage-group-funds-page/manage-group-funds-page.coffee')).state('review-bulk-allocation', require('app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee')).state('invite-members', require('app/components/invite-members-page/invite-members-page.coffee')).state('review-bulk-invite-members', require('app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee')).state('analytics', require('app/components/analytics-page/analytics-page.coffee'));
+  return $stateProvider.state('landing', require('app/components/landing-page/landing-page.coffee')).state('group', require('app/components/group-page/group-page.coffee')).state('login', require('app/components/login-page/login-page.coffee')).state('create-bucket', require('app/components/create-bucket-page/create-bucket-page.coffee')).state('bucket', require('app/components/bucket-page/bucket-page.coffee')).state('edit-bucket', require('app/components/edit-bucket-page/edit-bucket-page.coffee')).state('admin', require('app/components/admin-page/admin-page.coffee')).state('confirm-account', require('app/components/confirm-account-page/confirm-account-page.coffee')).state('group-setup', require('app/components/group-setup-page/group-setup-page.coffee')).state('forgot-password', require('app/components/forgot-password-page/forgot-password-page.coffee')).state('reset-password', require('app/components/reset-password-page/reset-password-page.coffee')).state('email-settings', require('app/components/email-settings-page/email-settings-page.coffee')).state('profile-settings', require('app/components/profile-settings-page/profile-settings-page.coffee')).state('manage-group-funds', require('app/components/manage-group-funds-page/manage-group-funds-page.coffee')).state('review-bulk-allocation', require('app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee')).state('invite-members', require('app/components/invite-members-page/invite-members-page.coffee')).state('review-bulk-invite-members', require('app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee')).state('analytics', require('app/components/analytics-page/analytics-page.coffee')).state('resources', require('app/components/resources-page/resources-page.coffee')).state('about', require('app/components/about-page/about-page.coffee'));
 }]);
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"app/components/admin-page/admin-page.coffee":3,"app/components/analytics-page/analytics-page.coffee":5,"app/components/bucket-page/bucket-page.coffee":9,"app/components/confirm-account-page/confirm-account-page.coffee":15,"app/components/create-bucket-page/create-bucket-page.coffee":17,"app/components/edit-bucket-page/edit-bucket-page.coffee":19,"app/components/email-settings-page/email-settings-page.coffee":21,"app/components/forgot-password-page/forgot-password-page.coffee":23,"app/components/group-page/group-page.coffee":25,"app/components/group-setup-page/group-setup-page.coffee":27,"app/components/invite-members-page/invite-members-page.coffee":29,"app/components/landing-page/landing-page.coffee":31,"app/components/login-page/login-page.coffee":33,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":35,"app/components/profile-settings-page/profile-settings-page.coffee":38,"app/components/reset-password-page/reset-password-page.coffee":42,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":44,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":46}],109:[function(require,module,exports){
+},{"app/components/about-page/about-page.coffee":3,"app/components/admin-page/admin-page.coffee":5,"app/components/analytics-page/analytics-page.coffee":7,"app/components/bucket-page/bucket-page.coffee":11,"app/components/confirm-account-page/confirm-account-page.coffee":17,"app/components/create-bucket-page/create-bucket-page.coffee":19,"app/components/edit-bucket-page/edit-bucket-page.coffee":21,"app/components/email-settings-page/email-settings-page.coffee":23,"app/components/forgot-password-page/forgot-password-page.coffee":27,"app/components/group-page/group-page.coffee":29,"app/components/group-setup-page/group-setup-page.coffee":31,"app/components/invite-members-page/invite-members-page.coffee":33,"app/components/landing-page/landing-page.coffee":35,"app/components/login-page/login-page.coffee":38,"app/components/manage-group-funds-page/manage-group-funds-page.coffee":40,"app/components/profile-settings-page/profile-settings-page.coffee":43,"app/components/reset-password-page/reset-password-page.coffee":47,"app/components/resources-page/resources-page.coffee":49,"app/components/review-bulk-allocation-page/review-bulk-allocation-page.coffee":51,"app/components/review-bulk-invite-members-page/review-bulk-invite-members-page.coffee":53}],121:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3077,7 +3300,7 @@ global.cobudgetApp.factory('CurrentUser', ["Records", function(Records) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],110:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3145,7 +3368,7 @@ global.cobudgetApp.factory('Dialog', ["$mdDialog", function($mdDialog) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],111:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3173,7 +3396,7 @@ global.cobudgetApp.factory('Error', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],112:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3185,11 +3408,18 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
   return new (LoadBar = (function() {
     function LoadBar() {}
 
-    LoadBar.prototype.start = function() {
+    LoadBar.prototype.start = function(args) {
+      args = args || {};
+      $rootScope.loadingScreenMsg = args.msg;
       return $rootScope.$broadcast('loading');
     };
 
+    LoadBar.prototype.updateMsg = function(msg) {
+      return $rootScope.loadingScreenMsg = msg;
+    };
+
     LoadBar.prototype.stop = function() {
+      $rootScope.loadingScreenMsg = null;
       return $rootScope.$broadcast('loaded');
     };
 
@@ -3201,7 +3431,7 @@ global.cobudgetApp.factory('LoadBar', ["$rootScope", function($rootScope) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],113:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3298,7 +3528,7 @@ global.cobudgetApp.factory('Session', ["$auth", "CurrentUser", "Dialog", "LoadBa
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],114:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3338,7 +3568,7 @@ global.cobudgetApp.factory('Toast', ["$mdToast", "$location", function($mdToast,
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],115:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3402,7 +3632,7 @@ global.cobudgetApp.factory('UserCan', ["CurrentUser", "$location", "$q", "Record
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],116:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 (function (global){
 null;
 
@@ -3429,7 +3659,7 @@ global.cobudgetApp.factory('ValidateAndRedirectLoggedInUser', ["$auth", "Error",
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],117:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7361,11 +7591,11 @@ angular.module('ngAnimate', [])
 
 })(window, window.angular);
 
-},{}],118:[function(require,module,exports){
+},{}],130:[function(require,module,exports){
 require('./angular-animate');
 module.exports = 'ngAnimate';
 
-},{"./angular-animate":117}],119:[function(require,module,exports){
+},{"./angular-animate":129}],131:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -7765,11 +7995,11 @@ ngAriaModule.directive('ngShow', ['$aria', function($aria) {
 
 })(window, window.angular);
 
-},{}],120:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 require('./angular-aria');
 module.exports = 'ngAria';
 
-},{"./angular-aria":119}],121:[function(require,module,exports){
+},{"./angular-aria":131}],133:[function(require,module,exports){
 /*
  * angular-autodisable 0.2.1
  * http://github.com/kirstein/angular-autodisable
@@ -7958,7 +8188,7 @@ module.exports = 'ngAria';
 
 })(angular);
 
-},{}],122:[function(require,module,exports){
+},{}],134:[function(require,module,exports){
 (function (factory) {
   'use strict';
   if (typeof exports === 'object') {
@@ -8293,7 +8523,7 @@ module.exports = 'ngAria';
   }
 }));
 
-},{"angular":136,"chart.js":146}],123:[function(require,module,exports){
+},{"angular":148,"chart.js":158}],135:[function(require,module,exports){
 /*
  * Copyright 2013 Ivan Pusic
  * Contributors:
@@ -8420,7 +8650,7 @@ factory('ipCookie', ['$document',
   }
 ]);
 
-},{}],124:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 /*
  * angular-marked
  * (c) 2014 J. Harshbarger
@@ -8770,7 +9000,7 @@ angular.module('hc.marked', [])
   };
 }]);
 
-},{"marked":192}],125:[function(require,module,exports){
+},{"marked":204}],137:[function(require,module,exports){
 /*
  * angular-material-icons v0.6.0
  * (c) 2014 Klar Systems
@@ -9702,11 +9932,11 @@ angular.module('ngMdIcons', [])
     })
 ;
 
-},{}],126:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 require('./angular-material-icons');
 module.exports = 'ngMdIcons';
 
-},{"./angular-material-icons":125}],127:[function(require,module,exports){
+},{"./angular-material-icons":137}],139:[function(require,module,exports){
 /*!
  * Angular Material Design
  * https://github.com/angular/material
@@ -26875,7 +27105,7 @@ angular.module("material.core").constant("$MD_THEME_CSS", "/* mixin definition ;
 
 
 })(window, window.angular);
-},{}],128:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 // Should already be required, here for clarity
 require('angular');
 
@@ -26889,7 +27119,7 @@ require('./angular-material');
 // Export namespace
 module.exports = 'ngMaterial';
 
-},{"./angular-material":127,"angular":136,"angular-animate":118,"angular-aria":120}],129:[function(require,module,exports){
+},{"./angular-material":139,"angular":148,"angular-animate":130,"angular-aria":132}],141:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -27576,11 +27806,11 @@ function ngMessageDirectiveFactory(restrict) {
 
 })(window, window.angular);
 
-},{}],130:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 require('./angular-messages');
 module.exports = 'ngMessages';
 
-},{"./angular-messages":129}],131:[function(require,module,exports){
+},{"./angular-messages":141}],143:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -28265,7 +28495,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
 
 })(window, window.angular);
 
-},{}],132:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 angular.module('truncate', [])
     .filter('characters', function () {
         return function (input, chars, breakOnWord) {
@@ -28316,7 +28546,7 @@ angular.module('truncate', [])
         };
     });
 
-},{}],133:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 /**
  * State-based routing for AngularJS
  * @version v0.2.13
@@ -32549,7 +32779,7 @@ angular.module('ui.router.state')
   .filter('isState', $IsStateFilter)
   .filter('includedByState', $IncludedByStateFilter);
 })(window, window.angular);
-},{}],134:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 'use strict';
 angular.module('lr.upload', [
   'lr.upload.formdata',
@@ -32851,7 +33081,7 @@ angular.module('lr.upload').factory('upload', [
     return upload;
   }
 ]);
-},{}],135:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 /**
  * @license AngularJS v1.4.8
  * (c) 2010-2015 Google, Inc. http://angularjs.org
@@ -61870,11 +62100,11 @@ $provide.value("$locale", {
 })(window, document);
 
 !window.angular.$$csp().noInlineStyle && window.angular.element(document.head).prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide:not(.ng-hide-animate){display:none !important;}ng\\:form{display:block;}.ng-animate-shim{visibility:hidden;}.ng-anchor{position:absolute;}</style>');
-},{}],136:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 require('./angular');
 module.exports = angular;
 
-},{"./angular":135}],137:[function(require,module,exports){
+},{"./angular":147}],149:[function(require,module,exports){
 var BaseModel, _, moment, utils,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
@@ -62168,7 +62398,7 @@ module.exports = BaseModel = (function() {
 })();
 
 
-},{"./utils.coffee":142}],138:[function(require,module,exports){
+},{"./utils.coffee":154}],150:[function(require,module,exports){
 var _, utils;
 
 _ = window._;
@@ -62326,7 +62556,7 @@ module.exports = function(RestfulClient, $q) {
 };
 
 
-},{"./utils.coffee":142}],139:[function(require,module,exports){
+},{"./utils.coffee":154}],151:[function(require,module,exports){
 module.exports = {
   RecordStoreFn: function() {
     return require('./record_store.coffee');
@@ -62339,7 +62569,7 @@ module.exports = {
 };
 
 
-},{"./base_model.coffee":137,"./base_records_interface.coffee":138,"./record_store.coffee":140,"./restful_client.coffee":141}],140:[function(require,module,exports){
+},{"./base_model.coffee":149,"./base_records_interface.coffee":150,"./record_store.coffee":152,"./restful_client.coffee":153}],152:[function(require,module,exports){
 var RecordStore, _;
 
 _ = window._;
@@ -62379,7 +62609,7 @@ module.exports = RecordStore = (function() {
 })();
 
 
-},{}],141:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 var _;
 
 _ = window._;
@@ -62511,7 +62741,7 @@ module.exports = function($http, Upload) {
 };
 
 
-},{}],142:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 var Utils;
 
 module.exports = new (Utils = (function() {
@@ -62554,7 +62784,7 @@ module.exports = new (Utils = (function() {
 })());
 
 
-},{}],143:[function(require,module,exports){
+},{}],155:[function(require,module,exports){
 /*!
   * Bowser - a browser detector
   * https://github.com/ded/bowser
@@ -62847,9 +63077,9 @@ module.exports = new (Utils = (function() {
   return bowser
 });
 
-},{}],144:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 
-},{}],145:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 module.exports = function(obj) {
     if (typeof obj === 'string') return camelCase(obj);
     return walk(obj);
@@ -62910,7 +63140,7 @@ function reduce (xs, f, acc) {
     return acc;
 }
 
-},{}],146:[function(require,module,exports){
+},{}],158:[function(require,module,exports){
 /*!
  * Chart.js
  * http://chartjs.org/
@@ -62964,7 +63194,7 @@ require('./charts/Chart.Scatter')(Chart);
 
 window.Chart = module.exports = Chart;
 
-},{"./charts/Chart.Bar":147,"./charts/Chart.Bubble":148,"./charts/Chart.Doughnut":149,"./charts/Chart.Line":150,"./charts/Chart.PolarArea":151,"./charts/Chart.Radar":152,"./charts/Chart.Scatter":153,"./controllers/controller.bar":154,"./controllers/controller.bubble":155,"./controllers/controller.doughnut":156,"./controllers/controller.line":157,"./controllers/controller.polarArea":158,"./controllers/controller.radar":159,"./core/core.animation":160,"./core/core.controller":161,"./core/core.datasetController":162,"./core/core.element":163,"./core/core.helpers":164,"./core/core.js":165,"./core/core.layoutService":166,"./core/core.legend":167,"./core/core.scale":168,"./core/core.scaleService":169,"./core/core.title":170,"./core/core.tooltip":171,"./elements/element.arc":172,"./elements/element.line":173,"./elements/element.point":174,"./elements/element.rectangle":175,"./scales/scale.category":176,"./scales/scale.linear":177,"./scales/scale.logarithmic":178,"./scales/scale.radialLinear":179,"./scales/scale.time":180}],147:[function(require,module,exports){
+},{"./charts/Chart.Bar":159,"./charts/Chart.Bubble":160,"./charts/Chart.Doughnut":161,"./charts/Chart.Line":162,"./charts/Chart.PolarArea":163,"./charts/Chart.Radar":164,"./charts/Chart.Scatter":165,"./controllers/controller.bar":166,"./controllers/controller.bubble":167,"./controllers/controller.doughnut":168,"./controllers/controller.line":169,"./controllers/controller.polarArea":170,"./controllers/controller.radar":171,"./core/core.animation":172,"./core/core.controller":173,"./core/core.datasetController":174,"./core/core.element":175,"./core/core.helpers":176,"./core/core.js":177,"./core/core.layoutService":178,"./core/core.legend":179,"./core/core.scale":180,"./core/core.scaleService":181,"./core/core.title":182,"./core/core.tooltip":183,"./elements/element.arc":184,"./elements/element.line":185,"./elements/element.point":186,"./elements/element.rectangle":187,"./scales/scale.category":188,"./scales/scale.linear":189,"./scales/scale.logarithmic":190,"./scales/scale.radialLinear":191,"./scales/scale.time":192}],159:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -62976,7 +63206,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],148:[function(require,module,exports){
+},{}],160:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -62987,7 +63217,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],149:[function(require,module,exports){
+},{}],161:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -62999,7 +63229,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],150:[function(require,module,exports){
+},{}],162:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63011,7 +63241,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],151:[function(require,module,exports){
+},{}],163:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63023,7 +63253,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],152:[function(require,module,exports){
+},{}],164:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63043,7 +63273,7 @@ module.exports = function(Chart) {
 
 };
 
-},{}],153:[function(require,module,exports){
+},{}],165:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63091,7 +63321,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{}],154:[function(require,module,exports){
+},{}],166:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63399,7 +63629,7 @@ module.exports = function(Chart) {
 	});
 };
 
-},{}],155:[function(require,module,exports){
+},{}],167:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63568,7 +63798,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],156:[function(require,module,exports){
+},{}],168:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -63818,7 +64048,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],157:[function(require,module,exports){
+},{}],169:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -64110,7 +64340,7 @@ module.exports = function(Chart) {
 	});
 };
 
-},{}],158:[function(require,module,exports){
+},{}],170:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -64347,7 +64577,7 @@ module.exports = function(Chart) {
 	});
 
 };
-},{}],159:[function(require,module,exports){
+},{}],171:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -64553,7 +64783,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],160:[function(require,module,exports){
+},{}],172:[function(require,module,exports){
 /*global window: false */
 "use strict";
 
@@ -64674,7 +64904,7 @@ module.exports = function(Chart) {
 		}
 	};
 };
-},{}],161:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -65248,7 +65478,7 @@ module.exports = function(Chart) {
 	});
 };
 
-},{}],162:[function(require,module,exports){
+},{}],174:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -65322,7 +65552,7 @@ module.exports = function(Chart) {
 	Chart.DatasetController.extend = helpers.inherits;
 
 };
-},{}],163:[function(require,module,exports){
+},{}],175:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -65417,7 +65647,7 @@ module.exports = function(Chart) {
 
 };
 
-},{}],164:[function(require,module,exports){
+},{}],176:[function(require,module,exports){
 /*global window: false */
 /*global document: false */
 "use strict";
@@ -66362,7 +66592,7 @@ module.exports = function(Chart) {
 	};
 
 };
-},{"chartjs-color":181}],165:[function(require,module,exports){
+},{"chartjs-color":193}],177:[function(require,module,exports){
 "use strict";
 
 module.exports = function() {
@@ -66467,7 +66697,7 @@ module.exports = function() {
 	return Chart;
 
 };
-},{}],166:[function(require,module,exports){
+},{}],178:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -66792,7 +67022,7 @@ module.exports = function(Chart) {
 	};
 };
 
-},{}],167:[function(require,module,exports){
+},{}],179:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -67125,7 +67355,7 @@ module.exports = function(Chart) {
 
 };
 
-},{}],168:[function(require,module,exports){
+},{}],180:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -67811,7 +68041,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],169:[function(require,module,exports){
+},{}],181:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -67846,7 +68076,7 @@ module.exports = function(Chart) {
 		}
 	};
 };
-},{}],170:[function(require,module,exports){
+},{}],182:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -68040,7 +68270,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],171:[function(require,module,exports){
+},{}],183:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -68657,7 +68887,7 @@ module.exports = function(Chart) {
 	});
 };
 
-},{}],172:[function(require,module,exports){
+},{}],184:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart, moment) {
@@ -68740,7 +68970,7 @@ module.exports = function(Chart, moment) {
   });
 };
 
-},{}],173:[function(require,module,exports){
+},{}],185:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -68902,7 +69132,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],174:[function(require,module,exports){
+},{}],186:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -69056,7 +69286,7 @@ module.exports = function(Chart) {
 		}
 	});
 };
-},{}],175:[function(require,module,exports){
+},{}],187:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -69163,7 +69393,7 @@ module.exports = function(Chart) {
 	});
 
 };
-},{}],176:[function(require,module,exports){
+},{}],188:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -69235,7 +69465,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType("category", DatasetScale, defaultConfig);
 
 };
-},{}],177:[function(require,module,exports){
+},{}],189:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -69494,7 +69724,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType("linear", LinearScale, defaultConfig);
 
 };
-},{}],178:[function(require,module,exports){
+},{}],190:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -69690,7 +69920,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType("logarithmic", LogarithmicScale, defaultConfig);
 
 };
-},{}],179:[function(require,module,exports){
+},{}],191:[function(require,module,exports){
 "use strict";
 
 module.exports = function(Chart) {
@@ -70131,7 +70361,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType("radialLinear", LinearRadialScale, defaultConfig);
 
 };
-},{}],180:[function(require,module,exports){
+},{}],192:[function(require,module,exports){
 /*global window: false */
 "use strict";
 
@@ -70470,7 +70700,7 @@ module.exports = function(Chart) {
 	Chart.scaleService.registerScaleType("time", TimeScale, defaultConfig);
 
 };
-},{"moment":193}],181:[function(require,module,exports){
+},{"moment":205}],193:[function(require,module,exports){
 /* MIT license */
 
 var convert = require("color-convert"),
@@ -70889,7 +71119,7 @@ Color.prototype.setChannel = function(space, index, val) {
 
 window.Color = module.exports = Color
 
-},{"color-convert":183,"color-string":185}],182:[function(require,module,exports){
+},{"color-convert":195,"color-string":197}],194:[function(require,module,exports){
 /* MIT license */
 
 module.exports = {
@@ -71589,7 +71819,7 @@ for (var key in cssKeywords) {
   reverseKeywords[JSON.stringify(cssKeywords[key])] = key;
 }
 
-},{}],183:[function(require,module,exports){
+},{}],195:[function(require,module,exports){
 var conversions = require("./conversions");
 
 var convert = function() {
@@ -71682,7 +71912,7 @@ Converter.prototype.getValues = function(space) {
 });
 
 module.exports = convert;
-},{"./conversions":182}],184:[function(require,module,exports){
+},{"./conversions":194}],196:[function(require,module,exports){
 module.exports = {
 	"aliceblue": [240, 248, 255],
 	"antiquewhite": [250, 235, 215],
@@ -71833,7 +72063,7 @@ module.exports = {
 	"yellow": [255, 255, 0],
 	"yellowgreen": [154, 205, 50]
 };
-},{}],185:[function(require,module,exports){
+},{}],197:[function(require,module,exports){
 /* MIT license */
 var colorNames = require('color-name');
 
@@ -72056,7 +72286,7 @@ for (var name in colorNames) {
    reverseNames[colorNames[name]] = name;
 }
 
-},{"color-name":184}],186:[function(require,module,exports){
+},{"color-name":196}],198:[function(require,module,exports){
 /**
  * Dependencies
  */
@@ -72084,7 +72314,7 @@ function isEmptyObject(obj) {
 
 module.exports = isEmptyObject
 
-},{}],187:[function(require,module,exports){
+},{}],199:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v2.2.0
  * http://jquery.com/
@@ -81917,7 +82147,7 @@ if ( !noGlobal ) {
 return jQuery;
 }));
 
-},{}],188:[function(require,module,exports){
+},{}],200:[function(require,module,exports){
 /*jslint node: true */
 
 var listify = function listify(list) {
@@ -81952,7 +82182,7 @@ var listify = function listify(list) {
 module.exports = listify;
 
 
-},{}],189:[function(require,module,exports){
+},{}],201:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -94308,7 +94538,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],190:[function(require,module,exports){
+},{}],202:[function(require,module,exports){
 /*
   Loki IndexedDb Adapter (need to include this script to use it)
 
@@ -94893,7 +95123,7 @@ module.exports = listify;
   }());
 }));
 
-},{}],191:[function(require,module,exports){
+},{}],203:[function(require,module,exports){
 (function (global){
 /**
  * LokiJS
@@ -99316,7 +99546,7 @@ module.exports = listify;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./loki-indexed-adapter.js":190,"fs":144}],192:[function(require,module,exports){
+},{"./loki-indexed-adapter.js":202,"fs":156}],204:[function(require,module,exports){
 (function (global){
 /**
  * marked - a markdown parser
@@ -100606,7 +100836,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],193:[function(require,module,exports){
+},{}],205:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -104213,7 +104443,7 @@ if (typeof module !== 'undefined' && typeof exports === 'object') {
     return _moment;
 
 }));
-},{}],194:[function(require,module,exports){
+},{}],206:[function(require,module,exports){
 // Generated by CoffeeScript 1.4.0
 var capFirst, lowerFirst, morphObj, toCamel, toDashed, toHuman, toSnake, toSnakeCaps, toTitle, toUpperCamel,
   _this = this;
@@ -104340,10 +104570,10 @@ module.exports.toHuman = toHuman;
 
 module.exports.toTitle = toTitle;
 
-},{}],195:[function(require,module,exports){
+},{}],207:[function(require,module,exports){
 /*! ng-csv 10-10-2015 */
 !function(a){angular.module("ngCsv.config",[]).value("ngCsv.config",{debug:!0}).config(["$compileProvider",function(a){angular.isDefined(a.urlSanitizationWhitelist)?a.urlSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/):a.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|file|data):/)}]),angular.module("ngCsv.directives",["ngCsv.services"]),angular.module("ngCsv.services",[]),angular.module("ngCsv",["ngCsv.config","ngCsv.services","ngCsv.directives","ngSanitize"]),"undefined"!=typeof module&&"undefined"!=typeof exports&&module.exports===exports&&(module.exports="ngCsv"),angular.module("ngCsv.services").service("CSV",["$q",function(a){var b="\r\n",c="﻿",d={"\\t":"	","\\b":"\b","\\v":"","\\f":"\f","\\r":"\r"};this.stringifyField=function(a,b){return"locale"===b.decimalSep&&this.isFloat(a)?a.toLocaleString():"."!==b.decimalSep&&this.isFloat(a)?a.toString().replace(".",b.decimalSep):"string"==typeof a?(a=a.replace(/"/g,'""'),(b.quoteStrings||a.indexOf(",")>-1||a.indexOf("\n")>-1||a.indexOf("\r")>-1)&&(a=b.txtDelim+a+b.txtDelim),a):"boolean"==typeof a?a?"TRUE":"FALSE":a},this.isFloat=function(a){return+a===a&&(!isFinite(a)||Boolean(a%1))},this.stringify=function(d,e){var f=a.defer(),g=this,h="",i="",j=a.when(d).then(function(a){if(angular.isDefined(e.header)&&e.header){var d,j;d=[],angular.forEach(e.header,function(a){this.push(g.stringifyField(a,e))},d),j=d.join(e.fieldSep?e.fieldSep:","),i+=j+b}var k=[];if(angular.isArray(a)?k=a:angular.isFunction(a)&&(k=a()),angular.isDefined(e.label)&&e.label&&"boolean"==typeof e.label){var l,m;l=[],angular.forEach(k[0],function(a,b){this.push(g.stringifyField(b,e))},l),m=l.join(e.fieldSep?e.fieldSep:","),i+=m+b}angular.forEach(k,function(a,c){var d,f,h=angular.copy(k[c]);f=[];var j=e.columnOrder?e.columnOrder:h;angular.forEach(j,function(a){var b=e.columnOrder?h[a]:a;this.push(g.stringifyField(b,e))},f),d=f.join(e.fieldSep?e.fieldSep:","),i+=c<k.length?d+b:d}),e.addByteOrderMarker&&(h+=c),h+=i,f.resolve(h)});return"function"==typeof j["catch"]&&j["catch"](function(a){f.reject(a)}),f.promise},this.isSpecialChar=function(a){return void 0!==d[a]},this.getSpecialChar=function(a){return d[a]}}]),angular.module("ngCsv.directives").directive("ngCsv",["$parse","$q","CSV","$document","$timeout",function(b,c,d,e,f){return{restrict:"AC",scope:{data:"&ngCsv",filename:"@filename",header:"&csvHeader",columnOrder:"&csvColumnOrder",txtDelim:"@textDelimiter",decimalSep:"@decimalSeparator",quoteStrings:"@quoteStrings",fieldSep:"@fieldSeparator",lazyLoad:"@lazyLoad",addByteOrderMarker:"@addBom",ngClick:"&",charset:"@charset",label:"&csvLabel"},controller:["$scope","$element","$attrs","$transclude",function(a,b,e){function f(){var b={txtDelim:a.txtDelim?a.txtDelim:'"',decimalSep:a.decimalSep?a.decimalSep:".",quoteStrings:a.quoteStrings,addByteOrderMarker:a.addByteOrderMarker};return angular.isDefined(e.csvHeader)&&(b.header=a.$eval(a.header)),angular.isDefined(e.csvColumnOrder)&&(b.columnOrder=a.$eval(a.columnOrder)),angular.isDefined(e.csvLabel)&&(b.label=a.$eval(a.label)),b.fieldSep=a.fieldSep?a.fieldSep:",",b.fieldSep=d.isSpecialChar(b.fieldSep)?d.getSpecialChar(b.fieldSep):b.fieldSep,b}a.csv="",angular.isDefined(a.lazyLoad)&&"true"==a.lazyLoad||angular.isArray(a.data)&&a.$watch("data",function(){a.buildCSV()},!0),a.getFilename=function(){return a.filename||"download.csv"},a.buildCSV=function(){var g=c.defer();return b.addClass(e.ngCsvLoadingClass||"ng-csv-loading"),d.stringify(a.data(),f()).then(function(c){a.csv=c,b.removeClass(e.ngCsvLoadingClass||"ng-csv-loading"),g.resolve(c)}),a.$apply(),g.promise}}],link:function(b,c){function d(){var c=b.charset||"utf-8",d=new Blob([b.csv],{type:"text/csv;charset="+c+";"});if(a.navigator.msSaveOrOpenBlob)navigator.msSaveBlob(d,b.getFilename());else{var g=angular.element('<div data-tap-disabled="true"><a></a></div>'),h=angular.element(g.children()[0]);h.attr("href",a.URL.createObjectURL(d)),h.attr("download",b.getFilename()),h.attr("target","_blank"),e.find("body").append(g),f(function(){h[0].click(),h.remove()},null)}}c.bind("click",function(){b.buildCSV().then(function(){d()}),b.$apply()})}}}])}(window,document);
-},{}],196:[function(require,module,exports){
+},{}],208:[function(require,module,exports){
 (function() {
   var module = angular.module('ngDownloadCsv', [])
   module.factory('DownloadCSV', ['$http', function ($http) {
@@ -104365,7 +104595,7 @@ module.exports.toTitle = toTitle;
   }])
 }())
 
-},{}],197:[function(require,module,exports){
+},{}],209:[function(require,module,exports){
 (function() {
     'use strict';
     angular
@@ -104397,7 +104627,7 @@ module.exports.toTitle = toTitle;
     }
 })();
 
-},{}],198:[function(require,module,exports){
+},{}],210:[function(require,module,exports){
 // taken from this gist https://gist.github.com/Aaronius/46ae4a0f8ff052cd24f0
 
 angular.module('qAllSettled', []).config(function($provide) {
@@ -104416,7 +104646,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   });
 });
 
-},{}],199:[function(require,module,exports){
+},{}],211:[function(require,module,exports){
 !function(root, factory) {
 
   // Set up ngSanitize appropriately for the environment. Start with AMD.
@@ -104907,7 +105137,7 @@ angular.module('qAllSettled', []).config(function($provide) {
   return ngSanitize;
 });
 
-},{}],200:[function(require,module,exports){
+},{}],212:[function(require,module,exports){
 if (typeof module !== 'undefined' && typeof exports !== 'undefined' && module.exports === exports) {
   module.exports = 'ng-token-auth';
 }
@@ -105756,10 +105986,10 @@ window.isEmpty = function(obj) {
   return true;
 };
 
-},{}],201:[function(require,module,exports){
+},{}],213:[function(require,module,exports){
 require('app')
 
-},{"app":91}]},{},[201])
+},{"app":103}]},{},[213])
 
 
 //# sourceMappingURL=../maps/index.js.map
