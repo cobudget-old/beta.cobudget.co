@@ -1244,43 +1244,54 @@ module.exports = {
         return person.deferred.promise;
       });
       _.each($scope.newMembers, function(newMember) {
-        var params;
+        var membershipParams;
         newMember.status = 'pending';
-        params = {
+        membershipParams = {
           group_id: groupId,
           email: newMember.email
         };
-        return Records.memberships.remote.create(params).then(function(data) {
-          var allocation;
-          params = {
-            groupId: groupId,
-            userId: data.users[0].id,
-            amount: newMember.allocation_amount
-          };
-          allocation = Records.allocations.build(params);
-          return allocation.save().then(function() {
-            var newMembership;
-            newMembership = data.memberships[0];
+        return Records.memberships.remote.create(membershipParams).then(function(data) {
+          var allocation, allocationParams, newMembership;
+          newMembership = data.memberships[0];
+          if (newMember.allocation_amount > 0) {
+            allocationParams = {
+              groupId: groupId,
+              userId: data.users[0].id,
+              amount: newMember.allocation_amount
+            };
+            allocation = Records.allocations.build(allocationParams);
+            return allocation.save().then(function() {
+              return Records.memberships.invite(newMembership).then(function() {
+                newMember.status = 'complete';
+                return newMember.deferred.resolve();
+              });
+            });
+          } else {
             return Records.memberships.invite(newMembership).then(function() {
               newMember.status = 'complete';
               return newMember.deferred.resolve();
             });
-          });
+          }
         });
       });
       _.each($scope.existingMembers, function(existingMember) {
         var allocation, params;
         existingMember.status = 'pending';
-        params = {
-          groupId: groupId,
-          userId: existingMember.id,
-          amount: existingMember.allocation_amount
-        };
-        allocation = Records.allocations.build(params);
-        return allocation.save().then(function() {
+        if (existingMember.allocation_amount > 0) {
+          params = {
+            groupId: groupId,
+            userId: existingMember.id,
+            amount: existingMember.allocation_amount
+          };
+          allocation = Records.allocations.build(params);
+          return allocation.save().then(function() {
+            existingMember.status = 'complete';
+            return existingMember.deferred.resolve();
+          });
+        } else {
           existingMember.status = 'complete';
           return existingMember.deferred.resolve();
-        });
+        }
       });
       return $q.allSettled(promises).then(function() {
         return $scope.uploadStatus = 'complete';
