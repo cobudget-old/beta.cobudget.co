@@ -1865,8 +1865,14 @@ global.cobudgetApp.directive('groupPageFunders', function() {
     replace: true,
     controller: ["config", "Dialog", "DownloadCSV", "LoadBar", "$q", "Records", "$scope", "Toast", "$window", function(config, Dialog, DownloadCSV, LoadBar, $q, Records, $scope, Toast, $window) {
       $scope.toggleMemberAdmin = function(membership) {
+        var params;
         membership.isAdmin = !membership.isAdmin;
-        return membership.save();
+        params = {
+          membership: {
+            is_admin: membership.isAdmin
+          }
+        };
+        return membership.remote.update(membership.id, params);
       };
       $scope.downloadCSV = function() {
         var filename, params, timestamp;
